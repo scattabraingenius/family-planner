@@ -6,7 +6,7 @@
 <title>Home — Family Day Planner</title>
 <style>
   /* ============================================================
-     HOME — family day planner   (v1.5)
+     HOME — family day planner   (v1.6-beta)
      One shared day list (multi-person tags), Places to Go + Shopping list.
      Optional live cloud sync across devices (Firebase — see config block).
      Self-contained, offline, saves to localStorage.
@@ -31,8 +31,12 @@
     .wrap { padding:0; max-width:none; }
     .toolbar, .rowactions, .clock, .nextup, .util, .peoplebar .pb-edit, .row.parked, .add-inline, .shop-clear, .people-editor { display:none !important; }
     .panels { grid-template-columns:1fr 1fr; gap:16px; }
-    .row, .shop-row { break-inside:avoid; box-shadow:none !important; }
+    .row, .shop-row, .place-row, .date-card { break-inside:avoid; box-shadow:none !important; }
     header.top { margin-bottom:8px; }
+    .dates-head-actions, .dc-actions, .dates-more, .dates-empty .btn, .date-editor, .place-edit, .place-del, .shop-del, .inline-input, .inline-textarea, .popover, .dates-past-toggle { display:none !important; }
+    .dates-past-list:not(.expanded) { display:none !important; }
+    .editable { padding:0; margin:0; }
+    .editable:hover, .editable:focus-visible { background:none; outline:none; }
   }
   * { box-sizing:border-box; } html,body{ margin:0; }
   body { font-family:var(--sans); background:var(--paper); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; }
@@ -87,6 +91,70 @@
   .pe-row input:focus { border-color:var(--signal); }
   .pe-row .rm { color:var(--muted-2); background:none; border:1px solid var(--line); border-radius:8px; width:30px; height:30px; cursor:pointer; }
   .pe-row .rm:hover { color:var(--alarm); border-color:var(--alarm); }
+
+  /* editable-field affordance (shared by inline editing everywhere) */
+  .editable { cursor:pointer; border-radius:6px; padding:1px 4px; margin:-1px -4px; transition:background .1s ease; }
+  .editable:hover { background:rgba(255,255,255,.06); }
+  .editable:focus-visible { outline:2px solid var(--signal); outline-offset:1px; background:rgba(255,255,255,.06); }
+  @media (hover:none) { .editable:hover { background:none; } }
+  .inline-input, .inline-textarea { font-family:inherit; font-size:inherit; font-weight:inherit; color:var(--ink); background:var(--input-bg); border:1px solid var(--signal); border-radius:6px; padding:2px 6px; outline:none; width:100%; box-shadow:0 0 0 3px rgba(18,176,201,.14); }
+  .inline-textarea { resize:vertical; min-height:44px; font-size:13px; }
+
+  /* shared popover (people / category / date-time / priority) */
+  .popover { position:fixed; z-index:1000; min-width:200px; max-width:min(300px,92vw); max-height:80vh; overflow-y:auto; background:var(--card); border:1px solid var(--signal); border-radius:10px; padding:10px; box-shadow:0 0 0 3px rgba(18,176,201,.12), var(--shadow); }
+  .popover .pop-title { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .popover .pop-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .popover .pop-row:last-child { margin-bottom:0; }
+  .popover label { font-family:var(--mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:3px; }
+  .popover input[type=time], .popover input[type=date], .popover select { font-size:13px; padding:6px 8px; border:1px solid var(--line); border-radius:7px; background:var(--input-bg); color:var(--ink); outline:none; width:100%; }
+  .popover .pop-actions { display:flex; gap:6px; justify-content:flex-end; margin-top:8px; }
+  .popover .pop-clear { font-size:11px; color:var(--muted); background:none; border:1px solid var(--line); border-radius:7px; padding:4px 8px; cursor:pointer; }
+  .popover .pop-clear:hover { color:var(--ink); border-color:var(--muted-2); }
+  .prislider-pop { display:flex; align-items:center; gap:10px; min-width:180px; }
+  .prislider-pop input[type=range] { flex:1; accent-color:var(--signal); }
+
+  /* important dates */
+  .dates-section { margin-bottom:14px; }
+  .dates-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .dates-head-actions { display:flex; gap:8px; }
+  .dates-quick { display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:10px; }
+  .date-card { --cat:#66788B; background:var(--card); border:1px solid var(--line); border-left:4px solid var(--cat); border-radius:var(--radius); padding:10px 12px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .date-card.ongoing { box-shadow:0 0 0 2px var(--signal), var(--shadow); }
+  .dc-top { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .dc-count { font-family:var(--mono); font-size:11.5px; font-weight:700; color:var(--signal-dim); white-space:nowrap; }
+  .dc-count.ongoing { color:#23B877; }
+  .dc-count.today { color:var(--star); }
+  .dc-cat { font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--cat); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dc-title { font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dc-when { font-family:var(--mono); font-size:11.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dc-sub { font-size:11px; color:var(--muted-2); display:flex; flex-wrap:wrap; gap:5px; align-items:center; overflow:hidden; }
+  .dc-sub .ptxt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px; }
+  .dc-people { display:flex; flex-wrap:wrap; gap:3px; }
+  .dc-people .pchip { font-size:10px; padding:2px 7px 2px 3px; }
+  .dc-people .pchip .dot { width:11px; height:11px; }
+  .dc-actions { display:flex; gap:4px; justify-content:flex-end; margin-top:2px; }
+  .dates-more { display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:var(--muted); background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--radius); cursor:pointer; min-height:60px; }
+  .dates-more:hover { color:var(--ink); border-color:var(--muted-2); }
+  .dates-empty { grid-column:1/-1; display:flex; align-items:center; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px; padding:10px 2px; }
+  .dates-all { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; margin-top:10px; box-shadow:var(--shadow); }
+  .dates-all-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .dates-all-list { display:flex; flex-direction:column; gap:8px; }
+  .dates-past-toggle { font-size:12px; color:var(--muted); background:none; border:1px solid var(--line); border-radius:8px; padding:6px 10px; cursor:pointer; margin-top:12px; }
+  .dates-past-toggle:hover { color:var(--ink); border-color:var(--muted-2); }
+  .dates-past-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; opacity:.85; }
+  /* .date-editor is placed both inside .dates-quick's card grid and inside .dates-all-list's flex
+     column — grid-column:1/-1 spans every track when it's a grid item; width:100% + min-width:0 make
+     it fill (and never overflow) either container, instead of being squeezed into one card column. */
+  .date-editor { grid-column:1/-1; width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--signal); border-radius:var(--radius); padding:14px; background:var(--input-bg); box-shadow:0 0 0 3px rgba(18,176,201,.12), var(--shadow); }
+  .date-editor .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px 14px; min-width:0; }
+  .date-editor .field { min-width:0; }
+  .date-editor .field.full { grid-column:1/-1; }
+  .date-editor .field label { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:4px; }
+  .date-editor input[type=text], .date-editor input[type=date], .date-editor input[type=time], .date-editor select, .date-editor textarea { font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); outline:none; width:100%; box-sizing:border-box; }
+  .date-editor textarea { resize:vertical; min-height:44px; }
+  .date-editor .who-picker { min-width:0; }
+  .date-editor .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; justify-content:flex-end; }
+  @media (max-width:760px){ .date-editor .grid { grid-template-columns:1fr; } }
 
   /* panels */
   .panels { display:grid; grid-template-columns:1fr 330px; gap:18px; align-items:start; }
@@ -250,6 +318,26 @@
 
   <div class="nextup empty" id="nextup"></div>
 
+  <div class="dates-section" id="datesSection">
+    <div class="dates-head">
+      <div class="panel-title" style="margin:0">Important dates</div>
+      <div class="dates-head-actions">
+        <button class="btn sm" id="addDateBtn">+ Add date</button>
+        <button class="btn sm" id="viewAllDatesBtn" aria-expanded="false">View all</button>
+      </div>
+    </div>
+    <div class="dates-quick" id="datesQuick"></div>
+    <div class="dates-all hidden" id="datesAll">
+      <div class="dates-all-head">
+        <div class="panel-title" style="margin:0">All upcoming dates</div>
+        <button class="btn sm" id="closeAllDatesBtn">Close</button>
+      </div>
+      <div class="dates-all-list" id="datesAllList"></div>
+      <button class="dates-past-toggle" id="pastDatesToggle" aria-expanded="false">Show past dates</button>
+      <div class="dates-past-list hidden" id="pastDatesList"></div>
+    </div>
+  </div>
+
   <div class="peoplebar" id="peoplebar"></div>
   <div class="people-editor hidden" id="peopleEditor"></div>
 
@@ -295,15 +383,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.5";
+const VERSION = "1.6-beta";
 
 /* ---------------- storage ---------------- */
-const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1";
+const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
 function savePeople(){ try{ localStorage.setItem(K_PEOPLE, JSON.stringify(people)); }catch(e){} pushCloud(); }
 function savePlaces(){ try{ localStorage.setItem(K_PLACES, JSON.stringify(places)); }catch(e){} pushCloud(); }
+function saveDates(){ try{ localStorage.setItem(K_DATES, JSON.stringify(importantDates)); }catch(e){} pushCloud(); }
 
 /* =====================================================================
    CLOUD SYNC (optional) — share one LIVE planner across all devices.
@@ -336,9 +425,12 @@ function initSync(){
       if(Array.isArray(v.tasks))  tasks=v.tasks.map(migrateTask);
       if(Array.isArray(v.shop))   shop=v.shop.map(s=>Object.assign(blankShop(),s));
       if(Array.isArray(v.places)) places=v.places.map(migratePlace);   // only overwrite if present → never erased by an old client
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); }catch(e){}
+      if(Array.isArray(v.importantDates)) importantDates=v.importantDates.map(migrateImportantDate); // same rule → older clients never erase this
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); }catch(e){}
       remoteApplying=false;
-      if(editingId==null) render();
+      // Data is always safe to merge in (every commit path re-fetches its entity by id), but a full render()
+      // would blow away a focused inline editor's DOM — so defer the redraw until editing ends.
+      if(!editingActive()) render(); else pendingRemoteRender=true;
     });
     firebase.database().ref(".info/connected").on("value", s=>{ if(syncing) updateSyncBadge(s.val()===true); });
   }catch(e){ syncing=false; updateSyncBadge(false); }
@@ -346,7 +438,11 @@ function initSync(){
 function pushCloud(force){
   if(!syncing || (remoteApplying && !force)) return;
   clearTimeout(pushTimer);
-  pushTimer=setTimeout(()=>{ try{ db.set({people,tasks,shop,places,updated:Date.now()}); }catch(e){} }, 250);
+  /* update() instead of set() — a set() from this tab would blank out any top-level key it omits.
+     Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
+     (update() only protects against writers that also use update() with a partial payload); this change
+     protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(on){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -390,13 +486,140 @@ function migrateTask(raw){
 }
 function migratePlace(raw){ const p=Object.assign(blankPlace(), raw||{}); p.people=normPeople(p.people); if(typeof p.created!=="number") p.created=Date.now(); return p; }
 
+/* ---------------- important dates ---------------- */
+/* Stored separately from tasks — never appear in the task list, never affect progress/overdue/Up Next.
+   Structure is deliberately calendar-shaped (startDate/endDate/startTime/endTime) so a future full
+   calendar view could read this same array without a migration. */
+const DATE_CATEGORIES = {
+  travel:      { label:"Travel",       color:"#3B97E6" },
+  school:      { label:"School",       color:"#F2A81D" },
+  family:      { label:"Family",       color:"#9B87F5" },
+  appointment: { label:"Appointment",  color:"#16BBD4" },
+  deadline:    { label:"Deadline",     color:"#F0575C" },
+  other:       { label:"Other",        color:"#66788B" },
+};
+function blankImportantDate(name){ return { id:uid("d"), title:name||"", startDate:"", endDate:"", startTime:"", endTime:"", people:[], location:"", note:"", category:"other", created:Date.now(), updated:Date.now() }; }
+function migrateImportantDate(raw){
+  const d=Object.assign(blankImportantDate(), raw||{});
+  d.people=normPeople(d.people);
+  if(!DATE_CATEGORIES[d.category]) d.category="other";
+  if(typeof d.created!=="number") d.created=Date.now();
+  if(typeof d.updated!=="number") d.updated=d.created;
+  return d;
+}
+
+/* Local-calendar-date helpers — a bare "YYYY-MM-DD" is NEVER passed to `new Date()` on its own
+   (that parses as UTC midnight and can shift a day in western timezones). Always attach a local
+   time-of-day first, exactly like the existing dueMoment()/fmtDate() pattern below. */
+function localMoment(ymd, hm){ if(!ymd) return null; const t=/^\d{2}:\d{2}$/.test(hm||"")?hm:"00:00"; const d=new Date(`${ymd}T${t}`); return isNaN(d)?null:d; }
+function dayDiff(fromYmd, toYmd){ const a=localMoment(fromYmd), b=localMoment(toYmd); if(!a||!b) return 0; return Math.round((b-a)/86400000); }
+
 let tasks = loadJSON(K_TASKS); if(!tasks){ tasks=[]; saveTasks(); }
 tasks = tasks.map(migrateTask);
 let shop = (loadJSON(K_SHOP) || []).map(s=>Object.assign(blankShop(),s));
 let places = (loadJSON(K_PLACES) || []).map(migratePlace);
+let importantDates = (loadJSON(K_DATES) || []).map(migrateImportantDate);
 
 /* ---------------- state ---------------- */
-let editingId=null, placeEditingId=null, activePerson="all", overdueSet=new Set();
+let editingId=null, placeEditingId=null, dateEditingId=null, activePerson="all", overdueSet=new Set();
+let datesAllOpen=false, pastDatesOpen=false;
+let pendingRemoteRender=false;
+/* Shared inline-edit / popover tracker (text fields + people/category/date-time/priority popovers).
+   Only one of these may be open at a time; opening a new one commits/closes whatever is open. */
+let activeEdit=null; // { type, id, field, close(cancel) }
+function editingActive(){ return editingId!=null || placeEditingId!=null || dateEditingId!=null || !!activeEdit; }
+
+/* =====================================================================
+   SHARED INLINE-EDIT / POPOVER SYSTEM
+   One editor (text field or popover) open at a time, tracked in `activeEdit`.
+   Opening a new one commits/closes whatever is currently open first.
+   Every commit path re-fetches its entity by id via getEntity() — never a
+   closure-captured object — the exact pattern that fixed the Edit Family bug.
+   ===================================================================== */
+function closeActiveEdit(commit){
+  if(!activeEdit) return;
+  const a=activeEdit; activeEdit=null;
+  try{ a.close(commit!==false); }catch(e){}
+}
+function isEditingField(type,id,field){ return !!activeEdit && activeEdit.type===type && activeEdit.id===id && (field==null || activeEdit.field===field); }
+function isEditingEntity(type,id){ return isEditingField(type,id,null); }
+
+/* Click-to-edit text field: swaps `container`'s content for an <input>/<textarea>.
+   Enter commits (never inserts a newline). Blur commits. Escape restores + cancels.
+   Blank required values restore the previous value. Saves once, not per keystroke. */
+function startInlineText(opts){
+  const {type,id,field,container,value,placeholder,ariaLabel,required=true,multiline=false,getEntity,onCommit,onDone}=opts;
+  closeActiveEdit(true);
+  let finished=false;
+  const original=value||"";
+  const input=document.createElement(multiline?"textarea":"input");
+  if(!multiline) input.type="text";
+  input.className=multiline?"inline-textarea":"inline-input";
+  input.value=original;
+  if(placeholder) input.placeholder=placeholder;
+  input.setAttribute("aria-label", ariaLabel||field);
+  container.innerHTML=""; container.appendChild(input);
+  input.focus(); if(input.select) input.select();
+  function finish(save){
+    if(finished) return; finished=true;
+    if(activeEdit && activeEdit.type===type && activeEdit.id===id && activeEdit.field===field) activeEdit=null;
+    if(save){
+      const entity=getEntity();
+      if(entity){ let v=input.value.trim(); if(required && !v) v=original; if(v!==original) onCommit(entity,v); }
+    }
+    if(onDone) onDone();
+  }
+  input.addEventListener("blur",()=>finish(true));
+  input.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){ e.preventDefault(); input.blur(); }
+    else if(e.key==="Escape"){ e.preventDefault(); finish(false); }
+  });
+  activeEdit={type,id,field,close:finish};
+}
+
+/* Popovers attach to <body> as position:fixed overlays — deliberately NOT nested inside the
+   row/card DOM, so a render() elsewhere (Firebase sync, another row's edit) can never destroy
+   an open popover. Closes + commits on outside click, Escape, or page scroll. */
+function clampPopoverToAnchor(pop, anchor){
+  const r=anchor.getBoundingClientRect();
+  pop.style.visibility="hidden";
+  document.body.appendChild(pop);
+  const pr=pop.getBoundingClientRect();
+  const vw=window.innerWidth, vh=window.innerHeight;
+  let left=r.left, top=r.bottom+6;
+  if(left+pr.width>vw-8) left=Math.max(8,vw-8-pr.width);
+  if(left<8) left=8;
+  if(top+pr.height>vh-8) top=Math.max(8,r.top-pr.height-6);
+  if(top<8) top=8;
+  pop.style.left=left+"px"; pop.style.top=top+"px"; pop.style.visibility="visible";
+}
+function openPopover(opts){
+  const {type,id,field,anchor,build,onClose}=opts;
+  if(isEditingField(type,id,field)){ closeActiveEdit(true); return null; } // second click on same field = toggle closed
+  closeActiveEdit(true);
+  const pop=document.createElement("div"); pop.className="popover"; pop.setAttribute("role","dialog"); pop.tabIndex=-1;
+  let closed=false;
+  function closeThis(commit){
+    if(closed) return; closed=true;
+    document.removeEventListener("mousedown", onDocDown, true);
+    document.removeEventListener("keydown", onDocKey, true);
+    window.removeEventListener("scroll", onScroll, true);
+    if(activeEdit && activeEdit.type===type && activeEdit.id===id && activeEdit.field===field) activeEdit=null;
+    pop.remove();
+    if(onClose) onClose(commit!==false);
+  }
+  function onDocDown(e){ if(!pop.contains(e.target) && e.target!==anchor && !anchor.contains(e.target)) closeThis(true); }
+  function onDocKey(e){ if(e.key==="Escape"){ e.preventDefault(); closeThis(false); } }
+  function onScroll(){ closeThis(true); } // popovers auto-save per interaction, so nothing is lost — just avoid a floating popover mid-scroll
+  build(pop, closeThis);
+  clampPopoverToAnchor(pop, anchor);
+  const first=pop.querySelector("input,select,button,textarea"); if(first) first.focus();
+  document.addEventListener("mousedown", onDocDown, true);
+  document.addEventListener("keydown", onDocKey, true);
+  window.addEventListener("scroll", onScroll, true);
+  activeEdit={type,id,field,close:closeThis};
+  return {el:pop, close:closeThis};
+}
 const STATUS={ todo:{label:"To do",color:"#7C8B9C"}, doing:{label:"Doing",color:"#3B97E6"}, done:{label:"Done",color:"#23B877"}, later:{label:"Later",color:"#9B87F5"} };
 
 /* ---------------- helpers ---------------- */
@@ -431,6 +654,49 @@ function dueBadge(t){ if(!t.due||isDone(t)) return "";
 }
 function normalizeLater(){ let ch=false; const now=new Date(); tasks.forEach(t=>{ if(isLater(t)&&t.showOn&&new Date(t.showOn)<=now){ t.status="todo"; t.showOn=""; ch=true; } }); if(ch) saveTasks(); return ch; }
 
+/* ---------------- important-date status / countdown ---------------- */
+function isDateRange(d){ return !!d.startDate && !!d.endDate && d.endDate!==d.startDate; }
+function dateEndMoment(d){ const endYmd=d.endDate||d.startDate; if(!endYmd) return null; const tm=/^\d{2}:\d{2}$/.test(d.endTime||"")?d.endTime:"23:59"; return localMoment(endYmd,tm); }
+function isPastDate(d){ const end=dateEndMoment(d); if(!end) return false; return new Date()>end; }
+function fmtCountdownDays(n){ if(n===1) return "Tomorrow"; if(n<14) return `In ${n} days`; const w=Math.round(n/7); return `In ${w} week${w===1?"":"s"}`; }
+function dateCountdown(d){
+  if(!d.startDate) return "";
+  const ts=todayStr(), start=d.startDate, end=d.endDate||d.startDate;
+  if(ts<start){ const n=dayDiff(ts,start); return n<=0?"Today":fmtCountdownDays(n); }
+  if(ts<=end){
+    if(isDateRange(d)){
+      if(ts===end) return "Ends today";
+      const n=dayDiff(ts,end);
+      return n===1?"Ends tomorrow":`Ends in ${n} days`;
+    }
+    const now=new Date(); const sm=localMoment(start,d.startTime||"00:00"); const em=dateEndMoment(d);
+    if(d.startTime && sm && em && now>=sm && now<=em) return "Happening now";
+    return "Today";
+  }
+  return "Ended";
+}
+function isOngoingLabel(label){ return label==="Happening now" || label.indexOf("Ends")===0; }
+/* Date and time are rendered (and edited) as two separate clickable targets — "Date or date range"
+   is edited together as one field per spec, "Time" is its own field. */
+function dateDatePartText(d){ if(!d.startDate) return "Set date"; let s=fmtDate(d.startDate); if(isDateRange(d)) s+=" – "+fmtDate(d.endDate); return s; }
+function dateTimePartText(d){ let s=d.startTime?fmt12(d.startTime):""; if(d.endTime && d.endTime!==d.startTime) s+=(s?" – ":"")+fmt12(d.endTime); return s; }
+function validateImportantDate(startDate,endDate,startTime,endTime){
+  if(!startDate) return "Start date is required.";
+  if(endDate && endDate<startDate) return "End date cannot be before start date.";
+  if((!endDate || endDate===startDate) && startTime && endTime && endTime<startTime) return "End time cannot be before start time.";
+  return null;
+}
+function activeDatesSorted(){
+  return importantDates.filter(d=>!isPastDate(d)).sort((a,b)=>
+    (a.startDate||"9999-99-99").localeCompare(b.startDate||"9999-99-99") ||
+    (a.startTime||"00:00").localeCompare(b.startTime||"00:00") ||
+    (a.created||0)-(b.created||0));
+}
+function pastDatesSorted(){
+  return importantDates.filter(isPastDate).sort((a,b)=>
+    (b.endDate||b.startDate||"").localeCompare(a.endDate||a.startDate||"") || (b.created||0)-(a.created||0));
+}
+
 /* ---------------- next up ---------------- */
 function personVisible(t){ if(activePerson==="all") return true; if(isFamilyTask(t)) return true; return taskPeopleIds(t).includes(activePerson); }
 /* Up Next = soonest FUTURE timed task today. Missed (past-time) tasks are flagged in their row, not here. */
@@ -450,18 +716,25 @@ function peopleChipsHtml(ids){
 }
 /* incomplete active tasks assigned to this person (family tasks count for everyone) */
 function personCount(pid){ return tasks.filter(t=>isActive(t) && (isFamilyTask(t)||taskPeopleIds(t).includes(pid))).length; }
-/* reusable multi-person selector; returns { get:()=>ids }. Family and individuals are mutually exclusive. */
-function makeWhoPicker(container, initial){
+/* reusable multi-person selector; returns { get:()=>ids }. Family and individuals are mutually exclusive.
+   Optional onChange(ids) fires after a real selection change (never during initial paint), with a
+   freshly-normalized array — never the picker's internal mutable one. */
+function makeWhoPicker(container, initial, onChange){
   let sel = normPeople(initial);
   function paint(){
     const opt=(id,name,color,on)=>`<button type="button" class="who-opt ${on?'on':''}" data-id="${id}"><span class="dot" style="background:${color}"></span>${esc(name)}</button>`;
     container.innerHTML = opt("family","Family",getPerson("family").color,sel.includes("family")) +
       people.map(p=>opt(p.id,p.name,p.color,sel.includes(p.id))).join("");
     container.querySelectorAll(".who-opt").forEach(b=>b.addEventListener("click",()=>{
+      const before=normPeople(sel);
       const id=b.dataset.id;
       if(id==="family") sel = sel.includes("family") ? [] : ["family"];
       else { sel=sel.filter(x=>x!=="family"); sel = sel.includes(id) ? sel.filter(x=>x!==id) : [...sel,id]; }
+      const after=normPeople(sel);
+      sel=after;
       paint();
+      const changed = before.length!==after.length || before.some((v,i)=>v!==after[i]);
+      if(changed && typeof onChange==="function") onChange(after);
     }));
   }
   paint();
@@ -500,6 +773,7 @@ function render(){
   renderPeopleBar();
   renderShop();
   renderPlaces();
+  renderDatesSection();
   const view=currentView();
   const next=computeNextUp();
   const laterCount=tasks.filter(isLater).length;
@@ -510,11 +784,10 @@ function render(){
   listEl.innerHTML="";
   if(!tasks.length){ listEl.innerHTML=`<div class="empty-state"><div class="big">No plans yet.</div>Add the first thing for today above, and tag who it's for.</div>`; }
   else if(!view.length){ listEl.innerHTML=`<div class="empty-state"><div class="big">Nothing here.</div>Try another person or clear filters.</div>`; }
-  overdueSet=new Set(); let laterShown=false;
+  overdueSet=new Set(tasks.filter(isOverdue).map(t=>t.id)); let laterShown=false;
   view.forEach(t=>{
     if(isLater(t)&&!laterShown){ const h=document.createElement("div"); h.className="later-head"; h.textContent="◴ Moved to later"; listEl.appendChild(h); laterShown=true; }
     if(editingId===t.id) listEl.appendChild(renderEditor(t)); else listEl.appendChild(renderRow(t,next&&next.id===t.id));
-    if(isOverdue(t)) overdueSet.add(t.id);
   });
 
   const done=tasks.filter(isDone).length; const over=tasks.filter(isOverdue).length;
@@ -540,7 +813,7 @@ function renderPeopleBar(){
   document.getElementById("pbEdit").addEventListener("click",togglePeopleEditor);
 }
 
-function togglePeopleEditor(){ const pe=document.getElementById("peopleEditor"); pe.classList.toggle("hidden"); if(!pe.classList.contains("hidden")) renderPeopleEditor(); }
+function togglePeopleEditor(){ closeActiveEdit(true); const pe=document.getElementById("peopleEditor"); pe.classList.toggle("hidden"); if(!pe.classList.contains("hidden")) renderPeopleEditor(); }
 function renderPeopleEditor(){
   const pe=document.getElementById("peopleEditor");
   pe.innerHTML=`<div class="panel-title">Family members</div>`+
@@ -562,9 +835,112 @@ function renderPeopleEditor(){
       else if(e.key==="Escape"){ e.preventDefault(); const person=people.find(x=>x.id===id); nameInput.value=person?person.name:""; nameInput.blur(); }
     });
     row.querySelector(".swatch").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; const i=PALETTE.indexOf(person.color); person.color=PALETTE[(i+1)%PALETTE.length]; savePeople(); renderPeopleEditor(); renderPeopleBar(); render(); });
-    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); if(activePerson===id) activePerson="all"; savePeople(); saveTasks(); savePlaces(); renderPeopleEditor(); render(); } });
+    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); importantDates.forEach(dt=>{ dt.people=normPeople(dt.people).filter(x=>x!==id); }); if(activePerson===id) activePerson="all"; savePeople(); saveTasks(); savePlaces(); saveDates(); renderPeopleEditor(); render(); } });
   });
   pe.querySelector("#peAdd").addEventListener("click",()=>{ const color=PALETTE[people.length%PALETTE.length]; people.push({id:uid("p"),name:"New person",color}); savePeople(); renderPeopleEditor(); renderPeopleBar(); });
+}
+
+/* ---------------- task inline editing (shared by row + Up Next) ---------------- */
+function wireTaskTitle(node, taskId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit task title");
+  function open(){
+    if(isEditingField("task",taskId,"title")) return;
+    const t=tasks.find(x=>x.id===taskId); if(!t) return;
+    startInlineText({ type:"task", id:taskId, field:"title", container:node, value:t.task, required:true, ariaLabel:"Task title",
+      getEntity:()=>tasks.find(x=>x.id===taskId), onCommit:(entity,v)=>{ entity.task=v; saveTasks(); }, onDone:render });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function wireTaskNotes(node, taskId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit note");
+  function open(){
+    if(isEditingField("task",taskId,"notes")) return;
+    const t=tasks.find(x=>x.id===taskId); if(!t) return;
+    startInlineText({ type:"task", id:taskId, field:"notes", container:node, value:t.notes, required:false, multiline:true, ariaLabel:"Note",
+      getEntity:()=>tasks.find(x=>x.id===taskId), onCommit:(entity,v)=>{ entity.notes=v; saveTasks(); }, onDone:render });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function openTaskPeoplePopover(anchor,taskId){
+  const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
+  openPopover({ type:"task", id:taskId, field:"people", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Who's involved</div><div class="who-picker" id="pop-who"></div><div class="pop-actions"><button class="btn sm" id="pop-done">Done</button></div>`;
+      makeWhoPicker(pop.querySelector("#pop-who"), t0.people, ids=>{
+        const t=tasks.find(x=>x.id===taskId); if(!t) return;
+        t.people=ids; saveTasks(); render();
+      });
+      pop.querySelector("#pop-done").addEventListener("click",()=>close(true));
+    },
+    onClose(){ render(); }
+  });
+}
+function wireTaskPeople(node, taskId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit who this is for");
+  node.addEventListener("click",()=>openTaskPeoplePopover(node,taskId));
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openTaskPeoplePopover(node,taskId); } });
+}
+function openTaskPriorityPopover(anchor,taskId){
+  const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
+  openPopover({ type:"task", id:taskId, field:"priority", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Priority</div><div class="prislider-pop"><input type="range" id="pop-pri" min="1" max="10" value="${t0.priority}" aria-label="Priority 1 to 10"><span class="prival" id="pop-prival" style="background:${priColor(t0.priority)}">${t0.priority}</span></div>`;
+      const range=pop.querySelector("#pop-pri"), val=pop.querySelector("#pop-prival");
+      range.addEventListener("input",()=>{ const v=+range.value; val.textContent=v; val.style.background=priColor(v); });
+      range.addEventListener("change",()=>{ const t=tasks.find(x=>x.id===taskId); if(!t) return; t.priority=+range.value; saveTasks(); render(); close(true); });
+    }
+  });
+}
+function wireTaskPriority(node, taskId){
+  const cur=tasks.find(x=>x.id===taskId);
+  node.setAttribute("role","button"); node.tabIndex=0; node.setAttribute("aria-label",`Priority ${cur?cur.priority:"?"} of 10. Activate to change.`);
+  const open=()=>openTaskPriorityPopover(node,taskId);
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function openTaskTimePopover(anchor,taskId){
+  const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
+  openPopover({ type:"task", id:taskId, field:"time", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Time</div><input type="time" id="pop-time" value="${t0.time||""}" aria-label="Task time"><div class="pop-actions"><button class="pop-clear" id="pop-clear">Clear</button><button class="btn sm" id="pop-done">Done</button></div>`;
+      const inp=pop.querySelector("#pop-time");
+      function commit(){ const t=tasks.find(x=>x.id===taskId); if(!t) return; const v=inp.value; if(v!==t.time){ t.time=v; saveTasks(); render(); } }
+      inp.addEventListener("change",commit);
+      pop.querySelector("#pop-clear").addEventListener("click",()=>{ const t=tasks.find(x=>x.id===taskId); if(!t) return; t.time=""; saveTasks(); render(); close(true); });
+      pop.querySelector("#pop-done").addEventListener("click",()=>{ commit(); close(true); });
+    }
+  });
+}
+function wireTaskTime(node, taskId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit time");
+  const open=()=>openTaskTimePopover(node,taskId);
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function openTaskDuePopover(anchor,taskId){
+  const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
+  openPopover({ type:"task", id:taskId, field:"due", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Due date</div>
+        <div class="pop-row"><div style="flex:1"><label>Date</label><input type="date" id="pop-due" aria-label="Due date"></div></div>
+        <div class="pop-row"><div style="flex:1"><label>Time (optional)</label><input type="time" id="pop-duetime" aria-label="Due time"></div></div>
+        <div class="pop-actions"><button class="pop-clear" id="pop-clear">Clear</button><button class="btn sm" id="pop-done">Done</button></div>`;
+      pop.querySelector("#pop-due").value=t0.due||""; pop.querySelector("#pop-duetime").value=t0.dueTime||"";
+      function commit(){ const t=tasks.find(x=>x.id===taskId); if(!t) return; const due=pop.querySelector("#pop-due").value, dueTime=pop.querySelector("#pop-duetime").value; if(due!==t.due||dueTime!==t.dueTime){ t.due=due; t.dueTime=dueTime; saveTasks(); render(); } }
+      pop.querySelector("#pop-due").addEventListener("change",commit);
+      pop.querySelector("#pop-duetime").addEventListener("change",commit);
+      pop.querySelector("#pop-clear").addEventListener("click",()=>{ const t=tasks.find(x=>x.id===taskId); if(!t) return; t.due=""; t.dueTime=""; saveTasks(); render(); close(true); });
+      pop.querySelector("#pop-done").addEventListener("click",()=>{ commit(); close(true); });
+    }
+  });
+}
+function wireTaskDue(node, taskId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit due date");
+  const open=()=>openTaskDuePopover(node,taskId);
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 
 function renderNextUp(t){
@@ -575,14 +951,19 @@ function renderNextUp(t){
   else { count=`<div class="count">—</div>`; subl=""; }
   nextEl.className="nextup";
   nextEl.innerHTML=`
-    <div class="gauge" style="background:${priColor(t.priority)}">${t.priority}</div>
-    <div class="lead"><div class="eyebrow">Up next</div><div class="title">${esc(t.task)||"(untitled)"}</div>
+    <div class="gauge" id="nu-pri" style="background:${priColor(t.priority)}">${t.priority}</div>
+    <div class="lead"><div class="eyebrow">Up next</div><div class="title" id="nu-title">${esc(t.task)||"(untitled)"}</div>
       <div class="meta">
-        ${peopleChipsHtml(t.people)}
-        ${t.time?`<span><b>${esc(fmt12(t.time))}</b></span>`:""}
-        ${t.due?`<span>due ${esc(fmtDate(t.due))}</span>`:""}
+        <span id="nu-who">${peopleChipsHtml(t.people)}</span>
+        <span id="nu-time">${t.time?`<b>${esc(fmt12(t.time))}</b>`:""}</span>
+        ${t.due?`<span id="nu-due">due ${esc(fmtDate(t.due))}</span>`:""}
       </div></div>
     <div class="readout">${count}<div class="subl">${subl}</div></div>`;
+  wireTaskPriority(nextEl.querySelector("#nu-pri"), t.id);
+  wireTaskTitle(nextEl.querySelector("#nu-title"), t.id);
+  wireTaskPeople(nextEl.querySelector("#nu-who"), t.id);
+  wireTaskTime(nextEl.querySelector("#nu-time"), t.id);
+  const nuDue=nextEl.querySelector("#nu-due"); if(nuDue) wireTaskDue(nuDue, t.id);
 }
 
 function statusOptionsHtml(t){
@@ -595,10 +976,12 @@ function renderRow(t,isNext){
   const el=document.createElement("div");
   el.className="row"+(isDone(t)?" done":"")+(isLater(t)?" parked":"")+(isOverdue(t)?" overdue":"")+(isNext?" isnext":"");
   el.dataset.id=t.id;
-  const meta=[]; const db=dueBadge(t); if(db) meta.push(db);
-  if(isLater(t)&&t.showOn) meta.push(`<span class="re">↩ ${esc(fmtWhen(t.showOn))}</span>`);
-  if(t.notes) meta.push(esc(t.notes));
-  const metaHtml=meta.length?`<div class="task-meta">${meta.join(" · ")}</div>`:"";
+  const db=dueBadge(t);
+  const dueSpanHtml = db ? db.replace('<span class="due', '<span id="r-due" class="due') : "";
+  const reHtml = (isLater(t)&&t.showOn) ? `<span class="re">↩ ${esc(fmtWhen(t.showOn))}</span>` : "";
+  const noteHtml = t.notes ? `<span class="task-note" id="r-notes">${esc(t.notes)}</span>` : "";
+  const metaParts=[dueSpanHtml,reHtml,noteHtml].filter(Boolean);
+  const metaHtml = metaParts.length ? `<div class="task-meta">${metaParts.join(' <span style="opacity:.4">·</span> ')}</div>` : "";
   const s=timeToMin(t.time); let cd="";
   if(s!=null&&isActive(t)){ const d=s-nowMin();
     if(d>0&&d<=60) cd=`<span class="cd">in ${fmtDelta(d)}</span>`;
@@ -608,27 +991,33 @@ function renderRow(t,isNext){
 
   el.innerHTML=`
     <input type="checkbox" class="cbx" ${isDone(t)?"checked":""} aria-label="Done">
-    <div class="pri" style="background:${priColor(t.priority)}" title="Priority ${t.priority}/10 — click to edit">${t.priority}<span class="fill"><i style="width:${t.priority*10}%"></i></span></div>
-    <div class="r-who">${peopleChipsHtml(t.people)}</div>
-    <div class="r-title"><div class="task-title">${esc(t.task)||"(untitled)"}</div>${metaHtml}</div>
-    <div class="r-meta"><div class="cell-time"><span class="t ${t.time?'':'none'}">${t.time?esc(fmt12(t.time)):"—"}</span>${cd}</div></div>
+    <div class="pri" id="r-pri" style="background:${priColor(t.priority)}" title="Priority ${t.priority}/10 — click to edit">${t.priority}<span class="fill"><i style="width:${t.priority*10}%"></i></span></div>
+    <div class="r-who" id="r-who">${peopleChipsHtml(t.people)}</div>
+    <div class="r-title"><div class="task-title" id="r-title">${esc(t.task)||"(untitled)"}</div>${metaHtml}</div>
+    <div class="r-meta"><div class="cell-time" id="r-time"><span class="t ${t.time?'':'none'}">${t.time?esc(fmt12(t.time)):"—"}</span>${cd}</div></div>
     <div class="r-status"><select class="status-sel" style="background:${STATUS[t.status].color}" aria-label="Status">${statusOptionsHtml(t)}</select></div>
     <div class="rowactions"><button class="iconbtn edit" title="Edit">✎</button><button class="iconbtn del" title="Delete">✕</button></div>`;
 
-  el.querySelector(".pri").addEventListener("click",()=>{ editingId=t.id; render(); });
+  wireTaskPriority(el.querySelector("#r-pri"), t.id);
+  wireTaskPeople(el.querySelector("#r-who"), t.id);
+  wireTaskTitle(el.querySelector("#r-title"), t.id);
+  wireTaskTime(el.querySelector("#r-time"), t.id);
+  const rDue=el.querySelector("#r-due"); if(rDue) wireTaskDue(rDue, t.id);
+  const rNotes=el.querySelector("#r-notes"); if(rNotes) wireTaskNotes(rNotes, t.id);
 
-  el.querySelector(".cbx").addEventListener("change",e=>{ t.status=e.target.checked?"done":"todo"; t.showOn=""; saveTasks(); render(); });
-  el.querySelector(".status-sel").addEventListener("change",e=>{ const v=e.target.value;
-    if(v==="tomorrow"){ t.status="later"; t.showOn=tomorrowLocal(t.time||"08:00"); saveTasks(); render(); }
-    else if(v==="pickday"){ t.status="later"; if(!t.showOn) t.showOn=tomorrowLocal(t.time||"08:00"); editingId=t.id; render(); }
+  el.querySelector(".cbx").addEventListener("change",e=>{ const cur=tasks.find(x=>x.id===t.id); if(!cur) return; cur.status=e.target.checked?"done":"todo"; cur.showOn=""; saveTasks(); render(); });
+  el.querySelector(".status-sel").addEventListener("change",e=>{ const v=e.target.value; const cur=tasks.find(x=>x.id===t.id); if(!cur) return;
+    if(v==="tomorrow"){ cur.status="later"; cur.showOn=tomorrowLocal(cur.time||"08:00"); saveTasks(); render(); }
+    else if(v==="pickday"){ cur.status="later"; if(!cur.showOn) cur.showOn=tomorrowLocal(cur.time||"08:00"); closeActiveEdit(true); editingId=cur.id; render(); }
     else if(v==="later"){ /* no-op */ }
-    else { t.status=v; t.showOn=""; saveTasks(); render(); } });
-  el.querySelector(".edit").addEventListener("click",()=>{ editingId=t.id; render(); });
+    else { cur.status=v; cur.showOn=""; saveTasks(); render(); } });
+  el.querySelector(".edit").addEventListener("click",()=>{ closeActiveEdit(true); editingId=t.id; render(); });
   el.querySelector(".del").addEventListener("click",()=>{ if(confirm(`Delete "${t.task||"this item"}"?`)){ tasks=tasks.filter(x=>x.id!==t.id); saveTasks(); render(); } });
   return el;
 }
 
 function renderEditor(t){
+  const taskId=t.id;
   const el=document.createElement("div"); el.className="editor"; el.dataset.id=t.id;
   el.innerHTML=`
     <div class="grid">
@@ -658,33 +1047,46 @@ function renderEditor(t){
   el.querySelector("#e-tmrw").addEventListener("click",()=>{ showon.value=tomorrowLocal(el.querySelector("#e-time").value||"08:00"); });
 
   el.querySelector(".save-e").addEventListener("click",()=>{
-    t.task=el.querySelector("#e-task").value.trim();
-    t.people=whoPick.get();
-    t.time=el.querySelector("#e-time").value;
-    t.due=el.querySelector("#e-due").value;
-    t.dueTime=el.querySelector("#e-duetime").value;
-    t.priority=+el.querySelector("#e-pri").value;
-    t.notes=el.querySelector("#e-notes").value.trim();
+    const cur=tasks.find(x=>x.id===taskId); if(!cur){ editingId=null; render(); return; }
+    cur.task=el.querySelector("#e-task").value.trim();
+    cur.people=whoPick.get();
+    cur.time=el.querySelector("#e-time").value;
+    cur.due=el.querySelector("#e-due").value;
+    cur.dueTime=el.querySelector("#e-duetime").value;
+    cur.priority=+el.querySelector("#e-pri").value;
+    cur.notes=el.querySelector("#e-notes").value.trim();
     const sv=ss.value;
-    if(sv==="todo"||sv==="doing"||sv==="done"){ t.status=sv; t.showOn=""; }
-    else { t.status="later"; t.showOn=showon.value||tomorrowLocal(t.time||"08:00"); }
+    if(sv==="todo"||sv==="doing"||sv==="done"){ cur.status=sv; cur.showOn=""; }
+    else { cur.status="later"; cur.showOn=showon.value||tomorrowLocal(cur.time||"08:00"); }
     editingId=null; saveTasks(); render();
   });
-  el.querySelector(".cancel-e").addEventListener("click",()=>{ if(!t.task&&!t.notes&&!t.time&&!t.due&&!t.people.length) tasks=tasks.filter(x=>x.id!==t.id); editingId=null; render(); });
-  el.querySelector(".del-e").addEventListener("click",()=>{ if(confirm("Delete this item?")){ tasks=tasks.filter(x=>x.id!==t.id); editingId=null; saveTasks(); render(); } });
+  el.querySelector(".cancel-e").addEventListener("click",()=>{ const cur=tasks.find(x=>x.id===taskId); if(cur && !cur.task&&!cur.notes&&!cur.time&&!cur.due&&!cur.people.length) tasks=tasks.filter(x=>x.id!==taskId); editingId=null; render(); });
+  el.querySelector(".del-e").addEventListener("click",()=>{ if(confirm("Delete this item?")){ tasks=tasks.filter(x=>x.id!==taskId); editingId=null; saveTasks(); render(); } });
   setTimeout(()=>el.querySelector("#e-task").focus(),0);
   return el;
 }
 
 /* ---------------- shopping ---------------- */
+function wireShopText(node, shopId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit item");
+  function open(){
+    if(isEditingField("shop",shopId,"item")) return;
+    const s=shop.find(x=>x.id===shopId); if(!s) return;
+    startInlineText({ type:"shop", id:shopId, field:"item", container:node, value:s.item, required:true, ariaLabel:"Shopping item",
+      getEntity:()=>shop.find(x=>x.id===shopId), onCommit:(entity,v)=>{ entity.item=v; saveShop(); }, onDone:renderShop });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
 function renderShop(){
   const el=document.getElementById("shopList");
   const sorted=[...shop].sort((a,b)=>((a.got?1:0)-(b.got?1:0)));
   el.innerHTML = shop.length ? "" : `<div class="empty-state" style="padding:24px 12px"><div class="big">List is empty.</div>Add what you need above.</div>`;
   sorted.forEach(s=>{
     const row=document.createElement("div"); row.className="shop-row"+(s.got?" got":""); row.dataset.id=s.id;
-    row.innerHTML=`<input type="checkbox" class="cbx" ${s.got?"checked":""} aria-label="Got it"><span class="shop-text">${esc(s.item)}</span><button class="shop-del" title="Remove">✕</button>`;
-    row.querySelector(".cbx").addEventListener("change",e=>{ s.got=e.target.checked; saveShop(); renderShop(); });
+    row.innerHTML=`<input type="checkbox" class="cbx" ${s.got?"checked":""} aria-label="Got it"><span class="shop-text" id="sr-text">${esc(s.item)}</span><button class="shop-del" title="Remove">✕</button>`;
+    row.querySelector(".cbx").addEventListener("change",e=>{ const cur=shop.find(x=>x.id===s.id); if(!cur) return; cur.got=e.target.checked; saveShop(); renderShop(); });
+    wireShopText(row.querySelector("#sr-text"), s.id);
     row.querySelector(".shop-del").addEventListener("click",()=>{ shop=shop.filter(x=>x.id!==s.id); saveShop(); renderShop(); });
     el.appendChild(row);
   });
@@ -701,35 +1103,93 @@ document.getElementById("shopClear").addEventListener("click",()=>{ if(!shop.som
 /* ---------------- places to go ---------------- */
 function mapUrl(addr){ return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(addr); }
 function placePeopleDots(ids){ ids=normPeople(ids); if(!ids.length) return ""; if(ids.includes("family")) return `<span class="pdot" style="background:${getPerson("family").color}" title="Family"></span>`; return ids.map(id=>{const p=getPerson(id);return `<span class="pdot" style="background:${p.color}" title="${esc(p.name)}"></span>`;}).join(""); }
+/* Quick-glance order: unvisited+dated (soonest first), then unvisited+undated, then visited (newest first). */
+function sortedPlaces(){
+  return [...places].sort((a,b)=>{
+    const ka=a.visited?2:(a.date?0:1), kb=b.visited?2:(b.date?0:1);
+    if(ka!==kb) return ka-kb;
+    if(ka===0) return (a.date||"").localeCompare(b.date||"") || (b.created||0)-(a.created||0);
+    return (b.created||0)-(a.created||0);
+  });
+}
 function renderPlaces(){
   const el=document.getElementById("placeList");
   el.innerHTML = places.length ? "" : `<div class="empty-state" style="padding:24px 12px"><div class="big">No places yet.</div>Add somewhere to go above.</div>`;
-  const sorted=[...places].sort((a,b)=>((a.visited?1:0)-(b.visited?1:0)) || (b.created||0)-(a.created||0));
-  sorted.forEach(pl=>{ el.appendChild(placeEditingId===pl.id ? renderPlaceEditor(pl) : renderPlaceRow(pl)); });
+  sortedPlaces().forEach(pl=>{ el.appendChild(placeEditingId===pl.id ? renderPlaceEditor(pl) : renderPlaceRow(pl)); });
   const active=places.filter(p=>!p.visited).length, visited=places.filter(p=>p.visited).length;
   document.getElementById("placeCount").textContent=places.length?`${active}`:"";
   document.getElementById("placeStatus").textContent=`${active} to visit · ${visited} visited`;
 }
+function wireInlinePlaceText(node, placeId, field, ariaLabel, required){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label",ariaLabel);
+  function open(){
+    if(isEditingField("place",placeId,field)) return;
+    const p=places.find(x=>x.id===placeId); if(!p) return;
+    startInlineText({ type:"place", id:placeId, field, container:node, value:p[field], required:!!required, ariaLabel,
+      getEntity:()=>places.find(x=>x.id===placeId), onCommit:(entity,v)=>{ entity[field]=v; savePlaces(); }, onDone:renderPlaces });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function openPlaceDatePopover(anchor, placeId){
+  const p0=places.find(x=>x.id===placeId); if(!p0) return;
+  openPopover({ type:"place", id:placeId, field:"date", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Date</div><input type="date" id="pop-date" value="${p0.date||""}" aria-label="Place date"><div class="pop-actions"><button class="pop-clear" id="pop-clear">Clear</button><button class="btn sm" id="pop-done">Done</button></div>`;
+      function commit(){ const p=places.find(x=>x.id===placeId); if(!p) return; const v=pop.querySelector("#pop-date").value; if(v!==p.date){ p.date=v; savePlaces(); renderPlaces(); } }
+      pop.querySelector("#pop-date").addEventListener("change",commit);
+      pop.querySelector("#pop-clear").addEventListener("click",()=>{ const p=places.find(x=>x.id===placeId); if(!p) return; p.date=""; savePlaces(); renderPlaces(); close(true); });
+      pop.querySelector("#pop-done").addEventListener("click",()=>{ commit(); close(true); });
+    },
+    onClose(){ renderPlaces(); }
+  });
+}
+function openPlacePeoplePopover(anchor, placeId){
+  const p0=places.find(x=>x.id===placeId); if(!p0) return;
+  openPopover({ type:"place", id:placeId, field:"people", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Who's going</div><div class="who-picker" id="pop-who"></div><div class="pop-actions"><button class="btn sm" id="pop-done">Done</button></div>`;
+      makeWhoPicker(pop.querySelector("#pop-who"), p0.people, ids=>{
+        const p=places.find(x=>x.id===placeId); if(!p) return;
+        p.people=ids; savePlaces(); renderPlaces();
+      });
+      pop.querySelector("#pop-done").addEventListener("click",()=>close(true));
+    },
+    onClose(){ renderPlaces(); }
+  });
+}
 function renderPlaceRow(pl){
   const row=document.createElement("div"); row.className="place-row"+(pl.visited?" got":""); row.dataset.id=pl.id;
   const bits=[];
-  if(pl.date) bits.push(`<span class="ptxt">${esc(fmtDate(pl.date))}</span>`);
-  if(pl.address) bits.push(`<span class="ptxt">${esc(pl.address)}</span>`);
-  if(pl.note) bits.push(`<span class="ptxt">${esc(pl.note)}</span>`);
-  const dots=placePeopleDots(pl.people); if(dots) bits.push(dots);
+  if(pl.date) bits.push(`<span class="ptxt" id="pr-date">${esc(fmtDate(pl.date))}</span>`);
+  if(pl.address) bits.push(`<span class="ptxt" id="pr-addr">${esc(pl.address)}</span>`);
+  if(pl.note) bits.push(`<span class="ptxt" id="pr-note">${esc(pl.note)}</span>`);
+  const dots=placePeopleDots(pl.people); if(dots) bits.push(`<span id="pr-people">${dots}</span>`);
   const metaHtml = bits.length?`<div class="place-meta">${bits.join('<span style="opacity:.4">·</span>')}</div>`:"";
   row.innerHTML=`
     <input type="checkbox" class="cbx" ${pl.visited?"checked":""} aria-label="Visited">
-    <div class="place-body"><div class="place-name">${esc(pl.name)||"(unnamed)"}</div>${metaHtml}</div>
+    <div class="place-body"><div class="place-name" id="pr-name">${esc(pl.name)||"(unnamed)"}</div>${metaHtml}</div>
     ${pl.address?`<a class="mapbtn" href="${mapUrl(pl.address)}" target="_blank" rel="noopener">Map</a>`:""}
     <button class="place-edit" title="Edit">✎</button>
     <button class="place-del" title="Remove">✕</button>`;
-  row.querySelector(".cbx").addEventListener("change",e=>{ pl.visited=e.target.checked; savePlaces(); renderPlaces(); });
-  row.querySelector(".place-edit").addEventListener("click",()=>{ placeEditingId=pl.id; renderPlaces(); });
+  row.querySelector(".cbx").addEventListener("change",e=>{ const cur=places.find(x=>x.id===pl.id); if(!cur) return; cur.visited=e.target.checked; savePlaces(); renderPlaces(); });
+  wireInlinePlaceText(row.querySelector("#pr-name"), pl.id, "name", "Place name", true);
+  const addrEl=row.querySelector("#pr-addr"); if(addrEl) wireInlinePlaceText(addrEl, pl.id, "address", "Address", false);
+  const noteEl=row.querySelector("#pr-note"); if(noteEl) wireInlinePlaceText(noteEl, pl.id, "note", "Note", false);
+  const dateEl=row.querySelector("#pr-date");
+  if(dateEl){ dateEl.classList.add("editable"); dateEl.tabIndex=0; dateEl.setAttribute("role","button"); dateEl.setAttribute("aria-label","Edit date");
+    const open=()=>openPlaceDatePopover(dateEl,pl.id);
+    dateEl.addEventListener("click",open); dateEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } }); }
+  const peopleEl=row.querySelector("#pr-people");
+  if(peopleEl){ peopleEl.classList.add("editable"); peopleEl.tabIndex=0; peopleEl.setAttribute("role","button"); peopleEl.setAttribute("aria-label","Edit who's going");
+    const open=()=>openPlacePeoplePopover(peopleEl,pl.id);
+    peopleEl.addEventListener("click",open); peopleEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } }); }
+  row.querySelector(".place-edit").addEventListener("click",()=>{ closeActiveEdit(true); placeEditingId=pl.id; renderPlaces(); });
   row.querySelector(".place-del").addEventListener("click",()=>{ if(confirm(`Remove "${pl.name||"this place"}"?`)){ places=places.filter(x=>x.id!==pl.id); savePlaces(); renderPlaces(); } });
   return row;
 }
 function renderPlaceEditor(pl){
+  const placeId=pl.id;
   const box=document.createElement("div"); box.className="place-editor"; box.dataset.id=pl.id;
   box.innerHTML=`
     <div class="pe-field"><label>Place</label><input type="text" id="pe-name" value="${esc(pl.name)}" placeholder="e.g. Costco"></div>
@@ -740,30 +1200,273 @@ function renderPlaceEditor(pl){
     <div class="pe-actions"><button class="btn sm del-pe">Delete</button><button class="btn sm cancel-pe">Cancel</button><button class="btn sm add save-pe">Save</button></div>`;
   const who=makeWhoPicker(box.querySelector("#pe-who"), pl.people);
   box.querySelector(".save-pe").addEventListener("click",()=>{
-    pl.name=box.querySelector("#pe-name").value.trim();
-    pl.address=box.querySelector("#pe-addr").value.trim();
-    pl.note=box.querySelector("#pe-note").value.trim();
-    pl.date=box.querySelector("#pe-date").value;
-    pl.people=who.get();
+    const cur=places.find(x=>x.id===placeId); if(!cur){ placeEditingId=null; renderPlaces(); return; }
+    cur.name=box.querySelector("#pe-name").value.trim();
+    cur.address=box.querySelector("#pe-addr").value.trim();
+    cur.note=box.querySelector("#pe-note").value.trim();
+    cur.date=box.querySelector("#pe-date").value;
+    cur.people=who.get();
     placeEditingId=null; savePlaces(); renderPlaces();
   });
-  box.querySelector(".cancel-pe").addEventListener("click",()=>{ if(!pl.name&&!pl.address&&!pl.note&&!pl.date&&!pl.people.length) places=places.filter(x=>x.id!==pl.id); placeEditingId=null; renderPlaces(); });
-  box.querySelector(".del-pe").addEventListener("click",()=>{ places=places.filter(x=>x.id!==pl.id); placeEditingId=null; savePlaces(); renderPlaces(); });
+  box.querySelector(".cancel-pe").addEventListener("click",()=>{ const cur=places.find(x=>x.id===placeId); if(cur && !cur.name&&!cur.address&&!cur.note&&!cur.date&&!cur.people.length) places=places.filter(x=>x.id!==placeId); placeEditingId=null; renderPlaces(); });
+  box.querySelector(".del-pe").addEventListener("click",()=>{ places=places.filter(x=>x.id!==placeId); placeEditingId=null; savePlaces(); renderPlaces(); });
   setTimeout(()=>box.querySelector("#pe-name").focus(),0);
   return box;
 }
 document.getElementById("placeInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; places.unshift(blankPlace(v)); e.target.value=""; savePlaces(); renderPlaces(); });
 document.getElementById("placeClear").addEventListener("click",()=>{ if(!places.some(p=>p.visited)) return; places=places.filter(p=>!p.visited); savePlaces(); renderPlaces(); });
 
+/* ---------------- important dates: rendering ---------------- */
+function renderDatesSection(){
+  renderDatesQuick();
+  const allBox=document.getElementById("datesAll");
+  const btn=document.getElementById("viewAllDatesBtn");
+  if(datesAllOpen){ allBox.classList.remove("hidden"); btn.textContent="Hide all"; btn.setAttribute("aria-expanded","true"); renderDatesAllPanel(); }
+  else { allBox.classList.add("hidden"); btn.textContent="View all"; btn.setAttribute("aria-expanded","false"); }
+}
+function renderDatesQuick(){
+  const wrap=document.getElementById("datesQuick");
+  const list=activeDatesSorted();
+  let show=list.slice(0,5);
+  /* While the View All panel is open, IT is the exclusive host for the full editor — never duplicate
+     it here too. Only pull the in-progress edit into the quick view when View All is closed. */
+  if(!datesAllOpen && dateEditingId && !show.some(d=>d.id===dateEditingId)){
+    const ed=importantDates.find(d=>d.id===dateEditingId);
+    if(ed) show=[ed, ...show.filter(d=>d.id!==dateEditingId).slice(0,4)];
+  }
+  wrap.innerHTML="";
+  if(!show.length){
+    const empty=document.createElement("div"); empty.className="dates-empty";
+    empty.innerHTML=`No upcoming dates yet. <button class="btn sm" id="addDateBtnEmpty">+ Add date</button>`;
+    wrap.appendChild(empty);
+    empty.querySelector("#addDateBtnEmpty").addEventListener("click",addImportantDate);
+    return;
+  }
+  show.forEach(d=>{ const useEditor=!datesAllOpen && dateEditingId===d.id; wrap.appendChild(useEditor ? renderDateEditorCard(d) : renderDateCard(d)); });
+  if(list.length>show.length){
+    const more=document.createElement("div"); more.className="dates-more"; more.tabIndex=0; more.setAttribute("role","button");
+    more.setAttribute("aria-label", `${list.length-show.length} more upcoming dates — view all`);
+    more.textContent=`+ ${list.length-show.length} more`;
+    const openAll=()=>{ datesAllOpen=true; renderDatesSection(); };
+    more.addEventListener("click",openAll);
+    more.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openAll(); } });
+    wrap.appendChild(more);
+  }
+}
+function renderDatesAllPanel(){
+  const listEl2=document.getElementById("datesAllList");
+  const list=activeDatesSorted();
+  listEl2.innerHTML = list.length ? "" : `<div class="empty-state" style="padding:20px 12px"><div class="big">No upcoming dates.</div></div>`;
+  list.forEach(d=>{ listEl2.appendChild(dateEditingId===d.id ? renderDateEditorCard(d) : renderDateCard(d)); });
+  const toggle=document.getElementById("pastDatesToggle");
+  toggle.textContent = pastDatesOpen ? "Hide past dates" : "Show past dates";
+  toggle.setAttribute("aria-expanded", pastDatesOpen?"true":"false");
+  const pastBox=document.getElementById("pastDatesList");
+  if(pastDatesOpen){
+    pastBox.classList.remove("hidden"); pastBox.classList.add("expanded");
+    const past=pastDatesSorted();
+    pastBox.innerHTML = past.length ? "" : `<div class="empty-state" style="padding:16px 12px"><div class="big">No past dates.</div></div>`;
+    past.forEach(d=>{ pastBox.appendChild(dateEditingId===d.id ? renderDateEditorCard(d) : renderDateCard(d)); });
+  } else { pastBox.classList.add("hidden"); pastBox.classList.remove("expanded"); pastBox.innerHTML=""; }
+}
+function dateCardMetaHtml(d){
+  const bits=[];
+  if(d.location) bits.push(`<span class="ptxt" id="dc-loc">📍 ${esc(d.location)}</span>`);
+  if(d.note) bits.push(`<span class="ptxt">${esc(d.note)}</span>`);
+  return bits.length ? `<div class="dc-sub">${bits.join('<span style="opacity:.4">·</span>')}</div>` : "";
+}
+/* ---------------- important-date inline editing ---------------- */
+function wireDateText(node, dateId, field, ariaLabel, required){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label",ariaLabel);
+  function open(){
+    if(isEditingField("date",dateId,field)) return;
+    const d=importantDates.find(x=>x.id===dateId); if(!d) return;
+    startInlineText({ type:"date", id:dateId, field, container:node, value:d[field], required:!!required, ariaLabel,
+      getEntity:()=>importantDates.find(x=>x.id===dateId),
+      onCommit:(entity,v)=>{ entity[field]=v; entity.updated=Date.now(); saveDates(); },
+      onDone:renderDatesSection });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function openDateRangePopover(anchor, dateId){
+  const d0=importantDates.find(x=>x.id===dateId); if(!d0) return;
+  openPopover({ type:"date", id:dateId, field:"daterange", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Date</div>
+        <div class="pop-row"><div style="flex:1"><label>Start date</label><input type="date" id="pop-start" aria-label="Start date"></div></div>
+        <div class="pop-row"><div style="flex:1"><label>End date (optional)</label><input type="date" id="pop-end" aria-label="End date"></div></div>
+        <div id="pop-err" style="color:var(--alarm);font-size:11px;display:none;"></div>
+        <div class="pop-actions"><button class="pop-clear" id="pop-clear">Clear end date</button><button class="btn sm" id="pop-done">Done</button></div>`;
+      pop.querySelector("#pop-start").value=d0.startDate||""; pop.querySelector("#pop-end").value=d0.endDate||"";
+      const err=pop.querySelector("#pop-err");
+      function commit(){
+        const d=importantDates.find(x=>x.id===dateId); if(!d) return false;
+        const startDate=pop.querySelector("#pop-start").value, endDate=pop.querySelector("#pop-end").value;
+        const msg=validateImportantDate(startDate,endDate,d.startTime,d.endTime);
+        if(msg){ err.textContent=msg; err.style.display="block"; return false; }
+        err.style.display="none";
+        if(startDate!==d.startDate||endDate!==d.endDate){ d.startDate=startDate; d.endDate=endDate; d.updated=Date.now(); saveDates(); renderDatesSection(); }
+        return true;
+      }
+      pop.querySelector("#pop-start").addEventListener("change",commit);
+      pop.querySelector("#pop-end").addEventListener("change",commit);
+      pop.querySelector("#pop-clear").addEventListener("click",()=>{ const d=importantDates.find(x=>x.id===dateId); if(!d) return; d.endDate=""; d.updated=Date.now(); saveDates(); renderDatesSection(); pop.querySelector("#pop-end").value=""; });
+      pop.querySelector("#pop-done").addEventListener("click",()=>{ if(commit()) close(true); });
+    },
+    onClose(){ renderDatesSection(); }
+  });
+}
+function openDateTimePopover(anchor, dateId){
+  const d0=importantDates.find(x=>x.id===dateId); if(!d0) return;
+  openPopover({ type:"date", id:dateId, field:"time", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Time</div>
+        <div class="pop-row"><div style="flex:1"><label>Start time</label><input type="time" id="pop-stime" aria-label="Start time"></div></div>
+        <div class="pop-row"><div style="flex:1"><label>End time (optional)</label><input type="time" id="pop-etime" aria-label="End time"></div></div>
+        <div id="pop-err" style="color:var(--alarm);font-size:11px;display:none;"></div>
+        <div class="pop-actions"><button class="pop-clear" id="pop-clear">Clear</button><button class="btn sm" id="pop-done">Done</button></div>`;
+      pop.querySelector("#pop-stime").value=d0.startTime||""; pop.querySelector("#pop-etime").value=d0.endTime||"";
+      const err=pop.querySelector("#pop-err");
+      function commit(){
+        const d=importantDates.find(x=>x.id===dateId); if(!d) return false;
+        const startTime=pop.querySelector("#pop-stime").value, endTime=pop.querySelector("#pop-etime").value;
+        const msg=validateImportantDate(d.startDate,d.endDate,startTime,endTime);
+        if(msg){ err.textContent=msg; err.style.display="block"; return false; }
+        err.style.display="none";
+        if(startTime!==d.startTime||endTime!==d.endTime){ d.startTime=startTime; d.endTime=endTime; d.updated=Date.now(); saveDates(); renderDatesSection(); }
+        return true;
+      }
+      pop.querySelector("#pop-stime").addEventListener("change",commit);
+      pop.querySelector("#pop-etime").addEventListener("change",commit);
+      pop.querySelector("#pop-clear").addEventListener("click",()=>{ const d=importantDates.find(x=>x.id===dateId); if(!d) return; d.startTime=""; d.endTime=""; d.updated=Date.now(); saveDates(); renderDatesSection(); close(true); });
+      pop.querySelector("#pop-done").addEventListener("click",()=>{ if(commit()) close(true); });
+    },
+    onClose(){ renderDatesSection(); }
+  });
+}
+function openDateCategoryPopover(anchor, dateId){
+  const d0=importantDates.find(x=>x.id===dateId); if(!d0) return;
+  openPopover({ type:"date", id:dateId, field:"category", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Category</div>`+Object.entries(DATE_CATEGORIES).map(([k,c])=>
+        `<button type="button" class="who-opt ${k===d0.category?'on':''}" data-k="${k}" style="width:100%;justify-content:flex-start;margin-bottom:4px;"><span class="dot" style="background:${c.color}"></span>${esc(c.label)}</button>`).join("");
+      pop.querySelectorAll("button[data-k]").forEach(b=>b.addEventListener("click",()=>{
+        const d=importantDates.find(x=>x.id===dateId); if(!d) return;
+        d.category=b.dataset.k; d.updated=Date.now(); saveDates(); renderDatesSection(); close(true);
+      }));
+    }
+  });
+}
+function openDatePeoplePopover(anchor, dateId){
+  const d0=importantDates.find(x=>x.id===dateId); if(!d0) return;
+  openPopover({ type:"date", id:dateId, field:"people", anchor,
+    build(pop,close){
+      pop.innerHTML=`<div class="pop-title">Who's involved</div><div class="who-picker" id="pop-who"></div><div class="pop-actions"><button class="btn sm" id="pop-done">Done</button></div>`;
+      makeWhoPicker(pop.querySelector("#pop-who"), d0.people, ids=>{
+        const d=importantDates.find(x=>x.id===dateId); if(!d) return;
+        d.people=ids; d.updated=Date.now(); saveDates(); renderDatesSection();
+      });
+      pop.querySelector("#pop-done").addEventListener("click",()=>close(true));
+    },
+    onClose(){ renderDatesSection(); }
+  });
+}
+function renderDateCard(d){
+  const el=document.createElement("div"); el.className="date-card"; el.dataset.id=d.id;
+  const cat=DATE_CATEGORIES[d.category]||DATE_CATEGORIES.other;
+  el.style.setProperty("--cat", cat.color);
+  const countdown=dateCountdown(d);
+  if(isOngoingLabel(countdown)) el.classList.add("ongoing");
+  const countClass = countdown==="Today" ? "today" : (isOngoingLabel(countdown) ? "ongoing" : "");
+  const hasTime = !!(d.startTime || d.endTime);
+  const hasPeople = d.people && d.people.length;
+  el.innerHTML=`
+    <div class="dc-top"><span class="dc-count ${countClass}">${esc(countdown)}</span><span class="dc-cat" id="dc-cat">${esc(cat.label)}</span></div>
+    <div class="dc-title" id="dc-title">${esc(d.title)||"(untitled)"}</div>
+    <div class="dc-when"><span id="dc-date">${esc(dateDatePartText(d))}</span>${hasTime?` · <span id="dc-time">${esc(dateTimePartText(d))}</span>`:""}</div>
+    ${hasPeople?`<div class="dc-people" id="dc-people">${peopleChipsHtml(d.people)}</div>`:""}
+    ${dateCardMetaHtml(d)}
+    <div class="dc-actions"><button class="iconbtn edit" title="Edit" aria-label="Edit ${esc(d.title)||'date'}">✎</button><button class="iconbtn del" title="Delete" aria-label="Delete ${esc(d.title)||'date'}">✕</button></div>`;
+  wireDateText(el.querySelector("#dc-title"), d.id, "title", "Edit title", true);
+  const dateEl=el.querySelector("#dc-date"); dateEl.classList.add("editable"); dateEl.tabIndex=0; dateEl.setAttribute("role","button"); dateEl.setAttribute("aria-label","Edit date");
+  const openDate=()=>openDateRangePopover(dateEl,d.id);
+  dateEl.addEventListener("click",openDate); dateEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openDate(); } });
+  const timeEl=el.querySelector("#dc-time");
+  if(timeEl){ timeEl.classList.add("editable"); timeEl.tabIndex=0; timeEl.setAttribute("role","button"); timeEl.setAttribute("aria-label","Edit time");
+    const openTime=()=>openDateTimePopover(timeEl,d.id);
+    timeEl.addEventListener("click",openTime); timeEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openTime(); } }); }
+  const peopleEl=el.querySelector("#dc-people");
+  if(peopleEl){ peopleEl.classList.add("editable"); peopleEl.tabIndex=0; peopleEl.setAttribute("role","button"); peopleEl.setAttribute("aria-label","Edit who's involved");
+    const openPpl=()=>openDatePeoplePopover(peopleEl,d.id);
+    peopleEl.addEventListener("click",openPpl); peopleEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPpl(); } }); }
+  const catEl=el.querySelector("#dc-cat"); catEl.classList.add("editable"); catEl.tabIndex=0; catEl.setAttribute("role","button"); catEl.setAttribute("aria-label","Edit category");
+  const openCat=()=>openDateCategoryPopover(catEl,d.id);
+  catEl.addEventListener("click",openCat); catEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openCat(); } });
+  const locEl=el.querySelector("#dc-loc"); if(locEl) wireDateText(locEl, d.id, "location", "Edit location", false);
+  el.querySelector(".edit").addEventListener("click",()=>{ closeActiveEdit(true); dateEditingId=d.id; renderDatesSection(); });
+  el.querySelector(".del").addEventListener("click",()=>{ if(confirm(`Delete "${d.title||"this date"}"?`)){ importantDates=importantDates.filter(x=>x.id!==d.id); saveDates(); renderDatesSection(); } });
+  return el;
+}
+function renderDateEditorCard(d){
+  const box=document.createElement("div"); box.className="date-editor"; box.dataset.id=d.id;
+  const id=d.id;
+  box.innerHTML=`
+    <div class="grid">
+      <div class="field full"><label>Title</label><input type="text" id="de-title" value="${esc(d.title)}" placeholder="e.g. Kids fly with Nana"></div>
+      <div class="field"><label>Category</label><select id="de-cat">${Object.entries(DATE_CATEGORIES).map(([k,c])=>`<option value="${k}" ${k===d.category?"selected":""}>${esc(c.label)}</option>`).join("")}</select></div>
+      <div class="field"><label>Location (optional)</label><input type="text" id="de-loc" value="${esc(d.location)}" placeholder="where"></div>
+      <div class="field"><label>Start date</label><input type="date" id="de-start" value="${d.startDate||""}"></div>
+      <div class="field"><label>Start time (optional)</label><input type="time" id="de-stime" value="${d.startTime||""}"></div>
+      <div class="field"><label>End date (optional)</label><input type="date" id="de-end" value="${d.endDate||""}"></div>
+      <div class="field"><label>End time (optional)</label><input type="time" id="de-etime" value="${d.endTime||""}"></div>
+      <div class="field full"><label>Who's involved (optional)</label><div class="who-picker" id="de-who"></div></div>
+      <div class="field full"><label>Note (optional)</label><textarea id="de-note" placeholder="anything to remember">${esc(d.note)}</textarea></div>
+    </div>
+    <div class="field full" id="de-error" style="color:var(--alarm);font-size:12px;display:none;"></div>
+    <div class="actions"><button class="btn del-de">Delete</button><button class="btn cancel-de">Cancel</button><button class="btn add save-de">Save</button></div>`;
+  const who=makeWhoPicker(box.querySelector("#de-who"), d.people);
+  const errEl=box.querySelector("#de-error");
+  box.querySelector(".save-de").addEventListener("click",()=>{
+    const rec=importantDates.find(x=>x.id===id); if(!rec) return;
+    const title=box.querySelector("#de-title").value.trim();
+    const startDate=box.querySelector("#de-start").value;
+    const endDate=box.querySelector("#de-end").value;
+    const startTime=box.querySelector("#de-stime").value;
+    const endTime=box.querySelector("#de-etime").value;
+    errEl.style.display="none";
+    if(!title){ errEl.textContent="Title is required."; errEl.style.display="block"; return; }
+    const rangeMsg=validateImportantDate(startDate,endDate,startTime,endTime);
+    if(rangeMsg){ errEl.textContent=rangeMsg; errEl.style.display="block"; return; }
+    rec.title=title; rec.category=box.querySelector("#de-cat").value; rec.location=box.querySelector("#de-loc").value.trim();
+    rec.startDate=startDate; rec.endDate=endDate; rec.startTime=startTime; rec.endTime=endTime;
+    rec.people=who.get(); rec.note=box.querySelector("#de-note").value.trim(); rec.updated=Date.now();
+    dateEditingId=null; saveDates(); renderDatesSection();
+  });
+  box.querySelector(".cancel-de").addEventListener("click",()=>{
+    const rec=importantDates.find(x=>x.id===id);
+    if(rec && !rec.title && !rec.startDate && !rec.location && !rec.note && !rec.people.length) importantDates=importantDates.filter(x=>x.id!==id);
+    dateEditingId=null; renderDatesSection();
+  });
+  box.querySelector(".del-de").addEventListener("click",()=>{ if(confirm("Delete this date?")){ importantDates=importantDates.filter(x=>x.id!==id); dateEditingId=null; saveDates(); renderDatesSection(); } });
+  setTimeout(()=>box.querySelector("#de-title").focus(),0);
+  return box;
+}
+function addImportantDate(){ closeActiveEdit(true); const d=blankImportantDate(); importantDates.unshift(d); dateEditingId=d.id; renderDatesSection(); }
+document.getElementById("addDateBtn").addEventListener("click",addImportantDate);
+document.getElementById("viewAllDatesBtn").addEventListener("click",()=>{ datesAllOpen=!datesAllOpen; renderDatesSection(); });
+document.getElementById("closeAllDatesBtn").addEventListener("click",()=>{ datesAllOpen=false; renderDatesSection(); });
+document.getElementById("pastDatesToggle").addEventListener("click",()=>{ pastDatesOpen=!pastDatesOpen; renderDatesAllPanel(); });
+
 /* ---------------- quick add / add ---------------- */
 document.getElementById("quickInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; const t=blankTask(v); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); e.target.value=""; saveTasks(); render(); });
-document.getElementById("addBtn").addEventListener("click",()=>{ const t=blankTask(); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); editingId=t.id; render(); });
+document.getElementById("addBtn").addEventListener("click",()=>{ closeActiveEdit(true); const t=blankTask(); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); editingId=t.id; render(); });
 
 /* ---------------- toolbar ---------------- */
 ["searchInput","sortBy","hideDone","showLater"].forEach(id=>document.getElementById(id).addEventListener("input",render));
 document.getElementById("printBtn").addEventListener("click",()=>window.print());
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -773,16 +1476,30 @@ document.getElementById("importFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return; const r=new FileReader();
   r.onload=()=>{ try{ const d=JSON.parse(r.result);
     if(!confirm("Import this file? It replaces your current planner.")) return;
+    closeActiveEdit(false);
+    /* Every collection is imported independently and only overwritten when present, so backups
+       from any prior version — old single-person tasks, no Places, no Important Dates — load fine;
+       whatever the file doesn't include is simply left as-is rather than wiped. */
     if(Array.isArray(d)){ tasks=d.map(migrateTask); }
-    else { if(Array.isArray(d.people)) people=d.people; if(Array.isArray(d.tasks)) tasks=d.tasks.map(migrateTask); if(Array.isArray(d.shop)) shop=d.shop.map(s=>Object.assign(blankShop(),s)); if(Array.isArray(d.places)) places=d.places.map(migratePlace); }
-    editingId=null; placeEditingId=null; savePeople(); saveTasks(); saveShop(); savePlaces(); render();
+    else {
+      if(Array.isArray(d.people)) people=d.people;
+      if(Array.isArray(d.tasks)) tasks=d.tasks.map(migrateTask);
+      if(Array.isArray(d.shop)) shop=d.shop.map(s=>Object.assign(blankShop(),s));
+      if(Array.isArray(d.places)) places=d.places.map(migratePlace);
+      if(Array.isArray(d.importantDates)) importantDates=d.importantDates.map(migrateImportantDate);
+    }
+    editingId=null; placeEditingId=null; dateEditingId=null; savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
 });
 
 /* ---------------- tick ---------------- */
 function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=`${pad2(d.getHours())}:${pad2(d.getMinutes())}<span class="sec">:${pad2(d.getSeconds())}</span>`;
-  if(editingId==null){ if(normalizeLater()){ render(); return; }
+  /* editingActive() covers the full task editor, place editor, date editor, AND any inline text/popover —
+     nothing the 1s tick does may ever rebuild DOM out from under an open editor. */
+  if(!editingActive()){
+    if(pendingRemoteRender){ pendingRemoteRender=false; render(); return; }
+    if(normalizeLater()){ render(); return; }
     const no=new Set(tasks.filter(isOverdue).map(t=>t.id)); let ch=no.size!==overdueSet.size; if(!ch) for(const i of no) if(!overdueSet.has(i)){ ch=true; break; }
     if(ch){ render(); return; }
     renderNextUp(computeNextUp());
