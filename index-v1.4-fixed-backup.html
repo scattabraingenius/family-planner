@@ -6,8 +6,8 @@
 <title>Home — Family Day Planner</title>
 <style>
   /* ============================================================
-     HOME — family day planner   (v1.5)
-     One shared day list (multi-person tags), Places to Go + Shopping list.
+     HOME — family day planner   (v1.4)
+     One shared day list (tagged by who), plus a shopping list.
      Optional live cloud sync across devices (Firebase — see config block).
      Self-contained, offline, saves to localStorage.
      Edit SEED_PEOPLE / palette to taste.
@@ -104,7 +104,7 @@
 
   /* day list */
   .list { display:flex; flex-direction:column; gap:8px; }
-  .row { display:grid; grid-template-columns:24px 52px minmax(66px,138px) minmax(0,1fr) 76px 122px 66px; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-left:4px solid var(--line); border-radius:var(--radius); padding:11px 14px; box-shadow:var(--shadow); }
+  .row { display:grid; grid-template-columns:24px 52px auto minmax(0,1fr) 76px 122px 66px; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-left:4px solid var(--line); border-radius:var(--radius); padding:11px 14px; box-shadow:var(--shadow); }
   .row.overdue { border-left-color:var(--alarm); }
   .row.isnext { box-shadow:0 0 0 2px var(--signal), var(--shadow); }
   .row.done { opacity:.5; background:var(--done-bg); }
@@ -157,45 +157,6 @@
   .reappear-inline { display:flex; gap:8px; align-items:center; } .reappear-inline input { flex:1; }
   .editor .actions { display:flex; gap:8px; margin-top:14px; justify-content:flex-end; }
 
-  /* multi-person picker */
-  .who-picker { display:flex; flex-wrap:wrap; gap:6px; }
-  .who-opt { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:5px 10px 5px 7px; border-radius:99px; background:var(--input-bg); border:1px solid var(--line); color:var(--muted); cursor:pointer; }
-  .who-opt .dot { width:12px; height:12px; border-radius:50%; opacity:.45; }
-  .who-opt.on { color:var(--ink); border-color:var(--ink); }
-  .who-opt.on .dot { opacity:1; }
-
-  /* multi-person chips in a row (compact, wrap) */
-  .r-who { display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
-  .r-who .pchip { font-size:11px; padding:3px 8px 3px 3px; }
-  .r-who .pchip .dot { width:13px; height:13px; }
-
-  /* late / overdue accents */
-  .cell-time .cd.late { color:var(--alarm); font-weight:600; }
-  .overdue-chip { font-family:var(--mono); font-size:11px; font-weight:600; color:var(--alarm); margin-left:8px; white-space:nowrap; }
-
-  /* right sidebar: Places to Go (above Shopping) */
-  .side { display:flex; flex-direction:column; gap:18px; }
-  .places { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
-  .place-list { display:flex; flex-direction:column; gap:6px; }
-  .place-row { display:flex; align-items:center; gap:9px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface-2); }
-  .place-row.got { opacity:.5; } .place-row.got .place-name { text-decoration:line-through; color:var(--muted); }
-  .place-body { flex:1; min-width:0; }
-  .place-name { font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .place-meta { font-size:11.5px; color:var(--muted); display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:1px; }
-  .place-meta .ptxt { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px; }
-  .place-meta .pdot { width:10px; height:10px; border-radius:50%; display:inline-block; flex:none; }
-  .mapbtn { font-size:11px; font-weight:600; color:var(--signal); background:none; border:1px solid var(--line); border-radius:7px; padding:5px 9px; cursor:pointer; text-decoration:none; white-space:nowrap; flex:none; }
-  .mapbtn:hover { border-color:var(--signal); }
-  .place-del, .place-edit { color:var(--muted-2); background:none; border:none; cursor:pointer; font-size:13px; padding:2px 3px; flex:none; }
-  .place-del:hover { color:var(--alarm); } .place-edit:hover { color:var(--ink); }
-  .place-editor { border:1px solid var(--signal); border-radius:9px; padding:10px; background:var(--input-bg); box-shadow:0 0 0 2px rgba(18,176,201,.1); }
-  .place-editor .pe-field { display:flex; flex-direction:column; gap:3px; margin-bottom:8px; }
-  .place-editor label { font-family:var(--mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-  .place-editor input[type=text], .place-editor input[type=date] { font-size:13px; padding:7px 9px; border:1px solid var(--line); border-radius:7px; background:var(--card); color:var(--ink); outline:none; width:100%; }
-  .place-editor input:focus { border-color:var(--signal); }
-  .place-editor .who-opt { font-size:11px; padding:4px 8px 4px 6px; }
-  .place-editor .pe-actions { display:flex; gap:6px; justify-content:flex-end; margin-top:4px; }
-
   /* shopping */
   .shop { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
   .add-inline { display:flex; align-items:center; gap:8px; background:var(--input-bg); border:1px solid var(--line); border-radius:10px; padding:3px 3px 3px 12px; margin-bottom:12px; }
@@ -235,7 +196,7 @@
     <div class="head-right">
       <div class="clock" id="clock">--:--<span class="sec">:--</span></div>
       <div class="progress-wrap">
-        <div class="progress-top"><span class="eyebrow">Today</span><span class="progress-count" id="progressCount">0 of 0 done</span><span class="overdue-chip" id="overdueChip"></span></div>
+        <div class="progress-top"><span class="eyebrow">Today</span><span class="progress-count" id="progressCount">0 of 0 done</span></div>
         <div class="bar"><span id="progressBar"></span></div>
       </div>
       <div class="util">
@@ -261,7 +222,6 @@
         <input class="search" id="searchInput" type="text" placeholder="Search…">
         <select class="ctrl" id="sortBy" aria-label="Sort">
           <option value="time">Sort: Time</option>
-          <option value="priority">Sort: Priority</option>
           <option value="person">Sort: Person</option>
           <option value="added">Sort: Added</option>
         </select>
@@ -271,20 +231,11 @@
       <div class="list" id="list"></div>
     </div>
 
-    <div class="side">
-      <div class="places">
-        <div class="panel-title">Places to go <span class="shop-count" id="placeCount"></span></div>
-        <div class="add-inline"><span class="plus">+</span><input id="placeInput" type="text" placeholder="Add a place, then Enter…" aria-label="Add place"></div>
-        <div class="place-list" id="placeList"></div>
-        <div class="shop-foot"><span class="shop-count" id="placeStatus"></span><button class="shop-clear" id="placeClear">Clear visited</button></div>
-      </div>
-
-      <div class="shop">
-        <div class="panel-title">Shopping list <span class="shop-count" id="shopCount"></span></div>
-        <div class="add-inline"><span class="plus">+</span><input id="shopInput" type="text" placeholder="Add an item, then Enter…" aria-label="Add shopping item"></div>
-        <div class="shop-list" id="shopList"></div>
-        <div class="shop-foot"><span class="shop-count" id="shopStatus"></span><button class="shop-clear" id="shopClear">Clear got items</button></div>
-      </div>
+    <div class="shop">
+      <div class="panel-title">Shopping list <span class="shop-count" id="shopCount"></span></div>
+      <div class="add-inline"><span class="plus">+</span><input id="shopInput" type="text" placeholder="Add an item, then Enter…" aria-label="Add shopping item"></div>
+      <div class="shop-list" id="shopList"></div>
+      <div class="shop-foot"><span class="shop-count" id="shopStatus"></span><button class="shop-clear" id="shopClear">Clear got items</button></div>
     </div>
   </div>
 
@@ -295,15 +246,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.5";
+const VERSION = "1.4";
 
 /* ---------------- storage ---------------- */
-const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1";
+const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
 function savePeople(){ try{ localStorage.setItem(K_PEOPLE, JSON.stringify(people)); }catch(e){} pushCloud(); }
-function savePlaces(){ try{ localStorage.setItem(K_PLACES, JSON.stringify(places)); }catch(e){} pushCloud(); }
 
 /* =====================================================================
    CLOUD SYNC (optional) — share one LIVE planner across all devices.
@@ -333,10 +283,9 @@ function initSync(){
       if(!v){ pushCloud(true); return; }                 // cloud empty → seed from this device
       remoteApplying=true;
       if(Array.isArray(v.people)) people=v.people;
-      if(Array.isArray(v.tasks))  tasks=v.tasks.map(migrateTask);
+      if(Array.isArray(v.tasks))  tasks=v.tasks.map(t=>Object.assign(blankTask(),t));
       if(Array.isArray(v.shop))   shop=v.shop.map(s=>Object.assign(blankShop(),s));
-      if(Array.isArray(v.places)) places=v.places.map(migratePlace);   // only overwrite if present → never erased by an old client
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); }catch(e){}
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); }catch(e){}
       remoteApplying=false;
       if(editingId==null) render();
     });
@@ -346,7 +295,7 @@ function initSync(){
 function pushCloud(force){
   if(!syncing || (remoteApplying && !force)) return;
   clearTimeout(pushTimer);
-  pushTimer=setTimeout(()=>{ try{ db.set({people,tasks,shop,places,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.set({people,tasks,shop,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(on){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -370,33 +319,16 @@ function getPerson(id){
   const p=people.find(x=>x.id===id); return p || {id:"",name:"Unassigned",color:"#3A4757",none:true};
 }
 
-/* ---------------- tasks / shopping / places ---------------- */
-/* Task now stores a `people` array. "family" as a member id = everyone (exclusive).
-   Old tasks used a single `person` string — migrateTask converts them, no data loss. */
-function blankTask(name){ return { id:uid("t"), people:[], task:name||"", time:"", due:"", dueTime:"", priority:5, status:"todo", showOn:"", notes:"", created:Date.now() }; }
+/* ---------------- tasks + shopping ---------------- */
+function blankTask(name){ return { id:uid("t"), person:"", task:name||"", time:"", due:"", dueTime:"", priority:5, status:"todo", showOn:"", notes:"" }; }
 function blankShop(name){ return { id:uid("s"), item:name||"", got:false }; }
-function blankPlace(name){ return { id:uid("pl"), name:name||"", address:"", note:"", date:"", people:[], visited:false, created:Date.now() }; }
-
-function normPeople(arr){ if(!Array.isArray(arr)) return []; if(arr.includes("family")) return ["family"]; return arr.filter(x=>x); }
-function migrateTask(raw){
-  const t=Object.assign(blankTask(), raw||{});
-  if((!Array.isArray(t.people)||!t.people.length) && raw && raw.person){   // old single-person → array
-    t.people = raw.person==="family" ? ["family"] : [raw.person];
-  }
-  t.people=normPeople(t.people);
-  delete t.person;
-  if(typeof t.created!=="number") t.created=Date.now();
-  return t;
-}
-function migratePlace(raw){ const p=Object.assign(blankPlace(), raw||{}); p.people=normPeople(p.people); if(typeof p.created!=="number") p.created=Date.now(); return p; }
-
 let tasks = loadJSON(K_TASKS); if(!tasks){ tasks=[]; saveTasks(); }
-tasks = tasks.map(migrateTask);
-let shop = (loadJSON(K_SHOP) || []).map(s=>Object.assign(blankShop(),s));
-let places = (loadJSON(K_PLACES) || []).map(migratePlace);
+tasks = tasks.map(t=>Object.assign(blankTask(),t));
+let shop = loadJSON(K_SHOP) || [];
+shop = shop.map(s=>Object.assign(blankShop(),s));
 
 /* ---------------- state ---------------- */
-let editingId=null, placeEditingId=null, activePerson="all", overdueSet=new Set();
+let editingId=null, activePerson="all", overdueSet=new Set();
 const STATUS={ todo:{label:"To do",color:"#7C8B9C"}, doing:{label:"Doing",color:"#3B97E6"}, done:{label:"Done",color:"#23B877"}, later:{label:"Later",color:"#9B87F5"} };
 
 /* ---------------- helpers ---------------- */
@@ -412,61 +344,22 @@ function isDone(t){ return t.status==="done"; }
 function isLater(t){ return t.status==="later"; }
 function isActive(t){ return t.status==="todo"||t.status==="doing"; }
 function esc(s){ return (s??"").toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
-function taskPeopleIds(t){ return Array.isArray(t.people)?t.people:[]; }
-function isFamilyTask(t){ return taskPeopleIds(t).includes("family"); }
-/* a task "counts toward today" if it's undated (a floating today task) or due today; not later */
-function isToday(t){ if(isLater(t)) return false; if(!t.due) return true; return t.due===todayStr(); }
-function personSortKey(t){ const ids=taskPeopleIds(t); if(!ids.length) return "~~~~"; if(ids.includes("family")) return "\u0000Family"; return getPerson(ids[0]).name; }
 function tomorrowLocal(timeStr){ const d=new Date(); d.setDate(d.getDate()+1); const t=/^\d{2}:\d{2}$/.test(timeStr||"")?timeStr:"08:00"; return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${t}`; }
 function dueMoment(t){ if(!t.due) return null; const tm=/^\d{2}:\d{2}$/.test(t.dueTime||"")?t.dueTime:"23:59"; const d=new Date(`${t.due}T${tm}`); return isNaN(d)?null:d; }
-function isOverdue(t){ if(!isActive(t)) return false; return !!t.due && t.due < todayStr(); }
-function dueBadge(t){ if(!t.due||isDone(t)) return "";
-  const ts=todayStr();
-  if(t.due < ts) return `<span class="due over">⚠ Overdue · was due ${esc(fmtDate(t.due))}</span>`;
-  if(t.due === ts) return `<span class="due today">due today${t.dueTime?" "+esc(fmt12(t.dueTime)):""}</span>`;
-  const dd=new Date(t.due+"T00:00"), today=new Date(ts+"T00:00"); const diff=Math.round((dd-today)/86400000);
+function isOverdue(t){ if(isDone(t)||isLater(t)) return false; const dm=dueMoment(t); return dm!=null && new Date()>dm; }
+function dueBadge(t){ if(!t.due||isDone(t)) return ""; const dm=dueMoment(t); if(!dm) return "";
+  const today=new Date(); today.setHours(0,0,0,0); const dd=new Date(t.due+"T00:00"); dd.setHours(0,0,0,0);
+  const diff=Math.round((dd-today)/86400000);
+  if(new Date()>dm) return `<span class="due over">⚠ overdue · ${esc(fmtDate(t.due))}</span>`;
+  if(diff===0) return `<span class="due today">due today${t.dueTime?" "+esc(fmt12(t.dueTime)):""}</span>`;
   if(diff===1) return `<span class="due soon">due tomorrow</span>`;
   return `<span class="due">due ${esc(fmtDate(t.due))}</span>`;
 }
 function normalizeLater(){ let ch=false; const now=new Date(); tasks.forEach(t=>{ if(isLater(t)&&t.showOn&&new Date(t.showOn)<=now){ t.status="todo"; t.showOn=""; ch=true; } }); if(ch) saveTasks(); return ch; }
 
 /* ---------------- next up ---------------- */
-function personVisible(t){ if(activePerson==="all") return true; if(isFamilyTask(t)) return true; return taskPeopleIds(t).includes(activePerson); }
-/* Up Next = soonest FUTURE timed task today. Missed (past-time) tasks are flagged in their row, not here. */
-function computeNextUp(){
-  const nm=nowMin();
-  const c=tasks.filter(t=>isActive(t)&&isToday(t)&&personVisible(t)&&timeToMin(t.time)!=null&&timeToMin(t.time)>=nm);
-  if(!c.length) return null;
-  c.sort((a,b)=>timeToMin(a.time)-timeToMin(b.time));
-  return c[0];
-}
-/* colored chips for a task's assigned people (Family collapses to one chip) */
-function peopleChipsHtml(ids){
-  ids = normPeople(ids);
-  if(!ids.length) return `<span class="pchip none"><span class="dot"></span>—</span>`;
-  if(ids.includes("family")){ const f=getPerson("family"); return `<span class="pchip" style="background:${f.color}"><span class="dot"></span>Family</span>`; }
-  return ids.map(id=>{ const p=getPerson(id); return `<span class="pchip" style="background:${p.color}"><span class="dot"></span>${esc(p.name)}</span>`; }).join("");
-}
-/* incomplete active tasks assigned to this person (family tasks count for everyone) */
-function personCount(pid){ return tasks.filter(t=>isActive(t) && (isFamilyTask(t)||taskPeopleIds(t).includes(pid))).length; }
-/* reusable multi-person selector; returns { get:()=>ids }. Family and individuals are mutually exclusive. */
-function makeWhoPicker(container, initial){
-  let sel = normPeople(initial);
-  function paint(){
-    const opt=(id,name,color,on)=>`<button type="button" class="who-opt ${on?'on':''}" data-id="${id}"><span class="dot" style="background:${color}"></span>${esc(name)}</button>`;
-    container.innerHTML = opt("family","Family",getPerson("family").color,sel.includes("family")) +
-      people.map(p=>opt(p.id,p.name,p.color,sel.includes(p.id))).join("");
-    container.querySelectorAll(".who-opt").forEach(b=>b.addEventListener("click",()=>{
-      const id=b.dataset.id;
-      if(id==="family") sel = sel.includes("family") ? [] : ["family"];
-      else { sel=sel.filter(x=>x!=="family"); sel = sel.includes(id) ? sel.filter(x=>x!==id) : [...sel,id]; }
-      paint();
-    }));
-  }
-  paint();
-  return { get:()=>normPeople(sel) };
-}
+function personVisible(t){ if(activePerson==="all") return true; return t.person===activePerson || t.person==="family"; }
+function computeNextUp(){ const c=tasks.filter(t=>isActive(t)&&timeToMin(t.time)!=null&&personVisible(t)); if(!c.length){ const o=tasks.filter(t=>isActive(t)&&isOverdue(t)&&personVisible(t)); if(o.length) return o[0]; return null; } c.sort((a,b)=>timeToMin(a.time)-timeToMin(b.time)); return c[0]; }
 
 /* ---------------- render ---------------- */
 const listEl=document.getElementById("list"), nextEl=document.getElementById("nextup");
@@ -480,18 +373,16 @@ function currentView(){
     if(!personVisible(t)) return false;
     if(isLater(t)&&!showLater) return false;
     if(hideDone&&isDone(t)) return false;
-    if(q){ const names=taskPeopleIds(t).map(id=>getPerson(id).name).join(" "); const hay=[t.task,t.notes,names].join(" ").toLowerCase(); if(!hay.includes(q)) return false; }
+    if(q){ const hay=[t.task,t.notes,getPerson(t.person).name].join(" ").toLowerCase(); if(!hay.includes(q)) return false; }
     return true;
   });
   const cmp={
     time:(a,b)=>(timeToMin(a.time)??1e9)-(timeToMin(b.time)??1e9),
-    priority:(a,b)=>(b.priority||0)-(a.priority||0),
-    person:(a,b)=>personSortKey(a).localeCompare(personSortKey(b)),
-    added:(a,b)=>(b.created||0)-(a.created||0),
-  }[sort] || ((a,b)=>0);
-  const secondary=(a,b)=> ((b.priority||0)-(a.priority||0)) || ((timeToMin(a.time)??1e9)-(timeToMin(b.time)??1e9));
+    person:(a,b)=>getPerson(a.person).name.localeCompare(getPerson(b.person).name),
+    added:(a,b)=>0,
+  }[sort];
   const tier=t=>isLater(t)?2:isDone(t)?1:0;
-  v.sort((a,b)=>(tier(a)-tier(b)) || cmp(a,b) || secondary(a,b));
+  v.sort((a,b)=>(tier(a)-tier(b))||((b.priority||0)-(a.priority||0))||cmp(a,b));
   return v;
 }
 
@@ -499,7 +390,6 @@ function render(){
   normalizeLater();
   renderPeopleBar();
   renderShop();
-  renderPlaces();
   const view=currentView();
   const next=computeNextUp();
   const laterCount=tasks.filter(isLater).length;
@@ -517,23 +407,17 @@ function render(){
     if(isOverdue(t)) overdueSet.add(t.id);
   });
 
-  const done=tasks.filter(isDone).length; const over=tasks.filter(isOverdue).length;
-  document.getElementById("hint").textContent=`${tasks.length} items • ${done} done • ${over} overdue • ${laterCount} later • ${places.filter(p=>!p.visited).length} places • ${shop.filter(s=>!s.got).length} to buy • Home v${VERSION}`;
+  const done=tasks.filter(isDone).length;
+  document.getElementById("hint").textContent=`${tasks.length} items • ${done} done • ${laterCount} later • ${shop.filter(s=>!s.got).length} to buy • saved locally • Home v${VERSION}`;
 }
 
-function renderProgress(){
-  const todays=tasks.filter(isToday); const tot=todays.length; const done=todays.filter(isDone).length;
-  document.getElementById("progressCount").textContent=`${done} of ${tot} done`;
-  document.getElementById("progressBar").style.width=tot?(done/tot*100)+"%":"0%";
-  const over=tasks.filter(isOverdue).length;
-  const oc=document.getElementById("overdueChip"); if(oc) oc.textContent = over ? `⚠ ${over} overdue` : "";
-}
+function renderProgress(){ const done=tasks.filter(isDone).length, tot=tasks.filter(t=>!isLater(t)).length; document.getElementById("progressCount").textContent=`${done} of ${tot} done`; document.getElementById("progressBar").style.width=tot?(done/tot*100)+"%":"0%"; }
 
 function renderPeopleBar(){
   const bar=document.getElementById("peoplebar");
-  const chip=(id,name,color,all,count)=>`<button class="pfilter ${all?'all':''} ${activePerson===id?'active':''}" data-p="${id}">${all?'':`<span class="dot" style="background:${color}"></span>`}${esc(name)}${(!all&&count)?` (${count})`:''}</button>`;
-  let html=chip("all","Everyone","",true,0);
-  people.forEach(p=>html+=chip(p.id,p.name,p.color,false,personCount(p.id)));
+  const chip=(id,name,color,all)=>`<button class="pfilter ${all?'all':''} ${activePerson===id?'active':''}" data-p="${id}">${all?'':`<span class="dot" style="background:${color}"></span>`}${esc(name)}</button>`;
+  let html=chip("all","Everyone","",true);
+  people.forEach(p=>html+=chip(p.id,p.name,p.color));
   html+=`<button class="btn sm pb-edit" id="pbEdit">Edit family</button>`;
   bar.innerHTML=html;
   bar.querySelectorAll(".pfilter").forEach(b=>b.addEventListener("click",()=>{ activePerson=b.dataset.p; render(); }));
@@ -562,23 +446,24 @@ function renderPeopleEditor(){
       else if(e.key==="Escape"){ e.preventDefault(); const person=people.find(x=>x.id===id); nameInput.value=person?person.name:""; nameInput.blur(); }
     });
     row.querySelector(".swatch").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; const i=PALETTE.indexOf(person.color); person.color=PALETTE[(i+1)%PALETTE.length]; savePeople(); renderPeopleEditor(); renderPeopleBar(); render(); });
-    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); if(activePerson===id) activePerson="all"; savePeople(); saveTasks(); savePlaces(); renderPeopleEditor(); render(); } });
+    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? Their items become unassigned.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ if(t.person===id) t.person=""; }); if(activePerson===id) activePerson="all"; savePeople(); saveTasks(); renderPeopleEditor(); render(); } });
   });
   pe.querySelector("#peAdd").addEventListener("click",()=>{ const color=PALETTE[people.length%PALETTE.length]; people.push({id:uid("p"),name:"New person",color}); savePeople(); renderPeopleEditor(); renderPeopleBar(); });
 }
 
 function renderNextUp(t){
-  if(!t){ nextEl.className="nextup empty"; nextEl.innerHTML=`<div><div class="eyebrow">Up next</div><div style="font-size:15px;margin-top:3px;color:#B7C6D6">Nothing coming up${activePerson!=='all'?' for '+esc(getPerson(activePerson).name):''}. Add a time to something to see it here.</div></div>`; return; }
-  const s=timeToMin(t.time);
+  if(!t){ nextEl.className="nextup empty"; nextEl.innerHTML=`<div><div class="eyebrow">Up next</div><div style="font-size:15px;margin-top:3px;color:#B7C6D6">Nothing scheduled${activePerson!=='all'?' for '+esc(getPerson(activePerson).name):''}. Add a time to something to see it here.</div></div>`; return; }
+  const p=getPerson(t.person), over=isOverdue(t), s=timeToMin(t.time);
   let count,subl;
-  if(s!=null){ const d=s-nowMin(); if(d<=0){ count=`<div class="count">now</div>`; subl="Happening now"; } else { count=`<div class="count">${fmtDelta(d)}</div>`; subl="Until"; } }
+  if(over){ count=`<div class="count" style="color:var(--alarm)">▲ overdue</div>`; subl="Was due"; }
+  else if(s!=null){ const d=s-nowMin(); if(d<=0){ count=`<div class="count">now</div>`; subl="Happening now"; } else { count=`<div class="count">${fmtDelta(d)}</div>`; subl="Until"; } }
   else { count=`<div class="count">—</div>`; subl=""; }
-  nextEl.className="nextup";
+  nextEl.className="nextup"+(over?" overdue":"");
   nextEl.innerHTML=`
     <div class="gauge" style="background:${priColor(t.priority)}">${t.priority}</div>
     <div class="lead"><div class="eyebrow">Up next</div><div class="title">${esc(t.task)||"(untitled)"}</div>
       <div class="meta">
-        ${peopleChipsHtml(t.people)}
+        ${t.person?`<span class="pchip" style="background:${p.color}"><span class="dot"></span>${esc(p.name)}</span>`:""}
         ${t.time?`<span><b>${esc(fmt12(t.time))}</b></span>`:""}
         ${t.due?`<span>due ${esc(fmtDate(t.due))}</span>`:""}
       </div></div>
@@ -592,24 +477,19 @@ function statusOptionsHtml(t){
 }
 
 function renderRow(t,isNext){
-  const el=document.createElement("div");
+  const el=document.createElement("div"); const p=getPerson(t.person);
   el.className="row"+(isDone(t)?" done":"")+(isLater(t)?" parked":"")+(isOverdue(t)?" overdue":"")+(isNext?" isnext":"");
   el.dataset.id=t.id;
   const meta=[]; const db=dueBadge(t); if(db) meta.push(db);
   if(isLater(t)&&t.showOn) meta.push(`<span class="re">↩ ${esc(fmtWhen(t.showOn))}</span>`);
   if(t.notes) meta.push(esc(t.notes));
   const metaHtml=meta.length?`<div class="task-meta">${meta.join(" · ")}</div>`:"";
-  const s=timeToMin(t.time); let cd="";
-  if(s!=null&&isActive(t)){ const d=s-nowMin();
-    if(d>0&&d<=60) cd=`<span class="cd">in ${fmtDelta(d)}</span>`;
-    else if(d===0) cd=`<span class="cd">now</span>`;
-    else if(d<0) cd=`<span class="cd late">▲ ${fmtDelta(d)} late</span>`;
-  }
+  const s=timeToMin(t.time); let cd=""; if(s!=null&&isActive(t)){ const d=s-nowMin(); if(d===0) cd=`<span class="cd">now</span>`; else if(d>0&&d<=60) cd=`<span class="cd">in ${fmtDelta(d)}</span>`; }
 
   el.innerHTML=`
     <input type="checkbox" class="cbx" ${isDone(t)?"checked":""} aria-label="Done">
     <div class="pri" style="background:${priColor(t.priority)}" title="Priority ${t.priority}/10 — click to edit">${t.priority}<span class="fill"><i style="width:${t.priority*10}%"></i></span></div>
-    <div class="r-who">${peopleChipsHtml(t.people)}</div>
+    <div class="r-who">${ t.person ? `<span class="pchip" style="background:${p.color}"><span class="dot"></span>${esc(p.name)}</span>` : `<span class="pchip none"><span class="dot"></span>—</span>` }</div>
     <div class="r-title"><div class="task-title">${esc(t.task)||"(untitled)"}</div>${metaHtml}</div>
     <div class="r-meta"><div class="cell-time"><span class="t ${t.time?'':'none'}">${t.time?esc(fmt12(t.time)):"—"}</span>${cd}</div></div>
     <div class="r-status"><select class="status-sel" style="background:${STATUS[t.status].color}" aria-label="Status">${statusOptionsHtml(t)}</select></div>
@@ -630,10 +510,11 @@ function renderRow(t,isNext){
 
 function renderEditor(t){
   const el=document.createElement("div"); el.className="editor"; el.dataset.id=t.id;
+  const peopleOpts=`<option value="">Unassigned</option><option value="family" ${t.person==="family"?"selected":""}>Family (everyone)</option>`+people.map(p=>`<option value="${p.id}" ${t.person===p.id?"selected":""}>${esc(p.name)}</option>`).join("");
   el.innerHTML=`
     <div class="grid">
       <div class="field full"><label>What</label><input type="text" id="e-task" value="${esc(t.task)}" placeholder="e.g. Soccer practice, empty dishwasher"></div>
-      <div class="field full"><label>Who it's for</label><div class="who-picker" id="e-who"></div></div>
+      <div class="field"><label>Who it's for</label><select id="e-person">${peopleOpts}</select></div>
       <div class="field"><label>Time</label><input type="time" id="e-time" value="${t.time||""}"></div>
       <div class="field"><label>Due date (optional)</label><input type="date" id="e-due" value="${t.due||""}"></div>
       <div class="field"><label>Due time (optional)</label><input type="time" id="e-duetime" value="${t.dueTime||""}"></div>
@@ -647,7 +528,6 @@ function renderEditor(t){
     <div class="actions"><button class="btn del-e">Delete</button><button class="btn cancel-e">Cancel</button><button class="btn add save-e">Save</button></div>`;
 
   const ss=el.querySelector("#e-status"), wrap=el.querySelector("#e-showon-wrap"), showon=el.querySelector("#e-showon");
-  const whoPick=makeWhoPicker(el.querySelector("#e-who"), t.people);
   const pri=el.querySelector("#e-pri"), prival=el.querySelector("#e-prival"), prilabel=el.querySelector("#e-prilabel");
   const syncPri=()=>{ const v=+pri.value; prival.textContent=v; prilabel.textContent=v+"/10"; prival.style.background=priColor(v); pri.style.setProperty("--sliderc",priColor(v)); };
   pri.addEventListener("input",syncPri); syncPri();
@@ -659,7 +539,7 @@ function renderEditor(t){
 
   el.querySelector(".save-e").addEventListener("click",()=>{
     t.task=el.querySelector("#e-task").value.trim();
-    t.people=whoPick.get();
+    t.person=el.querySelector("#e-person").value;
     t.time=el.querySelector("#e-time").value;
     t.due=el.querySelector("#e-due").value;
     t.dueTime=el.querySelector("#e-duetime").value;
@@ -670,7 +550,7 @@ function renderEditor(t){
     else { t.status="later"; t.showOn=showon.value||tomorrowLocal(t.time||"08:00"); }
     editingId=null; saveTasks(); render();
   });
-  el.querySelector(".cancel-e").addEventListener("click",()=>{ if(!t.task&&!t.notes&&!t.time&&!t.due&&!t.people.length) tasks=tasks.filter(x=>x.id!==t.id); editingId=null; render(); });
+  el.querySelector(".cancel-e").addEventListener("click",()=>{ if(!t.task&&!t.notes&&!t.time&&!t.due&&!t.person) tasks=tasks.filter(x=>x.id!==t.id); editingId=null; render(); });
   el.querySelector(".del-e").addEventListener("click",()=>{ if(confirm("Delete this item?")){ tasks=tasks.filter(x=>x.id!==t.id); editingId=null; saveTasks(); render(); } });
   setTimeout(()=>el.querySelector("#e-task").focus(),0);
   return el;
@@ -698,72 +578,15 @@ function renderFooterCounts(){
 document.getElementById("shopInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; shop.push(blankShop(v)); e.target.value=""; saveShop(); renderShop(); });
 document.getElementById("shopClear").addEventListener("click",()=>{ if(!shop.some(s=>s.got)) return; shop=shop.filter(s=>!s.got); saveShop(); renderShop(); });
 
-/* ---------------- places to go ---------------- */
-function mapUrl(addr){ return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(addr); }
-function placePeopleDots(ids){ ids=normPeople(ids); if(!ids.length) return ""; if(ids.includes("family")) return `<span class="pdot" style="background:${getPerson("family").color}" title="Family"></span>`; return ids.map(id=>{const p=getPerson(id);return `<span class="pdot" style="background:${p.color}" title="${esc(p.name)}"></span>`;}).join(""); }
-function renderPlaces(){
-  const el=document.getElementById("placeList");
-  el.innerHTML = places.length ? "" : `<div class="empty-state" style="padding:24px 12px"><div class="big">No places yet.</div>Add somewhere to go above.</div>`;
-  const sorted=[...places].sort((a,b)=>((a.visited?1:0)-(b.visited?1:0)) || (b.created||0)-(a.created||0));
-  sorted.forEach(pl=>{ el.appendChild(placeEditingId===pl.id ? renderPlaceEditor(pl) : renderPlaceRow(pl)); });
-  const active=places.filter(p=>!p.visited).length, visited=places.filter(p=>p.visited).length;
-  document.getElementById("placeCount").textContent=places.length?`${active}`:"";
-  document.getElementById("placeStatus").textContent=`${active} to visit · ${visited} visited`;
-}
-function renderPlaceRow(pl){
-  const row=document.createElement("div"); row.className="place-row"+(pl.visited?" got":""); row.dataset.id=pl.id;
-  const bits=[];
-  if(pl.date) bits.push(`<span class="ptxt">${esc(fmtDate(pl.date))}</span>`);
-  if(pl.address) bits.push(`<span class="ptxt">${esc(pl.address)}</span>`);
-  if(pl.note) bits.push(`<span class="ptxt">${esc(pl.note)}</span>`);
-  const dots=placePeopleDots(pl.people); if(dots) bits.push(dots);
-  const metaHtml = bits.length?`<div class="place-meta">${bits.join('<span style="opacity:.4">·</span>')}</div>`:"";
-  row.innerHTML=`
-    <input type="checkbox" class="cbx" ${pl.visited?"checked":""} aria-label="Visited">
-    <div class="place-body"><div class="place-name">${esc(pl.name)||"(unnamed)"}</div>${metaHtml}</div>
-    ${pl.address?`<a class="mapbtn" href="${mapUrl(pl.address)}" target="_blank" rel="noopener">Map</a>`:""}
-    <button class="place-edit" title="Edit">✎</button>
-    <button class="place-del" title="Remove">✕</button>`;
-  row.querySelector(".cbx").addEventListener("change",e=>{ pl.visited=e.target.checked; savePlaces(); renderPlaces(); });
-  row.querySelector(".place-edit").addEventListener("click",()=>{ placeEditingId=pl.id; renderPlaces(); });
-  row.querySelector(".place-del").addEventListener("click",()=>{ if(confirm(`Remove "${pl.name||"this place"}"?`)){ places=places.filter(x=>x.id!==pl.id); savePlaces(); renderPlaces(); } });
-  return row;
-}
-function renderPlaceEditor(pl){
-  const box=document.createElement("div"); box.className="place-editor"; box.dataset.id=pl.id;
-  box.innerHTML=`
-    <div class="pe-field"><label>Place</label><input type="text" id="pe-name" value="${esc(pl.name)}" placeholder="e.g. Costco"></div>
-    <div class="pe-field"><label>Address (optional)</label><input type="text" id="pe-addr" value="${esc(pl.address)}" placeholder="for the map button"></div>
-    <div class="pe-field"><label>Reason / note (optional)</label><input type="text" id="pe-note" value="${esc(pl.note)}" placeholder="why / what for"></div>
-    <div class="pe-field"><label>Date (optional)</label><input type="date" id="pe-date" value="${pl.date||""}"></div>
-    <div class="pe-field"><label>Who's going (optional)</label><div class="who-picker" id="pe-who"></div></div>
-    <div class="pe-actions"><button class="btn sm del-pe">Delete</button><button class="btn sm cancel-pe">Cancel</button><button class="btn sm add save-pe">Save</button></div>`;
-  const who=makeWhoPicker(box.querySelector("#pe-who"), pl.people);
-  box.querySelector(".save-pe").addEventListener("click",()=>{
-    pl.name=box.querySelector("#pe-name").value.trim();
-    pl.address=box.querySelector("#pe-addr").value.trim();
-    pl.note=box.querySelector("#pe-note").value.trim();
-    pl.date=box.querySelector("#pe-date").value;
-    pl.people=who.get();
-    placeEditingId=null; savePlaces(); renderPlaces();
-  });
-  box.querySelector(".cancel-pe").addEventListener("click",()=>{ if(!pl.name&&!pl.address&&!pl.note&&!pl.date&&!pl.people.length) places=places.filter(x=>x.id!==pl.id); placeEditingId=null; renderPlaces(); });
-  box.querySelector(".del-pe").addEventListener("click",()=>{ places=places.filter(x=>x.id!==pl.id); placeEditingId=null; savePlaces(); renderPlaces(); });
-  setTimeout(()=>box.querySelector("#pe-name").focus(),0);
-  return box;
-}
-document.getElementById("placeInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; places.unshift(blankPlace(v)); e.target.value=""; savePlaces(); renderPlaces(); });
-document.getElementById("placeClear").addEventListener("click",()=>{ if(!places.some(p=>p.visited)) return; places=places.filter(p=>!p.visited); savePlaces(); renderPlaces(); });
-
 /* ---------------- quick add / add ---------------- */
-document.getElementById("quickInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; const t=blankTask(v); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); e.target.value=""; saveTasks(); render(); });
-document.getElementById("addBtn").addEventListener("click",()=>{ const t=blankTask(); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); editingId=t.id; render(); });
+document.getElementById("quickInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; const t=blankTask(v); if(activePerson!=="all") t.person=activePerson; tasks.unshift(t); e.target.value=""; saveTasks(); render(); });
+document.getElementById("addBtn").addEventListener("click",()=>{ const t=blankTask(); if(activePerson!=="all") t.person=activePerson; tasks.unshift(t); editingId=t.id; render(); });
 
 /* ---------------- toolbar ---------------- */
 ["searchInput","sortBy","hideDone","showLater"].forEach(id=>document.getElementById(id).addEventListener("input",render));
 document.getElementById("printBtn").addEventListener("click",()=>window.print());
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places};
+  const bundle={version:VERSION,people,tasks,shop};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -773,9 +596,9 @@ document.getElementById("importFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f) return; const r=new FileReader();
   r.onload=()=>{ try{ const d=JSON.parse(r.result);
     if(!confirm("Import this file? It replaces your current planner.")) return;
-    if(Array.isArray(d)){ tasks=d.map(migrateTask); }
-    else { if(Array.isArray(d.people)) people=d.people; if(Array.isArray(d.tasks)) tasks=d.tasks.map(migrateTask); if(Array.isArray(d.shop)) shop=d.shop.map(s=>Object.assign(blankShop(),s)); if(Array.isArray(d.places)) places=d.places.map(migratePlace); }
-    editingId=null; placeEditingId=null; savePeople(); saveTasks(); saveShop(); savePlaces(); render();
+    if(Array.isArray(d)){ tasks=d.map(t=>Object.assign(blankTask(),t)); }
+    else { if(Array.isArray(d.people)) people=d.people; if(Array.isArray(d.tasks)) tasks=d.tasks.map(t=>Object.assign(blankTask(),t)); if(Array.isArray(d.shop)) shop=d.shop.map(s=>Object.assign(blankShop(),s)); }
+    editingId=null; savePeople(); saveTasks(); saveShop(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
 });
@@ -786,7 +609,7 @@ function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=
     const no=new Set(tasks.filter(isOverdue).map(t=>t.id)); let ch=no.size!==overdueSet.size; if(!ch) for(const i of no) if(!overdueSet.has(i)){ ch=true; break; }
     if(ch){ render(); return; }
     renderNextUp(computeNextUp());
-    document.querySelectorAll(".row").forEach(row=>{ const t=tasks.find(x=>x.id===row.dataset.id); const c=row.querySelector(".cell-time"); if(!t||!c) return; const s=timeToMin(t.time); let cd=""; if(s!=null&&isActive(t)){ const dd=s-nowMin(); if(dd>0&&dd<=60)cd=`<span class="cd">in ${fmtDelta(dd)}</span>`; else if(dd===0)cd=`<span class="cd">now</span>`; else if(dd<0)cd=`<span class="cd late">▲ ${fmtDelta(dd)} late</span>`; } c.innerHTML=`<span class="t ${t.time?'':'none'}">${t.time?fmt12(t.time):"—"}</span>${cd}`; });
+    document.querySelectorAll(".row").forEach(row=>{ const t=tasks.find(x=>x.id===row.dataset.id); const c=row.querySelector(".cell-time"); if(!t||!c) return; const s=timeToMin(t.time); let cd=""; if(s!=null&&isActive(t)){ const dd=s-nowMin(); if(dd===0)cd=`<span class="cd">now</span>`; else if(dd>0&&dd<=60)cd=`<span class="cd">in ${fmtDelta(dd)}</span>`; } c.innerHTML=`<span class="t ${t.time?'':'none'}">${t.time?fmt12(t.time):"—"}</span>${cd}`; });
   }
 }
 

@@ -547,22 +547,10 @@ function renderPeopleEditor(){
     people.map(p=>`<div class="pe-row" data-id="${p.id}"><button class="swatch" style="background:${p.color}" title="Change color"></button><input type="text" value="${esc(p.name)}" placeholder="Name"><button class="rm" title="Remove">✕</button></div>`).join("")+
     `<button class="btn sm" id="peAdd">+ Add person</button>`;
   pe.querySelectorAll(".pe-row").forEach(row=>{
-    const id=row.dataset.id;
-    const nameInput=row.querySelector("input");
-    const commitName=()=>{
-      const person=people.find(x=>x.id===id); if(!person) return;
-      const name=nameInput.value.trim();
-      if(!name){ nameInput.value=person.name; return; }
-      if(name===person.name){ nameInput.value=name; return; }
-      person.name=name; nameInput.value=name; savePeople(); render();
-    };
-    nameInput.addEventListener("blur",commitName);
-    nameInput.addEventListener("keydown",e=>{
-      if(e.key==="Enter"){ e.preventDefault(); nameInput.blur(); }
-      else if(e.key==="Escape"){ e.preventDefault(); const person=people.find(x=>x.id===id); nameInput.value=person?person.name:""; nameInput.blur(); }
-    });
-    row.querySelector(".swatch").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; const i=PALETTE.indexOf(person.color); person.color=PALETTE[(i+1)%PALETTE.length]; savePeople(); renderPeopleEditor(); renderPeopleBar(); render(); });
-    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); if(activePerson===id) activePerson="all"; savePeople(); saveTasks(); savePlaces(); renderPeopleEditor(); render(); } });
+    const id=row.dataset.id, p=people.find(x=>x.id===id);
+    row.querySelector("input").addEventListener("input",e=>{ p.name=e.target.value; savePeople(); renderPeopleBar(); });
+    row.querySelector(".swatch").addEventListener("click",()=>{ const i=PALETTE.indexOf(p.color); p.color=PALETTE[(i+1)%PALETTE.length]; savePeople(); renderPeopleEditor(); renderPeopleBar(); render(); });
+    row.querySelector(".rm").addEventListener("click",()=>{ if(confirm(`Remove ${p.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); if(activePerson===id) activePerson="all"; savePeople(); saveTasks(); savePlaces(); renderPeopleEditor(); render(); } });
   });
   pe.querySelector("#peAdd").addEventListener("click",()=>{ const color=PALETTE[people.length%PALETTE.length]; people.push({id:uid("p"),name:"New person",color}); savePeople(); renderPeopleEditor(); renderPeopleBar(); });
 }
