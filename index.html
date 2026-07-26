@@ -1460,7 +1460,15 @@ document.getElementById("pastDatesToggle").addEventListener("click",()=>{ pastDa
 
 /* ---------------- quick add / add ---------------- */
 document.getElementById("quickInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; const t=blankTask(v); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); e.target.value=""; saveTasks(); render(); });
-document.getElementById("addBtn").addEventListener("click",()=>{ closeActiveEdit(true); const t=blankTask(); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); editingId=t.id; render(); });
+document.getElementById("addBtn").addEventListener("click",()=>{
+  closeActiveEdit(true);
+  const quickInput=document.getElementById("quickInput");
+  const t=blankTask(quickInput.value.trim());
+  if(activePerson!=="all") t.people=[activePerson];
+  tasks.unshift(t);
+  quickInput.value="";
+  editingId=t.id; render();
+});
 
 /* ---------------- toolbar ---------------- */
 ["searchInput","sortBy","hideDone","showLater"].forEach(id=>document.getElementById(id).addEventListener("input",render));
