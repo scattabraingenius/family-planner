@@ -1192,6 +1192,38 @@ function wireTaskDue(node, taskId){
   node.addEventListener("click",open);
   node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
+/* Quick "Move to a day…" popover — lets the status dropdown park a task on a future day
+   without dropping into the full editor. Nothing commits until the date is actually touched
+   or Tomorrow/Done is clicked; onClose always re-renders so a cancelled popover leaves the
+   status <select> showing the task's real (unchanged) status instead of the "pickday" option. */
+function openMoveToDayPopover(anchor,taskId){
+  const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
+  openPopover({ type:"task", id:taskId, field:"pickday", anchor,
+    build(pop,close){
+      const seed=t0.showOn || tomorrowLocal(t0.time||"08:00");
+      const [seedDate,seedTime]=seed.split("T");
+      pop.innerHTML=`<div class="pop-title">Move to a day</div>
+        <div class="pop-row"><div style="flex:1"><label>Date</label><input type="date" id="pop-day" aria-label="Move to date"></div></div>
+        <div class="pop-row"><div style="flex:1"><label>Time (optional)</label><input type="time" id="pop-daytime" aria-label="Move to time"></div></div>
+        <div class="pop-actions"><button class="pop-clear" id="pop-tmrw">Tomorrow</button><button class="btn sm" id="pop-done">Done</button></div>`;
+      const dayInp=pop.querySelector("#pop-day"), timeInp=pop.querySelector("#pop-daytime");
+      dayInp.value=seedDate||""; timeInp.value=seedTime||"08:00";
+      function commit(){
+        const t=tasks.find(x=>x.id===taskId); if(!t||!dayInp.value) return;
+        const tm=/^\d{2}:\d{2}$/.test(timeInp.value)?timeInp.value:"08:00";
+        const showOn=`${dayInp.value}T${tm}`;
+        if(t.status!=="later"||t.showOn!==showOn){ t.status="later"; t.showOn=showOn; saveTasks(); render(); }
+      }
+      dayInp.addEventListener("change",commit);
+      timeInp.addEventListener("change",commit);
+      pop.querySelector("#pop-tmrw").addEventListener("click",()=>{
+        const tmr=tomorrowLocal(t0.time||"08:00"); const [dd,tt]=tmr.split("T"); dayInp.value=dd; timeInp.value=tt; commit(); close(true);
+      });
+      pop.querySelector("#pop-done").addEventListener("click",()=>{ commit(); close(true); });
+    },
+    onClose(){ render(); }
+  });
+}
 
 function renderNextUp(t){
   if(!t){ nextEl.className="nextup empty"; nextEl.innerHTML=`<div><div class="eyebrow">Up next</div><div style="font-size:15px;margin-top:3px;color:#B7C6D6">Nothing coming up${activePerson!=='all'?' for '+esc(getPerson(activePerson).name):''}. Add a time to something to see it here.</div></div>`; return; }
@@ -1258,7 +1290,7 @@ function renderRow(t,isNext){
   el.querySelector(".cbx").addEventListener("change",e=>{ const cur=tasks.find(x=>x.id===t.id); if(!cur) return; const wasDone=isDone(cur); cur.status=e.target.checked?"done":"todo"; cur.showOn=""; saveTasks(); if(e.target.checked&&!wasDone) playCompletionSound(); render(); });
   el.querySelector(".status-sel").addEventListener("change",e=>{ const v=e.target.value; const cur=tasks.find(x=>x.id===t.id); if(!cur) return;
     if(v==="tomorrow"){ cur.status="later"; cur.showOn=tomorrowLocal(cur.time||"08:00"); saveTasks(); render(); }
-    else if(v==="pickday"){ cur.status="later"; if(!cur.showOn) cur.showOn=tomorrowLocal(cur.time||"08:00"); closeActiveEdit(true); editingId=cur.id; render(); }
+    else if(v==="pickday"){ openMoveToDayPopover(e.target, cur.id); }
     else if(v==="later"){ /* no-op */ }
     else { cur.status=v; cur.showOn=""; saveTasks(); render(); } });
   el.querySelector(".edit").addEventListener("click",()=>{ closeActiveEdit(true); editingId=t.id; render(); });
