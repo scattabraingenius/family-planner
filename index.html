@@ -6,37 +6,99 @@
 <title>Home — Family Day Planner</title>
 <style>
   /* ============================================================
-     HOME — family day planner   (v1.6-beta)
-     One shared day list (multi-person tags), Places to Go + Shopping list.
+     HOME — family day planner   (v1.7-beta)
+     One shared day list (multi-person tags), Places to Go + Before You Leave
+     + Shopping list + Quick Notes, now in a dark-pink/plum theme.
+     A soft completion chime (Web Audio, no external file) plays when an item
+     is checked off; toggle it off via Sound: On/Off (device-local setting).
+     Hide done/Later and the selected family-member filter are remembered per
+     device. "Delete completed (N)" clears all done tasks across the family
+     in one shot. Print opens a dedicated Print Center: builds a separate,
+     printer- and fridge-friendly sheet (Fridge Sheet / Full Planner) from
+     current data — the on-screen dashboard itself is never printed.
      Optional live cloud sync across devices (Firebase — see config block).
      Self-contained, offline, saves to localStorage.
      Edit SEED_PEOPLE / palette to taste.
      ============================================================ */
   :root {
     color-scheme: dark;
-    --paper:#0B0F17; --card:#151C27; --surface-2:#1E2733; --input-bg:#0F1622; --done-bg:#0E141D; --track:#26313F;
-    --ink:#E6EDF3; --muted:#93A1B0; --muted-2:#66788B; --line:#26313F;
-    --signal:#16BBD4; --signal-dim:#52D2E2;
+    --paper:#10080D; --card:#1D1018; --surface-2:#2A1722; --input-bg:#160B12; --done-bg:#140B10; --track:#3A2030;
+    --ink:#F7EAF1; --muted:#C3A1B2; --muted-2:#8E6B7D; --line:#4A263A;
+    --signal:#EC4899; --signal-dim:#F9A8D4;
     --star:#F2C14E; --alarm:#F0575C;
     --radius:12px;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
     --mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
+  /* Print Center generates a completely separate print-only document (see .print-sheet below)
+     instead of squeezing the dark dashboard onto paper. This rule keeps that document invisible
+     on screen; @media print below hides everything else and shows only the print sheet. */
+  .print-sheet { display:none; }
   @media print {
-    :root { color-scheme:light; --paper:#fff; --card:#fff; --surface-2:#fff; --input-bg:#fff; --done-bg:#fff; --track:#e2e2e2;
-      --ink:#111; --muted:#444; --muted-2:#777; --line:#c4c4c4; --signal:#0E90A4; --shadow:none; }
-    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    body { background:#fff; }
-    .wrap { padding:0; max-width:none; }
-    .toolbar, .rowactions, .clock, .nextup, .util, .peoplebar .pb-edit, .row.parked, .add-inline, .shop-clear, .people-editor { display:none !important; }
-    .panels { grid-template-columns:1fr 1fr; gap:16px; }
-    .row, .shop-row, .place-row, .date-card { break-inside:avoid; box-shadow:none !important; }
-    header.top { margin-bottom:8px; }
-    .dates-head-actions, .dc-actions, .dates-more, .dates-empty .btn, .date-editor, .place-edit, .place-del, .shop-del, .inline-input, .inline-textarea, .popover, .dates-past-toggle { display:none !important; }
-    .dates-past-list:not(.expanded) { display:none !important; }
-    .editable { padding:0; margin:0; }
-    .editable:hover, .editable:focus-visible { background:none; outline:none; }
+    html, body { background:#fff !important; }
+    /* Hide every normal on-screen element (dashboard, Print Center modal, popovers — anything
+       appended to <body>) and show only the generated print-only document. */
+    body > *:not(.print-sheet) { display:none !important; }
+    .print-modal-backdrop { display:none !important; }
+    @page { size:letter portrait; margin:0.45in; }
+    .print-sheet {
+      display:block !important; position:static; width:auto; max-width:none; margin:0; padding:0;
+      background:#fff; color:#1A1A1A; font-family:var(--sans);
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    .print-sheet, .print-sheet * { box-shadow:none !important; text-shadow:none !important; background-image:none !important; }
+    .print-sheet-header { border-bottom:2px solid #C2185B; padding-bottom:10px; margin-bottom:14px; }
+    .print-sheet-header .ps-brand { font-size:22px; font-weight:800; letter-spacing:.02em; color:#111; }
+    .print-sheet-header .ps-meta { font-size:12px; color:#444; margin-top:2px; }
+    .print-sheet-header .ps-printed { color:#666; }
+    .print-summary { font-size:13px; font-weight:600; color:#333; margin-bottom:12px; }
+    /* Sections themselves may break across pages when long (avoid-page here would force a whole
+       section onto one page, fighting natural pagination) — only the heading is kept with its
+       first line via break-after, so a title never ends up orphaned at the bottom of a page. */
+    .print-section { margin-bottom:16px; }
+    .print-section-head { display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid #ccc; padding-bottom:4px; margin-bottom:8px; break-after:avoid; break-inside:avoid; }
+    .print-section-head .ps-title { font-weight:700; color:#111; text-transform:uppercase; letter-spacing:.03em; }
+    .print-section-head .ps-count { font-size:12px; color:#666; }
+    .print-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 20px; }
+    /* A drawn border (foreground stroke) plus a text glyph for the check mark — deliberately no
+       background-color fill, since "print background graphics" being off in the browser's print
+       dialog would make a background-only checked mark vanish. Borders and text content aren't
+       background graphics, so both survive with that setting off. */
+    .print-check { display:inline-block; position:relative; width:13px; height:13px; border:1.4px solid #333; border-radius:3px; margin-right:8px; vertical-align:-2px; flex:none; }
+    .print-check.checked::after { content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; line-height:1; font-weight:700; color:#111; }
+    .print-task, .print-item { display:flex; align-items:flex-start; gap:2px; padding:6px 0; border-bottom:1px solid #e5e5e5; break-inside:avoid; }
+    .print-task.done .pt-title, .print-item.done .pi-title { text-decoration:line-through; color:#777; }
+    .pt-body, .pi-body { flex:1; min-width:0; }
+    .pt-title, .pi-title { font-weight:600; color:#111; }
+    .pt-meta, .pi-meta { color:#555; margin-top:1px; }
+    .pt-note, .pi-note { color:#555; font-style:italic; margin-top:2px; }
+    .print-date { padding:6px 0; border-bottom:1px solid #e5e5e5; break-inside:avoid; }
+    .pd-title { font-weight:600; color:#111; }
+    .pd-when { color:#333; }
+    .pd-meta { color:#555; }
+    .pd-note { color:#555; font-style:italic; margin-top:2px; }
+    .print-note { padding:6px 0; border-bottom:1px solid #e5e5e5; break-inside:avoid; }
+    .print-note .pn-pin { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#C2185B; display:block; margin-bottom:2px; }
+    .print-note .pn-text { color:#222; white-space:pre-wrap; word-break:break-word; }
+    .print-empty { font-size:15px; color:#555; padding:40px 0; text-align:center; }
+    @media (max-width:6.5in){ .print-grid { grid-template-columns:1fr; } }
+
+    /* Fridge sheet: large, roomy, easy to read from a distance */
+    .print-sheet.format-fridge .print-section-head .ps-title { font-size:19px; }
+    .print-sheet.format-fridge .pt-title, .print-sheet.format-fridge .pi-title, .print-sheet.format-fridge .pd-title { font-size:15.5px; }
+    .print-sheet.format-fridge .pt-meta, .print-sheet.format-fridge .pi-meta, .print-sheet.format-fridge .pd-meta, .print-sheet.format-fridge .pd-when { font-size:12.5px; }
+    .print-sheet.format-fridge .pn-text { font-size:13.5px; }
+    .print-sheet.format-fridge .print-task, .print-sheet.format-fridge .print-item, .print-sheet.format-fridge .print-date, .print-sheet.format-fridge .print-note { padding:8px 0; }
+    .print-sheet.format-fridge .print-check { width:15px; height:15px; }
+
+    /* Full planner: compact but still clearly printable */
+    .print-sheet.format-full .print-section-head .ps-title { font-size:13.5px; }
+    .print-sheet.format-full .pt-title, .print-sheet.format-full .pi-title, .print-sheet.format-full .pd-title { font-size:12.5px; }
+    .print-sheet.format-full .pt-meta, .print-sheet.format-full .pi-meta, .print-sheet.format-full .pd-meta, .print-sheet.format-full .pd-when { font-size:10.5px; }
+    .print-sheet.format-full .pn-text { font-size:11.5px; }
+    .print-sheet.format-full .print-task, .print-sheet.format-full .print-item, .print-sheet.format-full .print-date, .print-sheet.format-full .print-note { padding:4px 0; }
+    .print-sheet.format-full .print-check { width:11px; height:11px; }
   }
   * { box-sizing:border-box; } html,body{ margin:0; }
   body { font-family:var(--sans); background:var(--paper); color:var(--ink); -webkit-font-smoothing:antialiased; line-height:1.4; }
@@ -66,15 +128,15 @@
   .btn.sm { padding:5px 9px; font-size:12px; }
 
   /* next up */
-  .nextup { background:radial-gradient(120% 140% at 0% 0%, #163039 0%, #0D1621 60%); border:1px solid #1E4653; box-shadow:0 0 0 1px rgba(22,187,212,.14), 0 12px 34px rgba(0,0,0,.45); border-radius:16px; padding:16px 18px; display:flex; align-items:center; gap:16px; margin-bottom:16px; color:#EAF1F7; }
+  .nextup { background:radial-gradient(120% 140% at 0% 0%, #3D1B2E 0%, #160B12 60%); border:1px solid #5C2A45; box-shadow:0 0 0 1px rgba(236,72,153,.14), 0 12px 34px rgba(0,0,0,.45); border-radius:16px; padding:16px 18px; display:flex; align-items:center; gap:16px; margin-bottom:16px; color:#F8ECF3; }
   .nextup .lead { flex:1; min-width:0; }
-  .nextup .eyebrow { color:#5F7488; }
+  .nextup .eyebrow { color:#9C7086; }
   .nextup .title { font-size:19px; font-weight:700; margin:3px 0; }
-  .nextup .meta { font-family:var(--mono); font-size:12.5px; color:#9FB2C4; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .nextup .meta { font-family:var(--mono); font-size:12.5px; color:#DCB8CB; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
   .nextup .readout { text-align:right; font-family:var(--mono); flex:none; }
   .nextup .readout .count { font-size:24px; font-weight:700; color:var(--signal-dim); }
-  .nextup .readout .subl { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#5F7488; }
-  .nextup.empty { color:#8AA0B4; justify-content:flex-start; }
+  .nextup .readout .subl { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9C7086; }
+  .nextup.empty { color:#B896A8; justify-content:flex-start; }
 
   /* people bar */
   .peoplebar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
@@ -97,11 +159,11 @@
   .editable:hover { background:rgba(255,255,255,.06); }
   .editable:focus-visible { outline:2px solid var(--signal); outline-offset:1px; background:rgba(255,255,255,.06); }
   @media (hover:none) { .editable:hover { background:none; } }
-  .inline-input, .inline-textarea { font-family:inherit; font-size:inherit; font-weight:inherit; color:var(--ink); background:var(--input-bg); border:1px solid var(--signal); border-radius:6px; padding:2px 6px; outline:none; width:100%; box-shadow:0 0 0 3px rgba(18,176,201,.14); }
+  .inline-input, .inline-textarea { font-family:inherit; font-size:inherit; font-weight:inherit; color:var(--ink); background:var(--input-bg); border:1px solid var(--signal); border-radius:6px; padding:2px 6px; outline:none; width:100%; box-shadow:0 0 0 3px rgba(236,72,153,.14); }
   .inline-textarea { resize:vertical; min-height:44px; font-size:13px; }
 
   /* shared popover (people / category / date-time / priority) */
-  .popover { position:fixed; z-index:1000; min-width:200px; max-width:min(300px,92vw); max-height:80vh; overflow-y:auto; background:var(--card); border:1px solid var(--signal); border-radius:10px; padding:10px; box-shadow:0 0 0 3px rgba(18,176,201,.12), var(--shadow); }
+  .popover { position:fixed; z-index:1000; min-width:200px; max-width:min(300px,92vw); max-height:80vh; overflow-y:auto; background:var(--card); border:1px solid var(--signal); border-radius:10px; padding:10px; box-shadow:0 0 0 3px rgba(236,72,153,.12), var(--shadow); }
   .popover .pop-title { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
   .popover .pop-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
   .popover .pop-row:last-child { margin-bottom:0; }
@@ -112,6 +174,22 @@
   .popover .pop-clear:hover { color:var(--ink); border-color:var(--muted-2); }
   .prislider-pop { display:flex; align-items:center; gap:10px; min-width:180px; }
   .prislider-pop input[type=range] { flex:1; accent-color:var(--signal); }
+
+  /* Print Center modal — a full overlay dialog (distinct from the small anchored .popover),
+     since it holds several grouped controls. Hidden on screen unless opened; @media print above
+     force-hides it too, as a safety net in case it's somehow still open when printing starts. */
+  .print-modal-backdrop { position:fixed; inset:0; background:rgba(10,3,7,.6); z-index:2000; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .print-modal { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 0 0 3px rgba(236,72,153,.12), var(--shadow); max-width:460px; width:100%; max-height:88vh; overflow-y:auto; padding:20px; }
+  .print-modal h2 { margin:0 0 2px; font-size:18px; }
+  .print-modal .pm-sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
+  .pm-field { margin-bottom:16px; }
+  .pm-field:last-of-type { margin-bottom:0; }
+  .pm-label { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:8px; }
+  .pm-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .pm-check { display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); cursor:pointer; }
+  .pm-check input { accent-color:var(--signal); }
+  .print-modal select.ctrl { width:100%; }
+  .pm-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
 
   /* important dates */
   .dates-section { margin-bottom:14px; }
@@ -145,7 +223,7 @@
   /* .date-editor is placed both inside .dates-quick's card grid and inside .dates-all-list's flex
      column — grid-column:1/-1 spans every track when it's a grid item; width:100% + min-width:0 make
      it fill (and never overflow) either container, instead of being squeezed into one card column. */
-  .date-editor { grid-column:1/-1; width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--signal); border-radius:var(--radius); padding:14px; background:var(--input-bg); box-shadow:0 0 0 3px rgba(18,176,201,.12), var(--shadow); }
+  .date-editor { grid-column:1/-1; width:100%; min-width:0; box-sizing:border-box; border:1px solid var(--signal); border-radius:var(--radius); padding:14px; background:var(--input-bg); box-shadow:0 0 0 3px rgba(236,72,153,.12), var(--shadow); }
   .date-editor .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px 14px; min-width:0; }
   .date-editor .field { min-width:0; }
   .date-editor .field.full { grid-column:1/-1; }
@@ -192,7 +270,7 @@
   .prival { font-family:var(--mono); font-weight:700; font-size:18px; color:#fff; width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex:none; }
   .nextup .gauge { width:52px; height:52px; border-radius:12px; flex:none; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:22px; color:#fff; }
 
-  .pchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:4px 10px 4px 4px; border-radius:99px; white-space:nowrap; color:#0B0F17; }
+  .pchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; padding:4px 10px 4px 4px; border-radius:99px; white-space:nowrap; color:var(--paper); }
   .pchip .dot { width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,.18); flex:none; }
   .pchip.none { background:var(--surface-2); color:var(--muted-2); border:1px dashed var(--line); }
 
@@ -214,13 +292,13 @@
   .later-head { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#9B87F5; margin:6px 2px 2px; }
 
   /* editor */
-  .editor { background:var(--card); border:1px solid var(--signal); border-radius:var(--radius); padding:16px; box-shadow:0 0 0 3px rgba(18,176,201,.12), var(--shadow); }
+  .editor { background:var(--card); border:1px solid var(--signal); border-radius:var(--radius); padding:16px; box-shadow:0 0 0 3px rgba(236,72,153,.12), var(--shadow); }
   .editor .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px 16px; }
   .field { display:flex; flex-direction:column; gap:4px; } .field.full { grid-column:1/-1; }
   .field label { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
   .field input[type=text], .field input[type=time], .field input[type=date], .field input[type=datetime-local], .field textarea, .field select { font-family:var(--sans); font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--input-bg); color:var(--ink); outline:none; width:100%; }
   .field textarea { resize:vertical; min-height:44px; }
-  .field input:focus, .field textarea:focus, .field select:focus { border-color:var(--signal); box-shadow:0 0 0 3px rgba(18,176,201,.14); }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color:var(--signal); box-shadow:0 0 0 3px rgba(236,72,153,.14); }
   .starbox { display:inline-flex; align-items:center; gap:8px; font-size:14px; cursor:pointer; user-select:none; padding:8px 0; }
   .reappear-inline { display:flex; gap:8px; align-items:center; } .reappear-inline input { flex:1; }
   .editor .actions { display:flex; gap:8px; margin-top:14px; justify-content:flex-end; }
@@ -241,8 +319,19 @@
   .cell-time .cd.late { color:var(--alarm); font-weight:600; }
   .overdue-chip { font-family:var(--mono); font-size:11px; font-weight:600; color:var(--alarm); margin-left:8px; white-space:nowrap; }
 
-  /* right sidebar: Places to Go (above Shopping) */
+  /* right sidebar: Quick notes (top), then Places to Go, Before You Leave, Shopping */
   .side { display:flex; flex-direction:column; gap:18px; }
+  .notes { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+  .note-list { display:flex; flex-direction:column; gap:6px; }
+  .note-row { display:flex; align-items:flex-start; gap:8px; padding:8px 10px; border:1px solid var(--line); border-left:3px solid transparent; border-radius:9px; background:var(--surface-2); }
+  .note-row.pinned { border-left-color:var(--signal); }
+  .note-body { flex:1; min-width:0; }
+  .note-text { font-size:13.5px; line-height:1.45; white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; }
+  .note-actions { display:flex; flex-direction:column; gap:4px; flex:none; }
+  .note-pin, .note-del { color:var(--muted-2); background:none; border:none; cursor:pointer; font-size:13px; padding:2px 3px; line-height:1; }
+  .note-pin.on { color:var(--signal); }
+  .note-pin:hover { color:var(--ink); } .note-del:hover { color:var(--alarm); }
+
   .places { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
   .place-list { display:flex; flex-direction:column; gap:6px; }
   .place-row { display:flex; align-items:center; gap:9px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface-2); }
@@ -256,7 +345,7 @@
   .mapbtn:hover { border-color:var(--signal); }
   .place-del, .place-edit { color:var(--muted-2); background:none; border:none; cursor:pointer; font-size:13px; padding:2px 3px; flex:none; }
   .place-del:hover { color:var(--alarm); } .place-edit:hover { color:var(--ink); }
-  .place-editor { border:1px solid var(--signal); border-radius:9px; padding:10px; background:var(--input-bg); box-shadow:0 0 0 2px rgba(18,176,201,.1); }
+  .place-editor { border:1px solid var(--signal); border-radius:9px; padding:10px; background:var(--input-bg); box-shadow:0 0 0 2px rgba(236,72,153,.1); }
   .place-editor .pe-field { display:flex; flex-direction:column; gap:3px; margin-bottom:8px; }
   .place-editor label { font-family:var(--mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
   .place-editor input[type=text], .place-editor input[type=date] { font-size:13px; padding:7px 9px; border:1px solid var(--line); border-radius:7px; background:var(--card); color:var(--ink); outline:none; width:100%; }
@@ -279,6 +368,18 @@
   .shop-count { font-family:var(--mono); font-size:11.5px; color:var(--muted-2); }
   .shop-clear { font-size:12px; color:var(--muted); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 9px; cursor:pointer; }
   .shop-clear:hover { border-color:var(--muted-2); color:var(--ink); }
+
+  /* before you leave — sits between Places and Shopping; deliberately does not reorder items by
+     done state (unlike Shopping's "got" sort), so checking things off never makes them jump around */
+  .byl { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+  .byl-list { display:flex; flex-direction:column; gap:6px; }
+  .byl-row { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface-2); }
+  .byl-row.done { opacity:.5; } .byl-row.done .byl-text { text-decoration:line-through; color:var(--muted); }
+  .byl-row .cbx { width:22px; height:22px; flex:none; }
+  .byl-text { flex:1; font-size:14px; white-space:pre-wrap; word-break:break-word; }
+  .byl-del { color:var(--muted-2); background:none; border:none; cursor:pointer; font-size:14px; flex:none; }
+  .byl-del:hover { color:var(--alarm); }
+  .byl-foot-actions { display:flex; gap:6px; }
 
   .empty-state { text-align:center; padding:40px 16px; color:var(--muted); border:1px dashed var(--line); border-radius:var(--radius); background:var(--card); }
   .empty-state .big { font-size:16px; font-weight:600; color:var(--ink); margin-bottom:5px; }
@@ -308,6 +409,7 @@
       </div>
       <div class="util">
         <span class="sync-badge" id="syncBadge"></span>
+        <button class="btn sm" id="soundToggle">Sound: On</button>
         <button class="btn sm" id="printBtn">🖨 Print</button>
         <button class="btn sm" id="exportBtn">Export</button>
         <button class="btn sm" id="importBtn">Import</button>
@@ -355,16 +457,30 @@
         </select>
         <label class="toggle"><input type="checkbox" id="hideDone"> Hide done</label>
         <label class="toggle"><input type="checkbox" id="showLater"> <span id="laterLbl">Later</span></label>
+        <button class="shop-clear hidden" id="deleteCompletedBtn">Delete completed (0)</button>
       </div>
       <div class="list" id="list"></div>
     </div>
 
     <div class="side">
+      <div class="notes">
+        <div class="panel-title">Quick notes <span class="shop-count" id="noteCount"></span></div>
+        <div class="add-inline"><span class="plus">+</span><input id="noteInput" type="text" placeholder="Jot something down, then Enter…" aria-label="Add note"></div>
+        <div class="note-list" id="noteList"></div>
+      </div>
+
       <div class="places">
         <div class="panel-title">Places to go <span class="shop-count" id="placeCount"></span></div>
         <div class="add-inline"><span class="plus">+</span><input id="placeInput" type="text" placeholder="Add a place, then Enter…" aria-label="Add place"></div>
         <div class="place-list" id="placeList"></div>
         <div class="shop-foot"><span class="shop-count" id="placeStatus"></span><button class="shop-clear" id="placeClear">Clear visited</button></div>
+      </div>
+
+      <div class="byl">
+        <div class="panel-title">Before you leave <span class="shop-count" id="bylCount"></span></div>
+        <div class="add-inline"><span class="plus">+</span><input id="bylInput" type="text" placeholder="Add a reminder, then Enter…" aria-label="Add reminder"></div>
+        <div class="byl-list" id="bylList"></div>
+        <div class="shop-foot"><span class="shop-count" id="bylStatus"></span><div class="byl-foot-actions"><button class="shop-clear" id="bylReset">Reset checks</button><button class="shop-clear" id="bylClear">Clear checked</button></div></div>
       </div>
 
       <div class="shop">
@@ -379,20 +495,83 @@
   <p class="hint" id="hint"></p>
 </div>
 
+<div class="print-modal-backdrop hidden" id="printModalBackdrop">
+  <div class="print-modal" id="printModal" role="dialog" aria-modal="true" aria-labelledby="printModalTitle" tabindex="-1">
+    <h2 id="printModalTitle">Print Center</h2>
+    <div class="pm-sub">Builds a separate printer-friendly sheet — your screen layout doesn't change.</div>
+
+    <div class="pm-field">
+      <span class="pm-label">Format</span>
+      <div class="pm-row">
+        <label class="pm-check"><input type="radio" name="pmFormat" value="fridge" checked> Fridge sheet</label>
+        <label class="pm-check"><input type="radio" name="pmFormat" value="full"> Full planner</label>
+      </div>
+    </div>
+
+    <div class="pm-field">
+      <label class="pm-label" for="pmProfile">Family member</label>
+      <select class="ctrl" id="pmProfile"></select>
+    </div>
+
+    <div class="pm-field">
+      <span class="pm-label">Include sections</span>
+      <div class="pm-row">
+        <label class="pm-check"><input type="checkbox" id="pmSecTasks" checked> Tasks</label>
+        <label class="pm-check"><input type="checkbox" id="pmSecDates" checked> Important dates</label>
+        <label class="pm-check"><input type="checkbox" id="pmSecNotes" checked> Quick notes</label>
+        <label class="pm-check"><input type="checkbox" id="pmSecPlaces" checked> Places to go</label>
+        <label class="pm-check"><input type="checkbox" id="pmSecBYL" checked> Before you leave</label>
+        <label class="pm-check"><input type="checkbox" id="pmSecShop" checked> Shopping list</label>
+      </div>
+    </div>
+
+    <div class="pm-field">
+      <span class="pm-label">Task options</span>
+      <div class="pm-row">
+        <label class="pm-check"><input type="checkbox" id="pmHideCompleted" checked> Hide completed tasks</label>
+        <label class="pm-check"><input type="checkbox" id="pmIncludeLater"> Include Later tasks</label>
+      </div>
+    </div>
+
+    <div class="pm-field">
+      <label class="pm-label" for="pmDateRange">Date range</label>
+      <select class="ctrl" id="pmDateRange">
+        <option value="today">Today</option>
+        <option value="next7" selected>Next 7 days</option>
+        <option value="all">All upcoming</option>
+      </select>
+    </div>
+
+    <div class="pm-actions">
+      <button class="btn sm" id="pmCancel">Cancel</button>
+      <button class="btn add" id="pmPrint">Print</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.6-beta";
+const VERSION = "1.7-beta";
 
 /* ---------------- storage ---------------- */
-const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1";
+const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
 function savePeople(){ try{ localStorage.setItem(K_PEOPLE, JSON.stringify(people)); }catch(e){} pushCloud(); }
 function savePlaces(){ try{ localStorage.setItem(K_PLACES, JSON.stringify(places)); }catch(e){} pushCloud(); }
 function saveDates(){ try{ localStorage.setItem(K_DATES, JSON.stringify(importantDates)); }catch(e){} pushCloud(); }
+function saveNotes(){ try{ localStorage.setItem(K_NOTES, JSON.stringify(notes)); }catch(e){} pushCloud(); }
+function saveBYL(){ try{ localStorage.setItem(K_BYL, JSON.stringify(beforeYouLeave)); }catch(e){} pushCloud(); }
+
+/* Device-local preferences — deliberately never synced through Firebase, never included in the
+   cloud payload, and never touched by import, so each device/browser keeps its own. */
+const K_SETTINGS="home.settings.v1", K_PREFS="home.viewprefs.v1", K_ACTIVE_PROFILE="home.activeProfile.v1";
+function saveSettings(){ try{ localStorage.setItem(K_SETTINGS, JSON.stringify(settings)); }catch(e){} }
+function saveViewPrefs(){ try{ localStorage.setItem(K_PREFS, JSON.stringify({ hideDone:document.getElementById("hideDone").checked, showLater:document.getElementById("showLater").checked })); }catch(e){} }
+function saveActiveProfile(){ try{ localStorage.setItem(K_ACTIVE_PROFILE, JSON.stringify(activePerson)); }catch(e){} }
 
 /* =====================================================================
    CLOUD SYNC (optional) — share one LIVE planner across all devices.
@@ -426,7 +605,9 @@ function initSync(){
       if(Array.isArray(v.shop))   shop=v.shop.map(s=>Object.assign(blankShop(),s));
       if(Array.isArray(v.places)) places=v.places.map(migratePlace);   // only overwrite if present → never erased by an old client
       if(Array.isArray(v.importantDates)) importantDates=v.importantDates.map(migrateImportantDate); // same rule → older clients never erase this
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); }catch(e){}
+      if(Array.isArray(v.notes)) notes=v.notes.map(migrateNote).filter(n=>n.text!=="");       // same rule → older clients never erase this
+      if(Array.isArray(v.beforeYouLeave)) beforeYouLeave=v.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");  // same rule → older clients never erase this
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); }catch(e){}
       remoteApplying=false;
       // Data is always safe to merge in (every commit path re-fetches its entity by id), but a full render()
       // would blow away a focused inline editor's DOM — so defer the redraw until editing ends.
@@ -442,7 +623,7 @@ function pushCloud(force){
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
      protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
-  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(on){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -485,6 +666,32 @@ function migrateTask(raw){
   return t;
 }
 function migratePlace(raw){ const p=Object.assign(blankPlace(), raw||{}); p.people=normPeople(p.people); if(typeof p.created!=="number") p.created=Date.now(); return p; }
+function blankNote(text){ return { id:uid("n"), text:text||"", pinned:false, created:Date.now(), updated:Date.now() }; }
+/* Defensive against malformed/older-format notes on import: coerces text/pinned to the right
+   type and backfills id/timestamps so a bad entry never crashes the app — it just becomes a
+   normal (possibly blank, later filtered) note. */
+function migrateNote(raw){
+  const src=(raw && typeof raw==="object" && !Array.isArray(raw)) ? raw : {};
+  const n=Object.assign(blankNote(), src);
+  n.text=(n.text==null?"":n.text).toString().trim();
+  n.pinned=!!n.pinned;
+  if(typeof n.id!=="string" || n.id.trim()==="") n.id=uid("n");
+  if(!Number.isFinite(n.created)) n.created=Date.now();
+  if(!Number.isFinite(n.updated)) n.updated=n.created;
+  return n;
+}
+function blankBYLItem(text){ return { id:uid("byl"), item:text||"", done:false, created:Date.now() }; }
+/* Same defensive pattern as migrateNote: a malformed Before You Leave entry becomes a normal
+   (possibly blank, later filtered) item instead of crashing the app. */
+function migrateBYLItem(raw){
+  const src=(raw && typeof raw==="object" && !Array.isArray(raw)) ? raw : {};
+  const b=Object.assign(blankBYLItem(), src);
+  b.item=(b.item==null?"":b.item).toString().trim();
+  b.done=!!b.done;
+  if(typeof b.id!=="string" || b.id.trim()==="") b.id=uid("byl");
+  if(!Number.isFinite(b.created)) b.created=Date.now();
+  return b;
+}
 
 /* ---------------- important dates ---------------- */
 /* Stored separately from tasks — never appear in the task list, never affect progress/overdue/Up Next.
@@ -519,9 +726,17 @@ tasks = tasks.map(migrateTask);
 let shop = (loadJSON(K_SHOP) || []).map(s=>Object.assign(blankShop(),s));
 let places = (loadJSON(K_PLACES) || []).map(migratePlace);
 let importantDates = (loadJSON(K_DATES) || []).map(migrateImportantDate);
+const notesRaw = loadJSON(K_NOTES);
+let notes = (Array.isArray(notesRaw) ? notesRaw : []).map(migrateNote).filter(n=>n.text!=="");
+const bylRaw = loadJSON(K_BYL);
+let beforeYouLeave = (Array.isArray(bylRaw) ? bylRaw : []).map(migrateBYLItem).filter(b=>b.item!=="");
+let settings = Object.assign({ soundEnabled:true }, loadJSON(K_SETTINGS)||{});
 
 /* ---------------- state ---------------- */
-let editingId=null, placeEditingId=null, dateEditingId=null, activePerson="all", overdueSet=new Set();
+let editingId=null, placeEditingId=null, dateEditingId=null, overdueSet=new Set();
+/* Restore this browser/device's last-selected family filter; fall back to Everyone ("all") if the
+   stored id no longer matches a real person (e.g. that family member was removed since). */
+let activePerson = (()=>{ const stored=loadJSON(K_ACTIVE_PROFILE); if(stored==null || stored==="all") return "all"; if(typeof stored==="string" && people.some(p=>p.id===stored)) return stored; return "all"; })();
 let datesAllOpen=false, pastDatesOpen=false;
 let pendingRemoteRender=false;
 /* Shared inline-edit / popover tracker (text fields + people/category/date-time/priority popovers).
@@ -636,6 +851,35 @@ function isLater(t){ return t.status==="later"; }
 function isActive(t){ return t.status==="todo"||t.status==="doing"; }
 function esc(s){ return (s??"").toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+
+/* ---------------- completion sound ---------------- */
+/* One shared chime for every "incomplete → complete" checkbox across the app (tasks, shopping,
+   places, Before You Leave) — deliberately not duplicated per-handler. Built with Web Audio (no
+   external file); the AudioContext is created lazily on first use, since creating one before any
+   user gesture triggers browser autoplay warnings and some browsers start it "suspended" until a
+   gesture unlocks it. Every failure path (blocked/unavailable audio, suspended context that won't
+   resume, etc.) is swallowed so a sound problem can never break the actual checkbox action. */
+let audioCtx=null;
+function playCompletionSound(){
+  if(!settings.soundEnabled) return;
+  try{
+    if(!audioCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; audioCtx=new AC(); }
+    if(audioCtx.state==="suspended") audioCtx.resume().catch(()=>{});
+    const now=audioCtx.currentTime;
+    const gain=audioCtx.createGain();
+    gain.connect(audioCtx.destination);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.2, now+0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.5);
+    [659.25, 987.77].forEach((freq,i)=>{   // soft two-tone rise (E5 → B5), ~500ms total
+      const osc=audioCtx.createOscillator();
+      osc.type="sine"; osc.frequency.value=freq;
+      osc.connect(gain);
+      const start=now+i*0.12;
+      osc.start(start); osc.stop(start+0.32);
+    });
+  }catch(e){ /* audio unavailable or blocked — fail silently, never breaks the checkbox action */ }
+}
 function taskPeopleIds(t){ return Array.isArray(t.people)?t.people:[]; }
 function isFamilyTask(t){ return taskPeopleIds(t).includes("family"); }
 /* a task "counts toward today" if it's undated (a floating today task) or due today; not later */
@@ -771,8 +1015,10 @@ function currentView(){
 function render(){
   normalizeLater();
   renderPeopleBar();
+  renderNotes();
   renderShop();
   renderPlaces();
+  renderBYL();
   renderDatesSection();
   const view=currentView();
   const next=computeNextUp();
@@ -791,6 +1037,10 @@ function render(){
   });
 
   const done=tasks.filter(isDone).length; const over=tasks.filter(isOverdue).length;
+  const delCompletedBtn=document.getElementById("deleteCompletedBtn");
+  delCompletedBtn.textContent=`Delete completed (${done})`;
+  delCompletedBtn.disabled=done===0;
+  delCompletedBtn.classList.toggle("hidden", done===0);
   document.getElementById("hint").textContent=`${tasks.length} items • ${done} done • ${over} overdue • ${laterCount} later • ${places.filter(p=>!p.visited).length} places • ${shop.filter(s=>!s.got).length} to buy • Home v${VERSION}`;
 }
 
@@ -809,7 +1059,7 @@ function renderPeopleBar(){
   people.forEach(p=>html+=chip(p.id,p.name,p.color,false,personCount(p.id)));
   html+=`<button class="btn sm pb-edit" id="pbEdit">Edit family</button>`;
   bar.innerHTML=html;
-  bar.querySelectorAll(".pfilter").forEach(b=>b.addEventListener("click",()=>{ activePerson=b.dataset.p; render(); }));
+  bar.querySelectorAll(".pfilter").forEach(b=>b.addEventListener("click",()=>{ activePerson=b.dataset.p; saveActiveProfile(); render(); }));
   document.getElementById("pbEdit").addEventListener("click",togglePeopleEditor);
 }
 
@@ -835,7 +1085,7 @@ function renderPeopleEditor(){
       else if(e.key==="Escape"){ e.preventDefault(); const person=people.find(x=>x.id===id); nameInput.value=person?person.name:""; nameInput.blur(); }
     });
     row.querySelector(".swatch").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; const i=PALETTE.indexOf(person.color); person.color=PALETTE[(i+1)%PALETTE.length]; savePeople(); renderPeopleEditor(); renderPeopleBar(); render(); });
-    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); importantDates.forEach(dt=>{ dt.people=normPeople(dt.people).filter(x=>x!==id); }); if(activePerson===id) activePerson="all"; savePeople(); saveTasks(); savePlaces(); saveDates(); renderPeopleEditor(); render(); } });
+    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); importantDates.forEach(dt=>{ dt.people=normPeople(dt.people).filter(x=>x!==id); }); if(activePerson===id){ activePerson="all"; saveActiveProfile(); } savePeople(); saveTasks(); savePlaces(); saveDates(); renderPeopleEditor(); render(); } });
   });
   pe.querySelector("#peAdd").addEventListener("click",()=>{ const color=PALETTE[people.length%PALETTE.length]; people.push({id:uid("p"),name:"New person",color}); savePeople(); renderPeopleEditor(); renderPeopleBar(); });
 }
@@ -850,7 +1100,7 @@ function wireTaskTitle(node, taskId){
       getEntity:()=>tasks.find(x=>x.id===taskId), onCommit:(entity,v)=>{ entity.task=v; saveTasks(); }, onDone:render });
   }
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 function wireTaskNotes(node, taskId){
   node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit note");
@@ -861,7 +1111,7 @@ function wireTaskNotes(node, taskId){
       getEntity:()=>tasks.find(x=>x.id===taskId), onCommit:(entity,v)=>{ entity.notes=v; saveTasks(); }, onDone:render });
   }
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 function openTaskPeoplePopover(anchor,taskId){
   const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
@@ -898,7 +1148,7 @@ function wireTaskPriority(node, taskId){
   node.setAttribute("role","button"); node.tabIndex=0; node.setAttribute("aria-label",`Priority ${cur?cur.priority:"?"} of 10. Activate to change.`);
   const open=()=>openTaskPriorityPopover(node,taskId);
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 function openTaskTimePopover(anchor,taskId){
   const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
@@ -917,7 +1167,7 @@ function wireTaskTime(node, taskId){
   node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit time");
   const open=()=>openTaskTimePopover(node,taskId);
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 function openTaskDuePopover(anchor,taskId){
   const t0=tasks.find(x=>x.id===taskId); if(!t0) return;
@@ -940,7 +1190,7 @@ function wireTaskDue(node, taskId){
   node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit due date");
   const open=()=>openTaskDuePopover(node,taskId);
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 
 function renderNextUp(t){
@@ -1005,7 +1255,7 @@ function renderRow(t,isNext){
   const rDue=el.querySelector("#r-due"); if(rDue) wireTaskDue(rDue, t.id);
   const rNotes=el.querySelector("#r-notes"); if(rNotes) wireTaskNotes(rNotes, t.id);
 
-  el.querySelector(".cbx").addEventListener("change",e=>{ const cur=tasks.find(x=>x.id===t.id); if(!cur) return; cur.status=e.target.checked?"done":"todo"; cur.showOn=""; saveTasks(); render(); });
+  el.querySelector(".cbx").addEventListener("change",e=>{ const cur=tasks.find(x=>x.id===t.id); if(!cur) return; const wasDone=isDone(cur); cur.status=e.target.checked?"done":"todo"; cur.showOn=""; saveTasks(); if(e.target.checked&&!wasDone) playCompletionSound(); render(); });
   el.querySelector(".status-sel").addEventListener("change",e=>{ const v=e.target.value; const cur=tasks.find(x=>x.id===t.id); if(!cur) return;
     if(v==="tomorrow"){ cur.status="later"; cur.showOn=tomorrowLocal(cur.time||"08:00"); saveTasks(); render(); }
     else if(v==="pickday"){ cur.status="later"; if(!cur.showOn) cur.showOn=tomorrowLocal(cur.time||"08:00"); closeActiveEdit(true); editingId=cur.id; render(); }
@@ -1076,7 +1326,7 @@ function wireShopText(node, shopId){
       getEntity:()=>shop.find(x=>x.id===shopId), onCommit:(entity,v)=>{ entity.item=v; saveShop(); }, onDone:renderShop });
   }
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 function renderShop(){
   const el=document.getElementById("shopList");
@@ -1085,7 +1335,7 @@ function renderShop(){
   sorted.forEach(s=>{
     const row=document.createElement("div"); row.className="shop-row"+(s.got?" got":""); row.dataset.id=s.id;
     row.innerHTML=`<input type="checkbox" class="cbx" ${s.got?"checked":""} aria-label="Got it"><span class="shop-text" id="sr-text">${esc(s.item)}</span><button class="shop-del" title="Remove">✕</button>`;
-    row.querySelector(".cbx").addEventListener("change",e=>{ const cur=shop.find(x=>x.id===s.id); if(!cur) return; cur.got=e.target.checked; saveShop(); renderShop(); });
+    row.querySelector(".cbx").addEventListener("change",e=>{ const cur=shop.find(x=>x.id===s.id); if(!cur) return; const wasGot=cur.got; cur.got=e.target.checked; saveShop(); if(e.target.checked&&!wasGot) playCompletionSound(); renderShop(); });
     wireShopText(row.querySelector("#sr-text"), s.id);
     row.querySelector(".shop-del").addEventListener("click",()=>{ shop=shop.filter(x=>x.id!==s.id); saveShop(); renderShop(); });
     el.appendChild(row);
@@ -1129,7 +1379,7 @@ function wireInlinePlaceText(node, placeId, field, ariaLabel, required){
       getEntity:()=>places.find(x=>x.id===placeId), onCommit:(entity,v)=>{ entity[field]=v; savePlaces(); }, onDone:renderPlaces });
   }
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 function openPlaceDatePopover(anchor, placeId){
   const p0=places.find(x=>x.id===placeId); if(!p0) return;
@@ -1172,7 +1422,7 @@ function renderPlaceRow(pl){
     ${pl.address?`<a class="mapbtn" href="${mapUrl(pl.address)}" target="_blank" rel="noopener">Map</a>`:""}
     <button class="place-edit" title="Edit">✎</button>
     <button class="place-del" title="Remove">✕</button>`;
-  row.querySelector(".cbx").addEventListener("change",e=>{ const cur=places.find(x=>x.id===pl.id); if(!cur) return; cur.visited=e.target.checked; savePlaces(); renderPlaces(); });
+  row.querySelector(".cbx").addEventListener("change",e=>{ const cur=places.find(x=>x.id===pl.id); if(!cur) return; const wasVisited=cur.visited; cur.visited=e.target.checked; savePlaces(); if(e.target.checked&&!wasVisited) playCompletionSound(); renderPlaces(); });
   wireInlinePlaceText(row.querySelector("#pr-name"), pl.id, "name", "Place name", true);
   const addrEl=row.querySelector("#pr-addr"); if(addrEl) wireInlinePlaceText(addrEl, pl.id, "address", "Address", false);
   const noteEl=row.querySelector("#pr-note"); if(noteEl) wireInlinePlaceText(noteEl, pl.id, "note", "Note", false);
@@ -1215,6 +1465,80 @@ function renderPlaceEditor(pl){
 }
 document.getElementById("placeInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; places.unshift(blankPlace(v)); e.target.value=""; savePlaces(); renderPlaces(); });
 document.getElementById("placeClear").addEventListener("click",()=>{ if(!places.some(p=>p.visited)) return; places=places.filter(p=>!p.visited); savePlaces(); renderPlaces(); });
+
+/* ---------------- quick notes ---------------- */
+/* Pinned first; within each group, most-recently-updated first. */
+function sortedNotes(){
+  return [...notes].sort((a,b)=> ((b.pinned?1:0)-(a.pinned?1:0)) || ((b.updated||0)-(a.updated||0)));
+}
+function renderNotes(){
+  const el=document.getElementById("noteList");
+  el.innerHTML = notes.length ? "" : `<div class="empty-state" style="padding:24px 12px"><div class="big">No notes yet.</div>Jot something down above.</div>`;
+  sortedNotes().forEach(n=>{ el.appendChild(renderNoteRow(n)); });
+  document.getElementById("noteCount").textContent = notes.length ? String(notes.length) : "";
+}
+function wireInlineNoteText(node, noteId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit note");
+  function open(){
+    if(isEditingField("note",noteId,"text")) return;
+    const n=notes.find(x=>x.id===noteId); if(!n) return;
+    startInlineText({ type:"note", id:noteId, field:"text", container:node, value:n.text, required:true, multiline:true, ariaLabel:"Note text",
+      getEntity:()=>notes.find(x=>x.id===noteId), onCommit:(entity,v)=>{ entity.text=v; entity.updated=Date.now(); saveNotes(); }, onDone:renderNotes });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function renderNoteRow(n){
+  const row=document.createElement("div"); row.className="note-row"+(n.pinned?" pinned":""); row.dataset.id=n.id;
+  row.innerHTML=`
+    <div class="note-body"><div class="note-text" id="nr-text">${esc(n.text)}</div></div>
+    <div class="note-actions">
+      <button class="note-pin${n.pinned?" on":""}" title="${n.pinned?"Unpin":"Pin"}">📌</button>
+      <button class="note-del" title="Delete">✕</button>
+    </div>`;
+  wireInlineNoteText(row.querySelector("#nr-text"), n.id);
+  row.querySelector(".note-pin").addEventListener("click",()=>{ const cur=notes.find(x=>x.id===n.id); if(!cur) return; cur.pinned=!cur.pinned; cur.updated=Date.now(); saveNotes(); renderNotes(); });
+  row.querySelector(".note-del").addEventListener("click",()=>{ if(confirm("Delete this note?")){ notes=notes.filter(x=>x.id!==n.id); saveNotes(); renderNotes(); } });
+  return row;
+}
+document.getElementById("noteInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; notes.unshift(blankNote(v)); e.target.value=""; saveNotes(); renderNotes(); });
+
+/* ---------------- before you leave ---------------- */
+/* Deliberately does NOT reorder by done state (unlike Shopping's "got" sort) — checking an item
+   must not make it jump to the bottom; order stays stable and predictable while checking things off. */
+function sortedBYL(){
+  return [...beforeYouLeave].sort((a,b)=>(a.created||0)-(b.created||0));
+}
+function renderBYL(){
+  const el=document.getElementById("bylList");
+  el.innerHTML = beforeYouLeave.length ? "" : `<div class="empty-state" style="padding:24px 12px"><div class="big">Nothing here yet.</div>Add a reminder above.</div>`;
+  sortedBYL().forEach(b=>{ el.appendChild(renderBYLRow(b)); });
+  const left=beforeYouLeave.filter(b=>!b.done).length, done=beforeYouLeave.filter(b=>b.done).length;
+  document.getElementById("bylStatus").textContent=`${left} left · ${done} checked`;
+  document.getElementById("bylCount").textContent=beforeYouLeave.length?`${left}`:"";
+}
+function wireInlineBYLText(node, bylId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit reminder");
+  function open(){
+    if(isEditingField("byl",bylId,"item")) return;
+    const b=beforeYouLeave.find(x=>x.id===bylId); if(!b) return;
+    startInlineText({ type:"byl", id:bylId, field:"item", container:node, value:b.item, required:true, ariaLabel:"Reminder",
+      getEntity:()=>beforeYouLeave.find(x=>x.id===bylId), onCommit:(entity,v)=>{ entity.item=v; saveBYL(); }, onDone:renderBYL });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function renderBYLRow(b){
+  const row=document.createElement("div"); row.className="byl-row"+(b.done?" done":""); row.dataset.id=b.id;
+  row.innerHTML=`<input type="checkbox" class="cbx" ${b.done?"checked":""} aria-label="Done"><span class="byl-text" id="br-text">${esc(b.item)}</span><button class="byl-del" title="Remove">✕</button>`;
+  row.querySelector(".cbx").addEventListener("change",e=>{ const cur=beforeYouLeave.find(x=>x.id===b.id); if(!cur) return; const wasDone=cur.done; cur.done=e.target.checked; saveBYL(); if(e.target.checked&&!wasDone) playCompletionSound(); renderBYL(); });
+  wireInlineBYLText(row.querySelector("#br-text"), b.id);
+  row.querySelector(".byl-del").addEventListener("click",()=>{ if(confirm("Remove this reminder?")){ beforeYouLeave=beforeYouLeave.filter(x=>x.id!==b.id); saveBYL(); renderBYL(); } });
+  return row;
+}
+document.getElementById("bylInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; beforeYouLeave.push(blankBYLItem(v)); e.target.value=""; saveBYL(); renderBYL(); });
+document.getElementById("bylReset").addEventListener("click",()=>{ if(!beforeYouLeave.some(b=>b.done)) return; beforeYouLeave.forEach(b=>{ b.done=false; }); saveBYL(); renderBYL(); });
+document.getElementById("bylClear").addEventListener("click",()=>{ if(!beforeYouLeave.some(b=>b.done)) return; beforeYouLeave=beforeYouLeave.filter(b=>!b.done); saveBYL(); renderBYL(); });
 
 /* ---------------- important dates: rendering ---------------- */
 function renderDatesSection(){
@@ -1287,7 +1611,7 @@ function wireDateText(node, dateId, field, ariaLabel, required){
       onDone:renderDatesSection });
   }
   node.addEventListener("click",open);
-  node.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 function openDateRangePopover(anchor, dateId){
   const d0=importantDates.find(x=>x.id===dateId); if(!d0) return;
@@ -1472,9 +1796,33 @@ document.getElementById("addBtn").addEventListener("click",()=>{
 
 /* ---------------- toolbar ---------------- */
 ["searchInput","sortBy","hideDone","showLater"].forEach(id=>document.getElementById(id).addEventListener("input",render));
-document.getElementById("printBtn").addEventListener("click",()=>window.print());
+["hideDone","showLater"].forEach(id=>document.getElementById(id).addEventListener("input",saveViewPrefs));
+function updateSoundToggleLabel(){ const btn=document.getElementById("soundToggle"); if(btn) btn.textContent = settings.soundEnabled ? "Sound: On" : "Sound: Off"; }
+document.getElementById("soundToggle").addEventListener("click",()=>{ settings.soundEnabled=!settings.soundEnabled; saveSettings(); updateSoundToggleLabel(); });
+document.getElementById("deleteCompletedBtn").addEventListener("click",()=>{
+  const n=tasks.filter(isDone).length;
+  if(!n) return;
+  if(!confirm(`Permanently delete all ${n} completed tasks across all family members?`)) return;
+  tasks=tasks.filter(t=>!isDone(t));
+  saveTasks();
+  render();
+});
+/* A mouse/touch/pen activation of Print naturally blurs whatever inline field is being edited
+   BEFORE this click handler runs, and that blur commits+saves the edit (see wireTaskTitle/
+   wireInlineNoteText/etc.) — so by the time openPrintCenter()'s own closeActiveEdit(false) ran,
+   the save had already happened. Canceling the edit on pointerdown (before the browser ever
+   reassigns focus) closes that race for every pointer type; preventDefault() suppresses the native
+   blur, then focus() explicitly makes Print the restore target. Keyboard activation
+   (Enter/Space) never fires pointerdown, so it still reaches the click handler below unaffected. */
+document.getElementById("printBtn").addEventListener("pointerdown",e=>{
+  if(!e.isPrimary || e.button!==0) return;
+  e.preventDefault();
+  closeActiveEdit(false);
+  e.currentTarget.focus();
+});
+document.getElementById("printBtn").addEventListener("click",openPrintCenter);
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places,importantDates};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -1495,10 +1843,279 @@ document.getElementById("importFile").addEventListener("change",e=>{
       if(Array.isArray(d.shop)) shop=d.shop.map(s=>Object.assign(blankShop(),s));
       if(Array.isArray(d.places)) places=d.places.map(migratePlace);
       if(Array.isArray(d.importantDates)) importantDates=d.importantDates.map(migrateImportantDate);
+      /* notes/beforeYouLeave: migrate (backfills ids/timestamps, coerces text/done) then drop
+         anything still blank after coercion — a malformed entry never crashes the app, it's just
+         discarded. Settings/view prefs/active family filter are deliberately never touched here —
+         those stay this device's own preference regardless of what's imported. */
+      if(Array.isArray(d.notes)) notes=d.notes.map(migrateNote).filter(n=>n.text!=="");
+      if(Array.isArray(d.beforeYouLeave)) beforeYouLeave=d.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");
     }
-    editingId=null; placeEditingId=null; dateEditingId=null; savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); render();
+    editingId=null; placeEditingId=null; dateEditingId=null; savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
+});
+
+/* =====================================================================
+   PRINT CENTER
+   Builds a completely separate print-only document from current in-memory
+   data and hands it to window.print() — the live dashboard DOM is never
+   touched, and nothing here ever calls a save*() function or Firebase.
+   Choices reset each time the modal opens (deliberately not persisted).
+   ===================================================================== */
+let printPrevFocus=null;
+function openPrintCenter(){
+  closeActiveEdit(false); // opening Print Center must never commit/save whatever was being edited
+  const sel=document.getElementById("pmProfile");
+  sel.innerHTML = `<option value="all">Everyone</option>` + people.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+  sel.value="all";
+  printPrevFocus=document.activeElement;
+  document.getElementById("printModalBackdrop").classList.remove("hidden");
+  document.addEventListener("keydown", printModalKeyHandler, true);
+  document.getElementById("printModal").focus();
+}
+function closePrintCenter(){
+  document.getElementById("printModalBackdrop").classList.add("hidden");
+  document.removeEventListener("keydown", printModalKeyHandler, true);
+  if(printPrevFocus && typeof printPrevFocus.focus==="function") printPrevFocus.focus();
+  printPrevFocus=null;
+}
+function printModalKeyHandler(e){
+  if(e.key==="Escape"){ e.preventDefault(); closePrintCenter(); return; }
+  if(e.key!=="Tab") return;
+  const modal=document.getElementById("printModal");
+  const focusables=[...modal.querySelectorAll('button,input,select,[tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled && el.offsetParent!==null);
+  if(!focusables.length) return;
+  const first=focusables[0], last=focusables[focusables.length-1];
+  if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+}
+document.getElementById("printModalBackdrop").addEventListener("mousedown",e=>{ if(e.target.id==="printModalBackdrop") closePrintCenter(); });
+document.getElementById("pmCancel").addEventListener("click",closePrintCenter);
+document.getElementById("pmPrint").addEventListener("click",()=>{ generateAndPrint(readPrintOptions()); closePrintCenter(); });
+
+function readPrintOptions(){
+  return {
+    format: document.querySelector('input[name="pmFormat"]:checked').value,
+    profile: document.getElementById("pmProfile").value,
+    sections: {
+      tasks: document.getElementById("pmSecTasks").checked,
+      dates: document.getElementById("pmSecDates").checked,
+      notes: document.getElementById("pmSecNotes").checked,
+      places: document.getElementById("pmSecPlaces").checked,
+      byl: document.getElementById("pmSecBYL").checked,
+      shop: document.getElementById("pmSecShop").checked,
+    },
+    hideCompleted: document.getElementById("pmHideCompleted").checked,
+    includeLater: document.getElementById("pmIncludeLater").checked,
+    dateRange: document.getElementById("pmDateRange").value,
+  };
+}
+/* Shared family-member rule for tasks/dates/places: "everyone", the selected member, or anything
+   assigned to the family-wide pseudo-id. Shopping, Quick Notes, and Before You Leave skip this
+   entirely — they're not assigned to specific family members. */
+function printProfileMatch(itemPeople, profileFilter){
+  if(profileFilter==="all") return true;
+  const ids=normPeople(itemPeople);
+  if(ids.includes("family")) return true;
+  return ids.includes(profileFilter);
+}
+function printProfileNames(itemPeople){
+  const ids=normPeople(itemPeople);
+  if(!ids.length) return "";
+  if(ids.includes("family")) return "Family";
+  return ids.map(id=>getPerson(id).name).join(", ");
+}
+function addDaysStr(ymd, n){ const d=localMoment(ymd,"00:00"); if(!d) return ymd; d.setDate(d.getDate()+n); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+
+function printFilterTasks(opts){
+  const list=tasks.filter(t=>{
+    if(!printProfileMatch(t.people, opts.profile)) return false;
+    if(isLater(t)) return opts.includeLater;
+    if(opts.hideCompleted && isDone(t)) return false;
+    return true;
+  });
+  const tier=t=>isLater(t)?2:isDone(t)?1:0;
+  list.sort((a,b)=>(tier(a)-tier(b)) || ((timeToMin(a.time)??1e9)-(timeToMin(b.time)??1e9)) || ((b.priority||0)-(a.priority||0)));
+  return list;
+}
+/* Date-range filtering is deliberately calendar-day based (plain "YYYY-MM-DD" string compares),
+   matching how Today/Next 7/All upcoming read to someone looking at a fridge sheet — not the
+   time-of-day-aware isPastDate() the live dashboard uses for its own "ended" badge. */
+function printFilterDates(opts){
+  const ts=todayStr();
+  const windowEnd=addDaysStr(ts,6); // "next 7 days" = today..today+6 inclusive
+  const list=importantDates.filter(d=>{
+    if(!d.startDate) return false;
+    if(!printProfileMatch(d.people, opts.profile)) return false;
+    const start=d.startDate, end=d.endDate||d.startDate;
+    if(opts.dateRange==="today") return start<=ts && ts<=end;
+    if(opts.dateRange==="next7") return start<=windowEnd && end>=ts;
+    return end>=ts; // all upcoming
+  });
+  list.sort((a,b)=>(a.startDate||"").localeCompare(b.startDate||"") || (a.startTime||"").localeCompare(b.startTime||""));
+  return list;
+}
+function printFilterNotes(opts){ return sortedNotes(); } // profile-independent by design
+function printFilterPlaces(opts){
+  return sortedPlaces().filter(p=>printProfileMatch(p.people, opts.profile) && !(opts.hideCompleted && p.visited));
+}
+function printFilterBYL(opts){ return sortedBYL().filter(b=>!(opts.hideCompleted && b.done)); } // profile-independent by design
+function printFilterShop(opts){
+  return [...shop].sort((a,b)=>(a.got?1:0)-(b.got?1:0)).filter(s=>!(opts.hideCompleted && s.got));
+}
+
+function printCheckSpan(checked){ return `<span class="print-check${checked?" checked":""}"></span>`; }
+function printTaskRow(t){
+  const checked=isDone(t);
+  const bits=[];
+  const profNames=printProfileNames(t.people); if(profNames) bits.push(esc(profNames));
+  if(t.time) bits.push(esc(fmt12(t.time)));
+  if(t.due) bits.push(`Due ${esc(fmtDate(t.due))}${t.dueTime?" "+esc(fmt12(t.dueTime)):""}`);
+  bits.push(`Priority ${t.priority}/10`);
+  bits.push(esc((STATUS[t.status]||STATUS.todo).label));
+  return `<div class="print-task${checked?" done":""}">${printCheckSpan(checked)}<div class="pt-body">
+    <div class="pt-title">${esc(t.task)||"(untitled)"}</div>
+    <div class="pt-meta">${bits.join(" · ")}</div>
+    ${t.notes?`<div class="pt-note">${esc(t.notes)}</div>`:""}
+  </div></div>`;
+}
+function printDateRow(d){
+  const cat=DATE_CATEGORIES[d.category]||DATE_CATEGORIES.other;
+  const when=dateDatePartText(d) + (dateTimePartText(d)?` · ${dateTimePartText(d)}`:"");
+  const bits=[esc(cat.label)];
+  const profNames=printProfileNames(d.people); if(profNames) bits.push(esc(profNames));
+  if(d.location) bits.push(esc(d.location));
+  return `<div class="print-date">
+    <div class="pd-title">${esc(d.title)||"(untitled)"}</div>
+    <div class="pd-when">${esc(when)}</div>
+    <div class="pd-meta">${bits.join(" · ")}</div>
+    ${d.note?`<div class="pd-note">${esc(d.note)}</div>`:""}
+  </div>`;
+}
+function printNoteRow(n){
+  return `<div class="print-note${n.pinned?" pinned":""}">${n.pinned?'<span class="pn-pin">Pinned</span>':""}<div class="pn-text">${esc(n.text)}</div></div>`;
+}
+function printPlaceRow(p){
+  const checked=p.visited;
+  const bits=[];
+  if(p.date) bits.push(esc(fmtDate(p.date)));
+  if(p.address) bits.push(esc(p.address));
+  const profNames=printProfileNames(p.people); if(profNames) bits.push(esc(profNames));
+  return `<div class="print-item${checked?" done":""}">${printCheckSpan(checked)}<div class="pi-body">
+    <div class="pi-title">${esc(p.name)||"(unnamed)"}</div>
+    ${bits.length?`<div class="pi-meta">${bits.join(" · ")}</div>`:""}
+    ${p.note?`<div class="pi-note">${esc(p.note)}</div>`:""}
+  </div></div>`;
+}
+function printBYLRow(b){
+  return `<div class="print-item${b.done?" done":""}">${printCheckSpan(b.done)}<div class="pi-body"><div class="pi-title">${esc(b.item)}</div></div></div>`;
+}
+function printShopRow(s){
+  return `<div class="print-item${s.got?" done":""}">${printCheckSpan(s.got)}<div class="pi-body"><div class="pi-title">${esc(s.item)}</div></div></div>`;
+}
+function printSectionHtml(title, count, bodyHtml){
+  return `<div class="print-section"><div class="print-section-head"><span class="ps-title">${esc(title)}</span><span class="ps-count">${count}</span></div>${bodyHtml}</div>`;
+}
+function buildPrintBody(data, opts){
+  let html=`<div class="print-col-1">`;
+  if(opts.sections.tasks && data.tasks.length) html+=printSectionHtml("Tasks", data.tasks.length, data.tasks.map(printTaskRow).join(""));
+  if(opts.sections.dates && data.dates.length) html+=printSectionHtml("Important Dates", data.dates.length, data.dates.map(printDateRow).join(""));
+  html+=`</div>`;
+  const lower=[];
+  if(opts.sections.notes && data.notes.length) lower.push(printSectionHtml("Quick Notes", data.notes.length, data.notes.map(printNoteRow).join("")));
+  if(opts.sections.places && data.places.length) lower.push(printSectionHtml("Places to Go", data.places.length, data.places.map(printPlaceRow).join("")));
+  if(opts.sections.byl && data.byl.length) lower.push(printSectionHtml("Before You Leave", data.byl.length, data.byl.map(printBYLRow).join("")));
+  if(opts.sections.shop && data.shop.length) lower.push(printSectionHtml("Shopping List", data.shop.length, data.shop.map(printShopRow).join("")));
+  if(lower.length) html+=`<div class="print-grid">${lower.join("")}</div>`;
+  return html;
+}
+/* Pure read-only build: reads current in-memory arrays and the passed-in options, mutates
+   nothing, saves nothing, never touches Firebase. */
+function buildPrintSheet(opts){
+  const sheet=document.createElement("div");
+  sheet.className="print-sheet format-"+(opts.format==="fridge"?"fridge":"full");
+
+  const data={
+    tasks: opts.sections.tasks ? printFilterTasks(opts) : [],
+    dates: opts.sections.dates ? printFilterDates(opts) : [],
+    notes: opts.sections.notes ? printFilterNotes(opts) : [],
+    places: opts.sections.places ? printFilterPlaces(opts) : [],
+    byl: opts.sections.byl ? printFilterBYL(opts) : [],
+    shop: opts.sections.shop ? printFilterShop(opts) : [],
+  };
+  const hasAny = Object.keys(data).some(k=>opts.sections[k] && data[k].length);
+
+  const now=new Date();
+  const formatName = opts.format==="fridge" ? "Fridge Sheet" : "Full Planner";
+  const profileName = opts.profile==="all" ? "Everyone" : esc(getPerson(opts.profile).name);
+  let html=`<div class="print-sheet-header">
+    <div class="ps-brand">FAMILY PLANNER</div>
+    <div class="ps-meta">${esc(formatName)} · ${profileName}</div>
+    <div class="ps-meta ps-printed">Printed ${esc(now.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"}))} at ${esc(now.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}))}</div>
+  </div>`;
+
+  if(!hasAny){
+    html+=`<div class="print-empty">Nothing matching these print options.</div>`;
+  } else {
+    if(opts.format==="fridge"){
+      /* Always the selected family member's (or family-wide) Today tasks, regardless of Hide
+         completed — that option hides completed rows from the list below, it must not change
+         this count. Never uses the normal dashboard's activePerson filter. */
+      const todays=tasks.filter(t=>isToday(t) && printProfileMatch(t.people, opts.profile));
+      const doneToday=todays.filter(isDone).length;
+      html+=`<div class="print-summary">${doneToday} of ${todays.length} done today</div>`;
+    }
+    html+=buildPrintBody(data, opts);
+  }
+  sheet.innerHTML=html;
+  return sheet;
+}
+function generateAndPrint(opts){
+  const sheet=buildPrintSheet(opts);
+  document.body.appendChild(sheet);
+
+  /* All cleanup listeners are registered BEFORE window.print() is called, and cleanup itself is
+     idempotent (guarded by `done`) since afterprint, the print-media-query change, and the
+     fallback timer can all fire — we only want the first one to actually do anything. The
+     fallback is a generous 5 minutes so a print-preview left open doesn't lose its sheet mid-review;
+     it exists purely in case neither event fires in some browser. */
+  let done=false, mql=null, fallbackTimer=null;
+  function onMqlChange(e){ if(!e.matches) cleanup(); } // fires when leaving print mode
+  function cleanup(){
+    if(done) return; done=true;
+    window.removeEventListener("afterprint", cleanup);
+    if(mql){ if(mql.removeEventListener) mql.removeEventListener("change", onMqlChange); else if(mql.removeListener) mql.removeListener(onMqlChange); }
+    if(fallbackTimer) clearTimeout(fallbackTimer);
+    if(sheet.isConnected) sheet.remove();
+  }
+  window.addEventListener("afterprint", cleanup);
+  if(window.matchMedia){
+    mql=window.matchMedia("print");
+    if(mql.addEventListener) mql.addEventListener("change", onMqlChange);
+    else if(mql.addListener) mql.addListener(onMqlChange); // older Safari
+  }
+  fallbackTimer=setTimeout(cleanup, 300000); // 5 minutes
+
+  window.print();
+}
+
+/* A bare Ctrl+P (or the browser's own print menu item) skips the Print Center entirely, so
+   @media print's "hide everything but .print-sheet" rule would otherwise print a blank page —
+   this builds a default Fridge Sheet at the last possible moment, only when nothing was already
+   built by generateAndPrint(). Marked with a dedicated class so its own cleanup only ever touches
+   a sheet IT created, never interfering with generateAndPrint()'s own sheet/cleanup. Read-only,
+   like every other print-sheet build: no save call, no localStorage/Firebase write, no sound. */
+window.addEventListener("beforeprint", ()=>{
+  if(document.querySelector(".print-sheet")) return; // Print Center already built one for this print
+  const sheet=buildPrintSheet({ format:"fridge", profile:"all",
+    sections:{tasks:true,dates:true,notes:true,places:true,byl:true,shop:true},
+    hideCompleted:true, includeLater:false, dateRange:"next7" });
+  sheet.classList.add("print-sheet-fallback");
+  document.body.appendChild(sheet);
+});
+window.addEventListener("afterprint", ()=>{
+  const fallbackSheet=document.querySelector(".print-sheet-fallback");
+  if(fallbackSheet) fallbackSheet.remove();
 });
 
 /* ---------------- tick ---------------- */
@@ -1517,6 +2134,8 @@ function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=
 
 /* ---------------- init ---------------- */
 document.getElementById("datestr").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+{ const vp=loadJSON(K_PREFS); if(vp){ document.getElementById("hideDone").checked=!!vp.hideDone; document.getElementById("showLater").checked=!!vp.showLater; } }
+updateSoundToggleLabel();
 render(); initSync(); tick(); setInterval(tick,1000);
 </script>
 </body>
