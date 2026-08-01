@@ -6,11 +6,11 @@
 <title>Home — Family Day Planner</title>
 <style>
   /* ============================================================
-     HOME — family day planner   (v1.9-beta)
+     HOME — family day planner   (v1.10-beta)
      One shared day list (multi-person tags), Places to Go + Before You Leave
      + Shopping list + Quick Notes, now in a dark-pink/plum theme.
      Tasks can be shown independently as Done, scheduled Later, or undated Someday.
-     Before You Leave supports reusable checklist templates ("Leaving for
+     Before You Leave has an editable active-checklist title and supports reusable checklist templates ("Leaving for
      Texas", "Airport", "Hotel checkout"…) — save the current checklist's
      item text as a template, then load it back onto the checklist any time;
      a saved template never changes when its loaded items are checked,
@@ -389,6 +389,10 @@
   .byl-del:hover { color:var(--alarm); }
   .byl-foot-actions { display:flex; gap:6px; }
   .byl-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap; row-gap:6px; }
+  .byl-title-wrap { display:flex; align-items:center; gap:4px; min-width:0; }
+  .byl-title-text { min-width:0; }
+  .byl-title-reset { color:var(--muted-2); background:none; border:none; cursor:pointer; font-size:13px; padding:2px 4px; flex:none; line-height:1; }
+  .byl-title-reset:hover { color:var(--ink); }
   .byl-head-actions { display:flex; gap:6px; flex-wrap:wrap; }
 
   /* Before You Leave templates — reuses the print-modal's dialog chrome (.pm-sub/.pm-actions/
@@ -510,7 +514,12 @@
 
       <div class="byl">
         <div class="byl-head">
-          <div class="panel-title" style="margin:0">Before you leave <span class="shop-count" id="bylCount"></span></div>
+          <div class="panel-title" style="margin:0">
+            <span class="byl-title-wrap">
+              <span class="editable byl-title-text" id="bylTitleText" tabindex="0" role="button" aria-label="Edit checklist title"></span>
+              <button class="byl-title-reset" id="bylTitleReset" title="Reset title" aria-label="Reset checklist title">↺</button>
+            </span>
+          </div>
           <div class="byl-head-actions">
             <button class="btn sm" id="bylTemplatesBtn">Templates</button>
             <button class="btn sm" id="bylSaveTemplateBtn">Save as template</button>
@@ -600,10 +609,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.9-beta";
+const VERSION = "1.10-beta";
 
 /* ---------------- storage ---------------- */
-const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TEMPLATES="home.before-you-leave-templates.v1";
+const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TEMPLATES="home.before-you-leave-templates.v1", K_BYL_TITLE="home.before-you-leave-title.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
@@ -613,6 +622,7 @@ function saveDates(){ try{ localStorage.setItem(K_DATES, JSON.stringify(importan
 function saveNotes(){ try{ localStorage.setItem(K_NOTES, JSON.stringify(notes)); }catch(e){} pushCloud(); }
 function saveBYL(){ try{ localStorage.setItem(K_BYL, JSON.stringify(beforeYouLeave)); }catch(e){} pushCloud(); }
 function saveBYLTemplates(){ try{ localStorage.setItem(K_BYL_TEMPLATES, JSON.stringify(beforeYouLeaveTemplates)); }catch(e){} pushCloud(); }
+function saveBYLTitle(){ try{ localStorage.setItem(K_BYL_TITLE, JSON.stringify(bylTitle)); }catch(e){} pushCloud(); }
 
 /* Device-local preferences — deliberately never synced through Firebase, never included in the
    cloud payload, and never touched by import, so each device/browser keeps its own. */
@@ -656,7 +666,8 @@ function initSync(){
       if(Array.isArray(v.notes)) notes=v.notes.map(migrateNote).filter(n=>n.text!=="");       // same rule → older clients never erase this
       if(Array.isArray(v.beforeYouLeave)) beforeYouLeave=v.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");  // same rule → older clients never erase this
       if(Array.isArray(v.beforeYouLeaveTemplates)) beforeYouLeaveTemplates=v.beforeYouLeaveTemplates.map(migrateBYLTemplate).filter(t=>t.name!==""&&t.items.length>0);  // same rule → older clients (pre-1.8) never erase this
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TEMPLATES,JSON.stringify(beforeYouLeaveTemplates)); }catch(e){}
+      if(typeof v.beforeYouLeaveTitle==="string" && v.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(v.beforeYouLeaveTitle);
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TEMPLATES,JSON.stringify(beforeYouLeaveTemplates)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); }catch(e){}
       remoteApplying=false;
       // Data is always safe to merge in (every commit path re-fetches its entity by id), but a full render()
       // would blow away a focused inline editor's DOM — so defer the redraw until editing ends.
@@ -672,7 +683,7 @@ function pushCloud(force){
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
      protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
-  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTemplates,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTemplates,beforeYouLeaveTitle:bylTitle,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(on){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -760,6 +771,11 @@ function migrateBYLTemplate(raw){
   if(!Number.isFinite(t.updated)) t.updated=t.created;
   return t;
 }
+const DEFAULT_BYL_TITLE="Before You Leave";
+function normalizeBYLTitle(raw){
+  const t=(raw==null?"":raw).toString().trim();
+  return t===""?DEFAULT_BYL_TITLE:t;
+}
 
 /* ---------------- important dates ---------------- */
 /* Stored separately from tasks — never appear in the task list, never affect progress/overdue/Up Next.
@@ -800,6 +816,7 @@ const bylRaw = loadJSON(K_BYL);
 let beforeYouLeave = (Array.isArray(bylRaw) ? bylRaw : []).map(migrateBYLItem).filter(b=>b.item!=="");
 const bylTemplatesRaw = loadJSON(K_BYL_TEMPLATES);
 let beforeYouLeaveTemplates = (Array.isArray(bylTemplatesRaw) ? bylTemplatesRaw : []).map(migrateBYLTemplate).filter(t=>t.name!==""&&t.items.length>0);
+let bylTitle = normalizeBYLTitle(loadJSON(K_BYL_TITLE));
 let settings = Object.assign({ soundEnabled:true }, loadJSON(K_SETTINGS)||{});
 
 /* ---------------- state ---------------- */
@@ -1072,6 +1089,7 @@ function currentView(){
   const showLater=document.getElementById("showLater").checked;
   const showSomeday=document.getElementById("showSomeday").checked;
   let v=tasks.filter(t=>{
+    if(t.id===editingId) return true; // an active draft/editor must never disappear behind view filters
     if(!personVisible(t)) return false;
     if(isScheduledLater(t)&&!showLater) return false;
     if(isSomeday(t)&&!showSomeday) return false;
@@ -1628,14 +1646,30 @@ document.getElementById("noteInput").addEventListener("keydown",e=>{ if(e.key!==
 function sortedBYL(){
   return [...beforeYouLeave].sort((a,b)=>(a.created||0)-(b.created||0));
 }
+function renderBYLTitle(){
+  const el=document.getElementById("bylTitleText");
+  if(isEditingField("bylTitle","single","title")) return;
+  el.textContent=bylTitle;
+}
 function renderBYL(){
+  renderBYLTitle();
   const el=document.getElementById("bylList");
   el.innerHTML = beforeYouLeave.length ? "" : `<div class="empty-state" style="padding:24px 12px"><div class="big">Nothing here yet.</div>Add a reminder above.</div>`;
   sortedBYL().forEach(b=>{ el.appendChild(renderBYLRow(b)); });
   const left=beforeYouLeave.filter(b=>!b.done).length, done=beforeYouLeave.filter(b=>b.done).length;
   document.getElementById("bylStatus").textContent=`${left} left · ${done} checked`;
-  document.getElementById("bylCount").textContent=beforeYouLeave.length?`${left}`:"";
 }
+function wireBYLTitleText(node){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit checklist title");
+  function open(){
+    if(isEditingField("bylTitle","single","title")) return;
+    startInlineText({ type:"bylTitle", id:"single", field:"title", container:node, value:bylTitle, required:false, ariaLabel:"Checklist title",
+      getEntity:()=>({}), onCommit:(entity,v)=>{ const norm=normalizeBYLTitle(v); if(norm!==bylTitle){ bylTitle=norm; saveBYLTitle(); } }, onDone:renderBYL });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+wireBYLTitleText(document.getElementById("bylTitleText"));
 function wireInlineBYLText(node, bylId){
   node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit reminder");
   function open(){
@@ -1658,6 +1692,14 @@ function renderBYLRow(b){
 document.getElementById("bylInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; beforeYouLeave.push(blankBYLItem(v)); e.target.value=""; saveBYL(); renderBYL(); });
 document.getElementById("bylReset").addEventListener("click",()=>{ if(!beforeYouLeave.some(b=>b.done)) return; beforeYouLeave.forEach(b=>{ b.done=false; }); saveBYL(); renderBYL(); });
 document.getElementById("bylClear").addEventListener("click",()=>{ if(!beforeYouLeave.some(b=>b.done)) return; beforeYouLeave=beforeYouLeave.filter(b=>!b.done); saveBYL(); renderBYL(); });
+document.getElementById("bylTitleReset").addEventListener("pointerdown",e=>{
+  if(!e.isPrimary || e.button!==0) return;
+  e.preventDefault(); closeActiveEdit(false); e.currentTarget.focus();
+});
+document.getElementById("bylTitleReset").addEventListener("click",()=>{
+  if(bylTitle===DEFAULT_BYL_TITLE) return;
+  bylTitle=DEFAULT_BYL_TITLE; saveBYLTitle(); renderBYLTitle();
+});
 
 /* =====================================================================
    BEFORE YOU LEAVE TEMPLATES
@@ -1669,8 +1711,8 @@ document.getElementById("bylClear").addEventListener("click",()=>{ if(!beforeYou
    Print Center's modal chrome (focus trap, Escape, backdrop click, focus
    restore) rather than inventing a second accessible-dialog pattern.
    Loading/saving/duplicating/deleting a template only ever reads or
-   writes beforeYouLeaveTemplates; the live beforeYouLeave checklist is
-   only ever touched by loadBYLTemplate() appending fresh items to it. */
+   writes beforeYouLeaveTemplates; the live checklist and its active title are
+   only ever touched by loadBYLTemplate(). */
 function openTplModal(view){
   closeActiveEdit(false); // opening this modal must never commit/save whatever inline edit was active
   tplPrevFocus=document.activeElement;
@@ -1737,9 +1779,10 @@ function tplListHtml(){
   return head+`<div class="tpl-list">${cards}</div><div class="pm-actions"><button class="btn" id="tplCloseBtn">Close</button></div>`;
 }
 function tplSaveHtml(){
+  const prefill = bylTitle!==DEFAULT_BYL_TITLE ? esc(bylTitle) : "";
   return `<h2 id="tplModalTitle">Save as template</h2>
-    <div class="pm-sub">Saves the current Before You Leave item text as a reusable template. Checked state isn't saved.</div>
-    <div class="field"><label for="tplSaveName">Template name</label><input type="text" id="tplSaveName" placeholder="e.g. Leaving for Texas" aria-label="Template name"></div>
+    <div class="pm-sub">Saves the current checklist item text as a reusable template. Checked state isn't saved.</div>
+    <div class="field"><label for="tplSaveName">Template name</label><input type="text" id="tplSaveName" value="${prefill}" placeholder="e.g. Leaving for Texas" aria-label="Template name"></div>
     <div class="pm-actions"><button class="btn" id="tplSaveCancel">Cancel</button><button class="btn add" id="tplSaveConfirm">Save</button></div>`;
 }
 function tplEditHtml(){
@@ -1831,11 +1874,14 @@ function confirmSaveBYLTemplate(nameRaw){
 }
 function loadBYLTemplate(id){
   const t=beforeYouLeaveTemplates.find(x=>x.id===id); if(!t) return;
-  if(!confirm(`Add all ${t.items.length} items from "${t.name}" to Before You Leave?`)) return;
+  if(!confirm(`Add all ${t.items.length} items from "${t.name}" to ${bylTitle}?`)) return;
+  const wasEmpty=beforeYouLeave.length===0;
   const now=Date.now();
   const fresh=t.items.map((txt,i)=>({ id:uid("byl"), item:txt, done:false, created:now+i }));
   beforeYouLeave=beforeYouLeave.concat(fresh);
-  saveBYL(); renderBYL();
+  saveBYL();
+  if(wasEmpty){ bylTitle=normalizeBYLTitle(t.name); saveBYLTitle(); }
+  renderBYL();
   closeTplModal();
 }
 function duplicateBYLTemplate(id){
@@ -2152,7 +2198,7 @@ document.getElementById("printBtn").addEventListener("pointerdown",e=>{
 });
 document.getElementById("printBtn").addEventListener("click",openPrintCenter);
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTemplates};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTemplates,beforeYouLeaveTitle:bylTitle};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -2183,8 +2229,9 @@ document.getElementById("importFile").addEventListener("change",e=>{
          current in-memory template collection untouched in that case, same as every other
          collection above, rather than treating "absent" as "clear these out". */
       if(Array.isArray(d.beforeYouLeaveTemplates)) beforeYouLeaveTemplates=d.beforeYouLeaveTemplates.map(migrateBYLTemplate).filter(t=>t.name!==""&&t.items.length>0);
+      if(typeof d.beforeYouLeaveTitle==="string" && d.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(d.beforeYouLeaveTitle);
     }
-    editingId=null; placeEditingId=null; dateEditingId=null; tplEditId=null; tplDraft=null; tplDraftDirty=false; savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTemplates(); render();
+    editingId=null; placeEditingId=null; dateEditingId=null; tplEditId=null; tplDraft=null; tplDraftDirty=false; savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTemplates(); saveBYLTitle(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
 });
@@ -2358,7 +2405,7 @@ function buildPrintBody(data, opts){
   const lower=[];
   if(opts.sections.notes && data.notes.length) lower.push(printSectionHtml("Quick Notes", data.notes.length, data.notes.map(printNoteRow).join("")));
   if(opts.sections.places && data.places.length) lower.push(printSectionHtml("Places to Go", data.places.length, data.places.map(printPlaceRow).join("")));
-  if(opts.sections.byl && data.byl.length) lower.push(printSectionHtml("Before You Leave", data.byl.length, data.byl.map(printBYLRow).join("")));
+  if(opts.sections.byl && data.byl.length) lower.push(printSectionHtml(bylTitle, data.byl.length, data.byl.map(printBYLRow).join("")));
   if(opts.sections.shop && data.shop.length) lower.push(printSectionHtml("Shopping List", data.shop.length, data.shop.map(printShopRow).join("")));
   if(lower.length) html+=`<div class="print-grid">${lower.join("")}</div>`;
   return html;
