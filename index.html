@@ -6,7 +6,7 @@
 <title>Home — Family Day Planner</title>
 <style>
   /* ============================================================
-     HOME — family day planner   (v1.12-beta)
+     HOME — family day planner   (v1.13-beta)
      One shared day list (multi-person tags), Places to Go + Before You Leave
      + Shopping list + Quick Notes, now in a dark-pink/plum theme.
      Tasks can be shown independently as Done, scheduled Later, or undated Someday.
@@ -544,6 +544,80 @@
   .rcs-preview-row.rcs-warning-strong { color:#FF9AA0; border-color:rgba(240,87,92,.4); background:rgba(240,87,92,.1); font-weight:600; }
   .rcs-actions-stack { flex-direction:column; align-items:stretch; gap:8px; }
 
+  /* ============================================================
+     CLOTHING PAGE
+     ============================================================ */
+  .clothing-wrap { max-width:1280px; margin:0 auto; padding:20px 20px 80px; }
+  .cl-top { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
+  .cl-top-left, .cl-top-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .cl-page-title { font-size:22px; margin:0; font-weight:800; letter-spacing:-.02em; }
+  .cl-notice { border:1px solid rgba(242,193,78,.45); background:rgba(242,193,78,.08); color:var(--star); border-radius:10px; padding:9px 12px; font-size:12px; margin-bottom:14px; }
+  .cl-wallet-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin-bottom:16px; }
+  .cl-wallet { background:var(--card); border:1px solid var(--line); border-top:4px solid var(--person-color,var(--signal)); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); min-width:0; }
+  .cl-wallet-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .cl-wallet-name { font-size:16px; font-weight:750; overflow:hidden; text-overflow:ellipsis; }
+  .cl-mode { font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:99px; padding:2px 7px; white-space:nowrap; }
+  .cl-balance { font-family:var(--mono); font-size:28px; font-weight:800; margin:10px 0 2px; }
+  .cl-wallet-meta { font-size:11.5px; color:var(--muted); }
+  .cl-wallet-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:11px; }
+  .cl-stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; margin-bottom:16px; }
+  .cl-stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 12px; min-width:0; }
+  .cl-stat-value { font-family:var(--mono); font-size:18px; font-weight:750; overflow:hidden; text-overflow:ellipsis; }
+  .cl-stat-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+  .cl-section { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); margin-bottom:16px; min-width:0; }
+  .cl-section-head { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .cl-section-title { font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted-2); }
+  .cl-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .cl-table-wrap { overflow-x:auto; }
+  .cl-table { width:100%; border-collapse:collapse; min-width:720px; }
+  .cl-table th { font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted-2); text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); }
+  .cl-table td { font-size:12.5px; padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .cl-table tr.archived { opacity:.55; }
+  .cl-table .money { font-family:var(--mono); white-space:nowrap; }
+  .cl-status { display:inline-flex; font-size:10px; border:1px solid var(--line); border-radius:99px; padding:2px 7px; color:var(--muted); white-space:nowrap; }
+  .cl-status.attn { color:var(--star); border-color:rgba(242,193,78,.45); }
+  .cl-status.done { color:#6EE7B7; border-color:rgba(35,184,119,.4); }
+  .cl-row-actions { display:flex; gap:4px; justify-content:flex-end; }
+  .cl-modal-backdrop { position:fixed; inset:0; background:rgba(10,3,7,.68); z-index:2100; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .cl-modal { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 0 0 3px rgba(236,72,153,.12),var(--shadow); width:min(760px,100%); max-height:92vh; overflow-y:auto; padding:20px; }
+  .cl-modal h2 { margin:0 0 3px; font-size:19px; }
+  .cl-modal-sub { color:var(--muted); font-size:12px; margin-bottom:14px; }
+  .cl-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px 14px; }
+  .cl-field { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .cl-field.full { grid-column:1/-1; }
+  .cl-field label { font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .cl-field input, .cl-field select, .cl-field textarea { font:inherit; font-size:13px; color:var(--ink); background:var(--input-bg); border:1px solid var(--line); border-radius:8px; padding:8px 9px; width:100%; min-width:0; }
+  .cl-field textarea { min-height:58px; resize:vertical; }
+  .cl-field input:focus, .cl-field select:focus, .cl-field textarea:focus { outline:2px solid var(--signal); outline-offset:1px; }
+  .cl-check { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); }
+  .cl-check input { accent-color:var(--signal); }
+  .cl-calc { background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:14px; }
+  .cl-calc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+  .cl-calc-item { min-width:0; }
+  .cl-calc-item b { display:block; font-family:var(--mono); font-size:16px; }
+  .cl-calc-item span { font-size:10px; color:var(--muted); }
+  .cl-reflections { display:grid; gap:8px; margin-top:10px; }
+  .cl-error { color:#FF9AA0; font-size:12px; margin-top:10px; }
+  .cl-modal-actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:16px; }
+  .cl-warning { color:var(--star); font-size:11.5px; margin-top:8px; }
+  .btn:focus-visible, .iconbtn:focus-visible, .cl-row-actions button:focus-visible { outline:2px solid var(--signal); outline-offset:2px; }
+
+  @media (max-width:700px){
+    .clothing-wrap { padding:14px 12px 60px; }
+    .cl-top-actions { width:100%; }
+    .cl-top-actions .btn { flex:1; }
+    .cl-form-grid { grid-template-columns:1fr; }
+    .cl-field.full { grid-column:auto; }
+    .cl-table-wrap { overflow:visible; }
+    .cl-table { min-width:0; display:block; }
+    .cl-table thead { display:none; }
+    .cl-table tbody, .cl-table tr, .cl-table td { display:block; width:100%; }
+    .cl-table tr { border:1px solid var(--line); border-radius:9px; padding:8px 10px; margin-bottom:8px; background:var(--surface-2); }
+    .cl-table td { border:0; padding:3px 0; }
+    .cl-table td::before { content:attr(data-label); display:inline-block; min-width:92px; color:var(--muted-2); font-family:var(--mono); font-size:9px; text-transform:uppercase; }
+    .cl-row-actions { justify-content:flex-start; margin-top:5px; }
+  }
+
   @media (max-width:820px){
     .cal-day-cards { grid-template-columns:1fr; }
   }
@@ -581,6 +655,7 @@
         <span class="sync-badge" id="syncBadge"></span>
         <button class="btn sm" id="soundToggle">Sound: On</button>
         <button class="btn sm add" id="calendarBtn">📅 Calendar</button>
+        <button class="btn sm" id="clothingBtn">👕 Clothing</button>
         <button class="btn sm" id="printBtn">🖨 Print</button>
         <button class="btn sm" id="exportBtn">Export</button>
         <button class="btn sm" id="importBtn">Import</button>
@@ -674,6 +749,31 @@
   <p class="hint" id="hint"></p>
 </div>
 
+<div class="clothing-wrap hidden" id="clothingPage">
+  <header class="cl-top">
+    <div class="cl-top-left"><button class="btn sm" id="clBackBtn">← Back to Home</button><h1 class="cl-page-title">Clothing</h1></div>
+    <div class="cl-top-actions">
+      <button class="btn sm" id="clCalculatorBtn">Deal calculator</button>
+      <button class="btn add" id="clNewPurchaseBtn">+ New purchase</button>
+      <button class="btn sm" id="clSettingsBtn">Settings</button>
+    </div>
+  </header>
+  <div class="cl-notice">Parent review is a household workflow, not secure authentication. Anyone with access to this planner can view or change clothing data.</div>
+  <div class="cl-wallet-grid" id="clWalletGrid"></div>
+  <div class="cl-stat-grid" id="clStatGrid"></div>
+  <section class="cl-section">
+    <div class="cl-section-head"><span class="cl-section-title">Purchase history</span><span class="shop-count" id="clPurchaseCount"></span></div>
+    <div class="cl-filter-row"><select class="ctrl" id="clPersonFilter" aria-label="Filter purchases by person"></select><select class="ctrl" id="clStatusFilter" aria-label="Filter purchases by status"><option value="active">Active</option><option value="all">All</option><option value="pending">Needs attention</option><option value="returned">Returned</option><option value="archived">Archived</option></select></div>
+    <div class="cl-table-wrap"><table class="cl-table"><thead><tr><th>Date</th><th>Person</th><th>Item</th><th>Status</th><th>Paid</th><th>Parent</th><th>Child</th><th></th></tr></thead><tbody id="clPurchaseBody"></tbody></table></div>
+  </section>
+  <section class="cl-section">
+    <div class="cl-section-head"><span class="cl-section-title">Verification approval queue</span><span class="shop-count" id="clVerificationCount"></span></div>
+    <div id="clVerificationQueue"></div>
+  </section>
+</div>
+
+<div class="cl-modal-backdrop hidden" id="clModalBackdrop"><div class="cl-modal" id="clModal" role="dialog" aria-modal="true" tabindex="-1"></div></div>
+
 <div class="calendar-wrap hidden" id="calendarPage">
   <header class="cal-top">
     <div class="cal-top-left">
@@ -726,6 +826,7 @@
         <label class="pm-check"><input type="checkbox" id="pmSecBYL" checked> Before you leave</label>
         <label class="pm-check"><input type="checkbox" id="pmSecShop" checked> Shopping list</label>
         <label class="pm-check"><input type="checkbox" id="pmSecCalendar"> Calendar</label>
+        <label class="pm-check"><input type="checkbox" id="pmSecClothing"> Clothing summary</label>
       </div>
     </div>
 
@@ -757,10 +858,11 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.12-beta";
+const VERSION = "1.13-beta";
 
 /* ---------------- storage ---------------- */
 const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1";
+const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
@@ -773,6 +875,16 @@ function saveBYLTitle(){ try{ localStorage.setItem(K_BYL_TITLE, JSON.stringify(b
 /* Persisted tombstones for deleted/excluded school-calendar import events — a shared family
    decision, so this is synced like every other collection above, not device-local. */
 function saveCalExclusions(){ try{ localStorage.setItem(K_CAL_EXCLUSIONS, JSON.stringify(calendarExclusions)); }catch(e){} pushCloud(); }
+/* Clothing purchases and their ledger are a single financial unit. Every clothing mutation writes
+   all three local collections first, then schedules exactly one debounced cloud update. */
+function saveClothing(){
+  try{
+    localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases));
+    localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger));
+    localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings));
+  }catch(e){}
+  pushCloud();
+}
 
 /* Device-local preferences — deliberately never synced through Firebase, never included in the
    cloud payload, and never touched by import, so each device/browser keeps its own. */
@@ -818,8 +930,13 @@ function initSync(){
       if(Array.isArray(v.beforeYouLeave)) beforeYouLeave=v.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");  // same rule → older clients never erase this
       if(typeof v.beforeYouLeaveTitle==="string" && v.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(v.beforeYouLeaveTitle);
       if(Array.isArray(v.calendarExclusions)) calendarExclusions=v.calendarExclusions.filter(x=>typeof x==="string");  // same rule → older clients never erase this
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); }catch(e){}
+      if(Array.isArray(v.clothingPurchases)) clothingPurchases=v.clothingPurchases.map(migrateClothingPurchase);
+      if(Array.isArray(v.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(v.clothingWalletLedger.map(migrateClothingLedgerEntry));
+      if(v.clothingSettings && typeof v.clothingSettings==="object" && !Array.isArray(v.clothingSettings)) clothingSettings=migrateClothingSettings(v.clothingSettings);
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); }catch(e){}
       remoteApplying=false;
+      const deposited=ensureMonthlyClothingDeposits();
+      if(deposited) saveClothing();
       // Data is always safe to merge in (every commit path re-fetches its entity by id), but a full render()
       // would blow away a focused inline editor's DOM — so defer the redraw until editing ends.
       if(!editingActive()) render(); else pendingRemoteRender=true;
@@ -834,7 +951,7 @@ function pushCloud(force){
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
      protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
-  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(on){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -944,6 +1061,173 @@ function normalizeBYLTitle(raw){
   const t=(raw==null?"":raw).toString().trim();
   return t===""?DEFAULT_BYL_TITLE:t;
 }
+
+/* ---------------- clothing deal-match data + financial engine ---------------- */
+const CLOTHING_POLICY_VERSION="1.0";
+const CLOTHING_MODES={"deal-match":"Deal Match","intentional":"Intentional Purchase","training-wheels":"Training Wheels"};
+const CLOTHING_CONDITIONS={new:"New",outlet:"Outlet",clearance:"Clearance",secondhand:"Secondhand"};
+const CLOTHING_VERIFICATION={unverified:"Unverified","parent-approved":"Parent approved","parent-corrected":"Parent corrected",rejected:"Rejected"};
+const CLOTHING_CATEGORIES={
+  "tshirt-tank":"T-shirt / tank", "blouse-top":"Blouse / specialty top", "sweater-hoodie":"Sweater / hoodie",
+  "shorts-skirt":"Shorts / skirt", "pants-jeans":"Pants / jeans", dress:"Dress", "everyday-shoes":"Everyday shoes",
+  "athletic-shoes":"Athletic shoes", boots:"Boots", "coat-jacket":"Coat / jacket", accessories:"Accessories",
+  "formal-event":"Formal / special-event clothing"
+};
+const DEFAULT_CLOTHING_CAPS={"tshirt-tank":3000,"blouse-top":4500,"sweater-hoodie":6000,"shorts-skirt":5000,"pants-jeans":7500,dress:8500,"everyday-shoes":10000,"athletic-shoes":12500,boots:12500,"coat-jacket":15000,accessories:3000,"formal-event":0};
+const CLOTHING_REFLECTION_PROMPTS=[
+  "Does this fit your current style?", "What will you wear it with?", "Name two or three outfits it completes.",
+  "Is it replacing something or adding something?", "Did you try it on?", "What is the return deadline?",
+  "Did you compare at least two options, online or in-store?"
+];
+function finiteInt(v,fallback){ const n=Number(v); return Number.isFinite(n)?Math.round(n):(fallback||0); }
+function nonNegativeInt(v,fallback){ return Math.max(0,finiteInt(v,fallback)); }
+function clampInt(v,min,max){ return Math.min(max,Math.max(min,finiteInt(v,min))); }
+function money(cents){ const n=finiteInt(cents,0); return `${n<0?"-":""}$${(Math.abs(n)/100).toFixed(2)}`; }
+function parseMoneyToCents(v){ const n=Number(String(v==null?"":v).replace(/[$,\s]/g,"")); return Number.isFinite(n)?Math.max(0,Math.round(n*100)):0; }
+function bpsLabel(bps){ return (clampInt(bps,0,10000)/100).toFixed((bps%100)?2:0)+"%"; }
+function localMonthKey(d){ d=d||new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
+function nextLocalMonthStart(){ const d=new Date(); return new Date(d.getFullYear(),d.getMonth()+1,1).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }
+function initialClothingMode(personId){
+  const childIds=SEED_PEOPLE.slice(1).map(p=>p.id), i=childIds.indexOf(personId);
+  return i===1?"intentional":i===2?"training-wheels":"deal-match";
+}
+function blankPersonClothingSettings(personId){
+  const isSeedParent=personId===SEED_PEOPLE[0].id;
+  return {enabled:!isSeedParent,mode:initialClothingMode(personId),monthlyDepositCents:5000,walletMaximumCents:15000,
+    fixedParentBps:5000,reflectionPrompts:initialClothingMode(personId)==="intentional",parentApprovalRequired:initialClothingMode(personId)==="training-wheels",coolingOffHours:initialClothingMode(personId)==="training-wheels"?24:0};
+}
+function blankClothingSettings(){ return {policyVersion:CLOTHING_POLICY_VERSION,baselineBps:5000,ceilingBps:9500,secondhandBonusBps:1500,
+  taxPolicy:"proportional",shippingPolicy:"standard-proportional-expedited-child",categoryCaps:Object.assign({},DEFAULT_CLOTHING_CAPS),people:{}}; }
+function migrateClothingSettings(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const s=Object.assign(blankClothingSettings(),src);
+  s.policyVersion=typeof s.policyVersion==="string"?s.policyVersion:CLOTHING_POLICY_VERSION;
+  s.baselineBps=clampInt(s.baselineBps,0,10000); s.ceilingBps=clampInt(s.ceilingBps,s.baselineBps,10000); s.secondhandBonusBps=clampInt(s.secondhandBonusBps,0,10000);
+  s.categoryCaps=Object.assign({},DEFAULT_CLOTHING_CAPS,(src.categoryCaps&&typeof src.categoryCaps==="object")?src.categoryCaps:{});
+  Object.keys(CLOTHING_CATEGORIES).forEach(k=>{ s.categoryCaps[k]=nonNegativeInt(s.categoryCaps[k],DEFAULT_CLOTHING_CAPS[k]); });
+  const rawPeople=(src.people&&typeof src.people==="object"&&!Array.isArray(src.people))?src.people:{}; s.people={};
+  Object.keys(rawPeople).forEach(id=>{
+    const p=Object.assign(blankPersonClothingSettings(id),rawPeople[id]||{});
+    if(!CLOTHING_MODES[p.mode]) p.mode="deal-match";
+    p.enabled=p.enabled!==false; p.monthlyDepositCents=nonNegativeInt(p.monthlyDepositCents,5000); p.walletMaximumCents=nonNegativeInt(p.walletMaximumCents,15000);
+    p.fixedParentBps=clampInt(p.fixedParentBps,0,10000); p.reflectionPrompts=!!p.reflectionPrompts; p.parentApprovalRequired=!!p.parentApprovalRequired; p.coolingOffHours=nonNegativeInt(p.coolingOffHours,0);
+    s.people[id]=p;
+  });
+  return s;
+}
+function clothingPersonSettings(personId){
+  if(!clothingSettings.people[personId]) clothingSettings.people[personId]=blankPersonClothingSettings(personId);
+  return clothingSettings.people[personId];
+}
+function ensureClothingPersonSettings(){ let changed=false; people.forEach(p=>{ if(!clothingSettings.people[p.id]){ clothingSettings.people[p.id]=blankPersonClothingSettings(p.id); changed=true; } }); return changed; }
+function blankClothingPurchase(){ const now=Date.now(); return {id:uid("clp"),personId:"",personName:"",purchaseDate:todayStr(),description:"",category:"tshirt-tank",condition:"new",store:"",necessaryOrDiscretionary:"discretionary",
+  claimedRetailPrice:0,verifiedRetailPrice:0,pricePaid:0,categoryCapUsed:0,discount:0,parentPayPercent:0,calculatedParentContribution:0,actualParentContribution:0,childContribution:0,
+  tax:0,shipping:0,shippingType:"standard",parentTaxContribution:0,childTaxContribution:0,parentShippingContribution:0,childShippingContribution:0,
+  verificationMethod:"",verificationUrl:"",verificationNote:"",verificationStatus:"unverified",verifiedBy:"",verifiedAt:0,returnDeadline:"",returned:false,returnedAt:0,returnNote:"",
+  archived:false,deleted:false,deletedAt:0,parentOverride:false,parentOverrideContribution:null,parentOverrideReason:"",notes:"",reflectionAnswers:{},status:"draft",coolingOffUntil:0,parentApproved:false,
+  policySnapshot:null,timesWorn:0,wouldBuyAgain:null,created:now,updated:now}; }
+function migrateClothingPurchase(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{}; const p=Object.assign(blankClothingPurchase(),src);
+  if(typeof p.id!=="string"||!p.id) p.id=uid("clp"); p.personId=typeof p.personId==="string"?p.personId:""; p.description=String(p.description||"").trim();
+  if(!CLOTHING_CATEGORIES[p.category]) p.category="tshirt-tank"; if(!CLOTHING_CONDITIONS[p.condition]) p.condition="new";
+  if(!["necessary","discretionary"].includes(p.necessaryOrDiscretionary)) p.necessaryOrDiscretionary="discretionary";
+  ["claimedRetailPrice","verifiedRetailPrice","pricePaid","categoryCapUsed","calculatedParentContribution","actualParentContribution","childContribution","tax","shipping","parentTaxContribution","childTaxContribution","parentShippingContribution","childShippingContribution"].forEach(k=>p[k]=nonNegativeInt(p[k],0));
+  p.discount=clampInt(p.discount,0,10000); p.parentPayPercent=clampInt(p.parentPayPercent,0,10000);
+  p.parentOverrideContribution=p.parentOverrideContribution==null?null:nonNegativeInt(p.parentOverrideContribution,0);
+  if(!CLOTHING_VERIFICATION[p.verificationStatus]) p.verificationStatus="unverified";
+  p.verificationUrl=String(p.verificationUrl||"").trim(); if(/^(data|blob):/i.test(p.verificationUrl)) p.verificationUrl="";
+  p.returned=!!p.returned; p.archived=!!p.archived; p.deleted=!!p.deleted; p.parentOverride=!!p.parentOverride; p.parentApproved=!!p.parentApproved;
+  p.reflectionAnswers=(p.reflectionAnswers&&typeof p.reflectionAnswers==="object"&&!Array.isArray(p.reflectionAnswers))?p.reflectionAnswers:{};
+  p.created=Number.isFinite(p.created)?p.created:Date.now(); p.updated=Number.isFinite(p.updated)?p.updated:p.created;
+  return p;
+}
+function blankClothingLedgerEntry(){ const now=Date.now(); return {id:uid("cll"),personId:"",date:todayStr(),type:"manual-adjustment",amount:0,purchaseId:"",periodKey:"",description:"",parentNote:"",created:now,updated:now}; }
+function migrateClothingLedgerEntry(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{}; const e=Object.assign(blankClothingLedgerEntry(),src);
+  if(typeof e.id!=="string"||!e.id) e.id=uid("cll"); e.personId=String(e.personId||""); e.amount=finiteInt(e.amount,0); e.purchaseId=String(e.purchaseId||""); e.periodKey=String(e.periodKey||"");
+  e.created=Number.isFinite(e.created)?e.created:Date.now(); e.updated=Number.isFinite(e.updated)?e.updated:e.created; return e;
+}
+function dedupeClothingLedger(entries){
+  const byId=new Map(), periodSeen=new Set();
+  entries.forEach(e=>{ if(!e||!e.id) return; if(e.type==="monthly-deposit"&&e.periodKey){ const k=e.personId+"|"+e.periodKey; if(periodSeen.has(k)) return; periodSeen.add(k); } if(!byId.has(e.id)||byId.get(e.id).updated<e.updated) byId.set(e.id,e); });
+  return [...byId.values()];
+}
+function clothingBalance(personId){ return clothingWalletLedger.filter(e=>e.personId===personId).reduce((sum,e)=>sum+finiteInt(e.amount,0),0); }
+function clothingLedgerEntry(id){ return clothingWalletLedger.find(e=>e.id===id); }
+function addClothingLedgerEntry(fields){ const e=migrateClothingLedgerEntry(Object.assign(blankClothingLedgerEntry(),fields||{})); if(clothingLedgerEntry(e.id)) return null; clothingWalletLedger.push(e); return e; }
+function ensureMonthlyClothingDeposits(now){
+  ensureClothingPersonSettings(); const month=localMonthKey(now), date=`${month}-01`; let changed=false;
+  people.forEach(person=>{
+    const cfg=clothingPersonSettings(person.id); if(!cfg.enabled) return;
+    const periodKey=`clothing-deposit:${person.id}:${month}`;
+    if(clothingWalletLedger.some(e=>e.personId===person.id&&e.type==="monthly-deposit"&&e.periodKey===periodKey)) return;
+    const amount=Math.max(0,Math.min(cfg.monthlyDepositCents,cfg.walletMaximumCents-clothingBalance(person.id)));
+    addClothingLedgerEntry({id:periodKey,personId:person.id,date,type:"monthly-deposit",amount,periodKey,description:`Monthly clothing deposit for ${month}`}); changed=true;
+  });
+  return changed;
+}
+function verifiedRetailApproved(p){ return ["parent-approved","parent-corrected"].includes(p.verificationStatus)&&p.verifiedRetailPrice>0; }
+function clothingPolicySnapshot(personId,categoryCapUsed){ const cfg=clothingPersonSettings(personId); return {policyVersion:clothingSettings.policyVersion,baselinePercentUsed:clothingSettings.baselineBps,ceilingPercentUsed:clothingSettings.ceilingBps,secondhandBonusUsed:clothingSettings.secondhandBonusBps,categoryCapUsed,
+  childModeUsed:cfg.mode,monthlyDepositSetting:cfg.monthlyDepositCents,walletMaximumSetting:cfg.walletMaximumCents,taxPolicyUsed:clothingSettings.taxPolicy,shippingPolicyUsed:clothingSettings.shippingPolicy,fixedParentPercentUsed:cfg.fixedParentBps,capturedAt:Date.now()}; }
+function splitProportional(cents,parentBase,totalBase){ if(cents<=0||parentBase<=0||totalBase<=0) return {parent:0,child:cents}; const parent=Math.min(cents,Math.round(cents*parentBase/totalBase)); return {parent,child:cents-parent}; }
+function calculateClothingPurchase(input, snapshot, walletBalance){
+  const p=migrateClothingPurchase(input), cfg=clothingPersonSettings(p.personId), snap=snapshot||clothingPolicySnapshot(p.personId,p.categoryCapUsed||clothingSettings.categoryCaps[p.category]||0);
+  const price=p.pricePaid, cap=p.categoryCapUsed||snap.categoryCapUsed||price, eligible=cap>0?Math.min(price,cap):price;
+  const verified=verifiedRetailApproved(p), retail=verified?p.verifiedRetailPrice:0;
+  const discount=verified&&retail>0?clampInt(Math.round((retail-price)*10000/retail),0,10000):0;
+  let parentBps=snap.baselinePercentUsed;
+  if(snap.childModeUsed==="training-wheels") parentBps=clampInt(snap.fixedParentPercentUsed,0,snap.ceilingPercentUsed);
+  else parentBps=clampInt(snap.baselinePercentUsed+Math.round((snap.ceilingPercentUsed-snap.baselinePercentUsed)*discount/10000),0,snap.ceilingPercentUsed);
+  if(p.condition==="secondhand"&&!verified&&snap.childModeUsed!=="training-wheels") parentBps=Math.min(snap.ceilingPercentUsed,parentBps+snap.secondhandBonusUsed);
+  const calculated=p.necessaryOrDiscretionary==="necessary"?eligible:Math.round(eligible*parentBps/10000);
+  let actual=p.necessaryOrDiscretionary==="necessary"?calculated:Math.min(calculated,Math.max(0,finiteInt(walletBalance,0)));
+  if(p.parentOverride&&p.parentOverrideContribution!=null) actual=Math.min(price,p.necessaryOrDiscretionary==="necessary"?p.parentOverrideContribution:Math.min(p.parentOverrideContribution,Math.max(0,finiteInt(walletBalance,0))));
+  const childBase=price-actual;
+  const taxSplit=splitProportional(p.tax,actual,price);
+  const shippingSplit=p.shippingType==="expedited"?{parent:0,child:p.shipping}:splitProportional(p.shipping,actual,price);
+  return {eligiblePrice:eligible,discount,parentPayPercent:parentBps,calculatedParentContribution:calculated,actualParentContribution:actual,childContribution:childBase,
+    parentTaxContribution:taxSplit.parent,childTaxContribution:taxSplit.child,parentShippingContribution:shippingSplit.parent,childShippingContribution:shippingSplit.child,
+    parentTotal:actual+taxSplit.parent+shippingSplit.parent,childTotal:childBase+taxSplit.child+shippingSplit.child,projectedWallet:p.necessaryOrDiscretionary==="necessary"?walletBalance:walletBalance-actual,snapshot:snap};
+}
+function purchaseContributionLedgerId(purchaseId){ return `clothing-purchase:${purchaseId}`; }
+function completeClothingPurchase(raw){
+  const p=migrateClothingPurchase(raw), existing=clothingPurchases.find(x=>x.id===p.id); if(existing&&existing.status==="completed") return {ok:false,error:"That purchase is already completed."};
+  p.personName=getPerson(p.personId).name;
+  const cfg=clothingPersonSettings(p.personId), now=Date.now();
+  if(cfg.parentApprovalRequired&&!p.parentApproved) return {ok:false,pending:true,error:"Parent approval is required."};
+  if(p.coolingOffUntil&&now<p.coolingOffUntil) return {ok:false,pending:true,error:"The cooling-off period has not ended."};
+  const snap=clothingPolicySnapshot(p.personId,p.categoryCapUsed||clothingSettings.categoryCaps[p.category]||0), calc=calculateClothingPurchase(p,snap,clothingBalance(p.personId));
+  Object.assign(p,calc,{policySnapshot:snap,status:"completed",updated:now}); delete p.eligiblePrice; delete p.parentTotal; delete p.childTotal; delete p.projectedWallet; delete p.snapshot;
+  if(existing) clothingPurchases=clothingPurchases.filter(x=>x.id!==p.id);
+  clothingPurchases.push(p);
+  addClothingLedgerEntry({id:purchaseContributionLedgerId(p.id),personId:p.personId,date:p.purchaseDate,type:"purchase-contribution",amount:p.necessaryOrDiscretionary==="necessary"?0:-p.actualParentContribution,purchaseId:p.id,description:p.description||"Clothing purchase"});
+  saveClothing(); return {ok:true,purchase:p};
+}
+function recalculateCompletedClothingPurchase(id,updated,useCurrentPolicy){
+  const old=clothingPurchases.find(x=>x.id===id); if(!old||old.status!=="completed"||old.deleted||old.returned) return {ok:false,error:"This purchase cannot be recalculated."};
+  const next=migrateClothingPurchase(Object.assign({},old,updated||{})); next.personId=old.personId; next.personName=old.personName;
+  const snapshot=useCurrentPolicy?clothingPolicySnapshot(next.personId,next.categoryCapUsed||clothingSettings.categoryCaps[next.category]||0):old.policySnapshot;
+  const balanceBefore=clothingBalance(next.personId)+(old.necessaryOrDiscretionary==="discretionary"?old.actualParentContribution:0);
+  const calc=calculateClothingPurchase(next,snapshot,balanceBefore), difference=(old.necessaryOrDiscretionary==="discretionary"?old.actualParentContribution:0)-(next.necessaryOrDiscretionary==="discretionary"?calc.actualParentContribution:0);
+  if(!confirm(`This changes the wallet by ${money(difference)}. Apply the correction and preserve the audit history?`)) return {ok:false,cancelled:true};
+  Object.assign(next,calc,{policySnapshot:snapshot,updated:Date.now()}); ["eligiblePrice","parentTotal","childTotal","projectedWallet","snapshot"].forEach(k=>delete next[k]);
+  clothingPurchases[clothingPurchases.findIndex(x=>x.id===id)]=next;
+  if(difference!==0) addClothingLedgerEntry({id:`clothing-correction:${id}:${Date.now()}`,personId:next.personId,date:todayStr(),type:"correction",amount:difference,purchaseId:id,description:`Purchase correction: ${next.description}`,parentNote:next.parentOverrideReason||"Confirmed purchase edit"});
+  saveClothing(); return {ok:true,purchase:next};
+}
+function savePendingClothingPurchase(raw){ const p=migrateClothingPurchase(raw); p.status=p.coolingOffUntil>Date.now()?"pending-cooling-off":"pending-approval"; const i=clothingPurchases.findIndex(x=>x.id===p.id); if(i>=0) clothingPurchases[i]=p; else clothingPurchases.push(p); saveClothing(); return p; }
+function returnClothingPurchase(id,note){
+  const p=clothingPurchases.find(x=>x.id===id); if(!p||p.returned||p.deleted||p.status!=="completed") return false;
+  const ledgerId=`clothing-refund:${id}`; if(clothingLedgerEntry(ledgerId)) return false;
+  p.returned=true; p.returnedAt=Date.now(); p.returnNote=String(note||"").trim(); p.updated=Date.now();
+  addClothingLedgerEntry({id:ledgerId,personId:p.personId,date:todayStr(),type:"refund",amount:p.necessaryOrDiscretionary==="necessary"?0:p.actualParentContribution,purchaseId:id,description:`Return: ${p.description}`,parentNote:p.returnNote}); saveClothing(); return true;
+}
+function deleteErroneousClothingPurchase(id,note){
+  const p=clothingPurchases.find(x=>x.id===id); if(!p||p.deleted) return false; const ledgerId=`clothing-delete-reversal:${id}`;
+  if(!clothingLedgerEntry(ledgerId)&&p.status==="completed"&&!p.returned) addClothingLedgerEntry({id:ledgerId,personId:p.personId,date:todayStr(),type:"correction",amount:p.necessaryOrDiscretionary==="necessary"?0:p.actualParentContribution,purchaseId:id,description:`Erroneous purchase reversal: ${p.description}`,parentNote:String(note||"").trim()});
+  p.deleted=true; p.deletedAt=Date.now(); p.status="deleted"; p.updated=Date.now(); saveClothing(); return true;
+}
+function clothingPurchaseTotals(p){ return {parent:p.actualParentContribution+p.parentTaxContribution+p.parentShippingContribution,child:p.childContribution+p.childTaxContribution+p.childShippingContribution,total:p.pricePaid+p.tax+p.shipping}; }
 
 /* ---------------- important dates ---------------- */
 /* Stored separately from tasks — never appear in the task list, never affect progress/overdue/Up Next.
@@ -1098,6 +1382,11 @@ let bylTitle = normalizeBYLTitle(loadJSON(K_BYL_TITLE));
 let settings = Object.assign({ soundEnabled:true }, loadJSON(K_SETTINGS)||{});
 const calExclusionsRaw = loadJSON(K_CAL_EXCLUSIONS);
 let calendarExclusions = (Array.isArray(calExclusionsRaw) ? calExclusionsRaw : []).filter(x=>typeof x==="string");
+let clothingSettings = migrateClothingSettings(loadJSON(K_CLOTHING_SETTINGS)||{});
+const clothingPurchasesRaw=loadJSON(K_CLOTHING_PURCHASES);
+let clothingPurchases=(Array.isArray(clothingPurchasesRaw)?clothingPurchasesRaw:[]).map(migrateClothingPurchase);
+const clothingLedgerRaw=loadJSON(K_CLOTHING_LEDGER);
+let clothingWalletLedger=dedupeClothingLedger((Array.isArray(clothingLedgerRaw)?clothingLedgerRaw:[]).map(migrateClothingLedgerEntry));
 
 /* ---------------- state ---------------- */
 let editingId=null, placeEditingId=null, dateEditingId=null, overdueSet=new Set();
@@ -1123,6 +1412,7 @@ function showHomePage(){
   currentPage="home"; closeActiveEdit(true);
   document.getElementById("homeWrap").classList.remove("hidden");
   document.getElementById("calendarPage").classList.add("hidden");
+  document.getElementById("clothingPage").classList.add("hidden");
   render(); // Calendar-triggered edits only refresh Calendar's own DOM while it's the active page;
             // refresh Home here so it's never stale when the user switches back to it.
   if(location.hash==="#calendar") history.replaceState(null,"",location.pathname+location.search);
@@ -1130,6 +1420,7 @@ function showHomePage(){
 function showCalendarPage(){
   currentPage="calendar"; closeActiveEdit(true);
   document.getElementById("homeWrap").classList.add("hidden");
+  document.getElementById("clothingPage").classList.add("hidden");
   document.getElementById("calendarPage").classList.remove("hidden");
   renderCalendarPage();
   /* Reflects current page in the URL (replaceState — no extra back-button history entries) so
@@ -1137,8 +1428,16 @@ function showCalendarPage(){
      Reload-persistence of the last-viewed page is a separate, not-yet-requested feature. */
   if(location.hash!=="#calendar") history.replaceState(null,"","#calendar");
 }
+function showClothingPage(){
+  currentPage="clothing"; closeActiveEdit(true);
+  document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("clothingPage").classList.remove("hidden");
+  renderClothingPage();
+  if(location.hash==="#calendar") history.replaceState(null,"",location.pathname+location.search);
+}
 document.getElementById("calendarBtn").addEventListener("click", showCalendarPage);
 document.getElementById("calBackBtn").addEventListener("click", showHomePage);
+document.getElementById("clothingBtn").addEventListener("click", showClothingPage);
+document.getElementById("clBackBtn").addEventListener("click", showHomePage);
 
 /* Generic modal shell for Calendar-triggered full editors (date/task/place) and the School Import
    workflow — same overlay/focus-trap/Escape/restore-focus pattern as the existing Print Center
@@ -1188,7 +1487,7 @@ function calModalKeyHandler(e){
 /* Shared inline-edit / popover tracker (text fields + people/category/date-time/priority popovers).
    Only one of these may be open at a time; opening a new one commits/closes whatever is open. */
 let activeEdit=null; // { type, id, field, close(cancel) }
-function editingActive(){ return editingId!=null || placeEditingId!=null || dateEditingId!=null || !!activeEdit; }
+function editingActive(){ return editingId!=null || placeEditingId!=null || dateEditingId!=null || !!activeEdit || !document.getElementById("clModalBackdrop").classList.contains("hidden"); }
 
 /* =====================================================================
    SHARED INLINE-EDIT / POPOVER SYSTEM
@@ -1503,6 +1802,7 @@ function render(){
   /* Keep Calendar current after ANY mutation, from either page — every mutation in this app already
      funnels through render(), so this one line is the entire integration point Calendar needs. */
   if(currentPage==="calendar") renderCalendarPage();
+  if(currentPage==="clothing") renderClothingPage();
 }
 
 function renderProgress(){
@@ -1562,7 +1862,7 @@ function renderPeopleEditor(){
       else if(e.key==="Escape"){ e.preventDefault(); const person=people.find(x=>x.id===id); nameInput.value=person?person.name:""; nameInput.blur(); }
     });
     row.querySelector(".swatch").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; const i=PALETTE.indexOf(person.color); person.color=PALETTE[(i+1)%PALETTE.length]; savePeople(); renderPeopleEditor(); renderPeopleBar(); render(); });
-    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; if(confirm(`Remove ${person.name}? They'll be removed from any assigned items.`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); importantDates.forEach(dt=>{ dt.people=normPeople(dt.people).filter(x=>x!==id); }); if(activePerson===id){ activePerson="all"; saveActiveProfile(); } savePeople(); saveTasks(); savePlaces(); saveDates(); renderPeopleEditor(); render(); } });
+    row.querySelector(".rm").addEventListener("click",()=>{ const person=people.find(x=>x.id===id); if(!person) return; const hasClothing=clothingPurchases.some(p=>p.personId===id)||clothingWalletLedger.some(e=>e.personId===id); const extra=hasClothing?" Clothing purchases and wallet history will be preserved under their historical name.":""; if(confirm(`Remove ${person.name}? They'll be removed from assigned planner items.${extra}`)){ people=people.filter(x=>x.id!==id); tasks.forEach(t=>{ t.people=taskPeopleIds(t).filter(x=>x!==id); }); places.forEach(pl=>{ pl.people=normPeople(pl.people).filter(x=>x!==id); }); importantDates.forEach(dt=>{ dt.people=normPeople(dt.people).filter(x=>x!==id); }); if(activePerson===id){ activePerson="all"; saveActiveProfile(); } savePeople(); saveTasks(); savePlaces(); saveDates(); renderPeopleEditor(); render(); } });
     /* School profile fields — same "resolve person by id at commit time" pattern as the name field
        above; selects commit on change (no debounce concern), the free-text group field follows the
        identical blur/Enter-commits, Escape-restores rule as name. Purely optional metadata: never
@@ -1577,7 +1877,7 @@ function renderPeopleEditor(){
       else if(e.key==="Escape"){ e.preventDefault(); const person=people.find(x=>x.id===id); groupInput.value=person?(person.schoolGroup||""):""; groupInput.blur(); }
     });
   });
-  pe.querySelector("#peAdd").addEventListener("click",()=>{ const color=PALETTE[people.length%PALETTE.length]; people.push({id:uid("p"),name:"New person",color}); savePeople(); renderPeopleEditor(); renderPeopleBar(); });
+  pe.querySelector("#peAdd").addEventListener("click",()=>{ const color=PALETTE[people.length%PALETTE.length]; const person={id:uid("p"),name:"New person",color}; people.push(person); clothingSettings.people[person.id]=blankPersonClothingSettings(person.id); savePeople(); saveClothing(); renderPeopleEditor(); renderPeopleBar(); });
 }
 
 /* ---------------- task inline editing (shared by row + Up Next) ---------------- */
@@ -2946,6 +3246,120 @@ document.getElementById("calViewAgendaBtn").addEventListener("click",()=>{ calSt
 document.getElementById("calViewMonthBtn").addEventListener("click",()=>{ calState.view="month"; saveCalPrefs(); renderCalendarPage(); });
 document.getElementById("calAddBtn").addEventListener("click",()=>addCalendarEvent({startDate: calState.selectedDay||todayStr()}));
 
+/* =====================================================================
+   CLOTHING DEAL-MATCH PAGE
+   Financial controls here are cooperative household controls. There is no
+   authentication in this application, so UI visibility is never described
+   as a security boundary.
+   ===================================================================== */
+let clModalPrevFocus=null;
+function closeClModal(){ const bd=document.getElementById("clModalBackdrop"); if(bd.classList.contains("hidden")) return; bd.classList.add("hidden"); document.removeEventListener("keydown",clModalKeyHandler,true); document.getElementById("clModal").innerHTML=""; if(clModalPrevFocus&&clModalPrevFocus.focus) clModalPrevFocus.focus(); clModalPrevFocus=null; if(pendingRemoteRender){ pendingRemoteRender=false; render(); } }
+function clModalKeyHandler(e){
+  if(e.key==="Escape"){ e.preventDefault(); closeClModal(); return; } if(e.key!=="Tab") return;
+  const modal=document.getElementById("clModal"), f=[...modal.querySelectorAll("button,input,select,textarea,[tabindex]:not([tabindex='-1'])")].filter(x=>!x.disabled&&x.offsetParent!==null); if(!f.length) return;
+  if(e.shiftKey&&document.activeElement===f[0]){ e.preventDefault(); f[f.length-1].focus(); } else if(!e.shiftKey&&document.activeElement===f[f.length-1]){ e.preventDefault(); f[0].focus(); }
+}
+function openClModal(build){ closeActiveEdit(true); const bd=document.getElementById("clModalBackdrop"), modal=document.getElementById("clModal"); clModalPrevFocus=document.activeElement; bd.classList.remove("hidden"); document.addEventListener("keydown",clModalKeyHandler,true); build(modal); modal.focus(); }
+document.getElementById("clModalBackdrop").addEventListener("mousedown",e=>{ if(e.target.id==="clModalBackdrop") closeClModal(); });
+function clothingPersonName(p){ const current=people.find(x=>x.id===p.personId); return current?current.name:(p.personName||"Former family member"); }
+function clothingStatusInfo(p){
+  if(p.deleted) return {label:"Deleted · reversed",cls:""}; if(p.returned) return {label:"Returned",cls:""}; if(p.status==="pending-cooling-off") return {label:"Cooling off",cls:"attn"};
+  if(p.status==="pending-approval") return {label:"Parent review",cls:"attn"}; if(p.archived) return {label:"Archived",cls:""}; return {label:"Completed",cls:"done"};
+}
+function activeClothingPeople(){ return people.filter(p=>clothingPersonSettings(p.id).enabled); }
+function renderClothingPage(){
+  if(ensureMonthlyClothingDeposits()) saveClothing();
+  const enabled=activeClothingPeople(), wallet=document.getElementById("clWalletGrid");
+  wallet.innerHTML=enabled.length?enabled.map(p=>{ const cfg=clothingPersonSettings(p.id),bal=clothingBalance(p.id),pct=cfg.walletMaximumCents?Math.max(0,Math.min(100,bal/cfg.walletMaximumCents*100)):0; return `<article class="cl-wallet" style="--person-color:${p.color}">
+    <div class="cl-wallet-top"><span class="cl-wallet-name">${esc(p.name)}</span><span class="cl-mode">${esc(CLOTHING_MODES[cfg.mode])}</span></div><div class="cl-balance">${money(bal)}</div>
+    <div class="cl-wallet-meta">of ${money(cfg.walletMaximumCents)} maximum · ${money(cfg.monthlyDepositCents)}/month</div><div class="bar" style="width:100%;margin-top:8px"><span style="width:${pct}%"></span></div>
+    <div class="cl-wallet-meta" style="margin-top:7px">Next deposit: ${esc(nextLocalMonthStart())}</div><div class="cl-wallet-actions"><button class="btn sm cl-wallet-history" data-id="${p.id}">Ledger</button><button class="btn sm cl-wallet-add" data-id="${p.id}">New purchase</button></div></article>`; }).join(""):`<div class="empty-state"><div class="big">No clothing wallets enabled.</div>Open Settings to enable a family member.</div>`;
+  wallet.querySelectorAll(".cl-wallet-history").forEach(b=>b.addEventListener("click",()=>openClothingLedgerModal(b.dataset.id)));
+  wallet.querySelectorAll(".cl-wallet-add").forEach(b=>b.addEventListener("click",()=>openClothingPurchaseModal(null,{personId:b.dataset.id})));
+  const completed=clothingPurchases.filter(p=>p.status==="completed"&&!p.deleted&&!p.returned), verified=completed.filter(verifiedRetailApproved), spent=completed.reduce((s,p)=>s+p.pricePaid+p.tax+p.shipping,0), retail=verified.reduce((s,p)=>s+p.verifiedRetailPrice,0);
+  const saved=verified.reduce((s,p)=>s+Math.max(0,p.verifiedRetailPrice-p.pricePaid),0), parent=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).parent,0), child=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).child,0);
+  const avg=verified.length?Math.round(verified.reduce((s,p)=>s+p.discount,0)/verified.length):0, best=verified.slice().sort((a,b)=>b.discount-a.discount)[0], dollars=verified.slice().sort((a,b)=>(b.verifiedRetailPrice-b.pricePaid)-(a.verifiedRetailPrice-a.pricePaid))[0];
+  const fullRetail=completed.filter(p=>p.discount===0).length, soon=completed.filter(p=>p.returnDeadline&&p.returnDeadline>=todayStr()&&p.returnDeadline<=addDaysStr(todayStr(),7)).length;
+  const stats=[[money(retail),"Verified retail"],[money(spent),"Actually spent"],[money(saved),"Verified savings"],[bpsLabel(avg),"Average discount"],[money(parent),"Parent total"],[money(child),"Child total"],[best?bpsLabel(best.discount):"—","Best % deal"],[dollars?money(Math.max(0,dollars.verifiedRetailPrice-dollars.pricePaid)):"—","Most saved"],[String(fullRetail),"Full-retail items"],[String(soon),"Returns due ≤7d"]];
+  document.getElementById("clStatGrid").innerHTML=stats.map(([v,l])=>`<div class="cl-stat"><div class="cl-stat-value">${esc(v)}</div><div class="cl-stat-label">${esc(l)}</div></div>`).join("");
+  const pf=document.getElementById("clPersonFilter"), old=pf.value||"all"; pf.innerHTML=`<option value="all">All family members</option>`+people.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join(""); pf.value=[...pf.options].some(o=>o.value===old)?old:"all";
+  renderClothingPurchases(); renderClothingVerificationQueue();
+}
+function filteredClothingPurchases(){ const person=document.getElementById("clPersonFilter").value, status=document.getElementById("clStatusFilter").value; return clothingPurchases.filter(p=>{
+  if(person!=="all"&&p.personId!==person) return false; if(status==="active") return !p.deleted&&!p.archived; if(status==="pending") return p.status.indexOf("pending")===0; if(status==="returned") return p.returned; if(status==="archived") return p.archived; return true;
+}).sort((a,b)=>(b.purchaseDate||"").localeCompare(a.purchaseDate||"")||(b.updated||0)-(a.updated||0)); }
+function renderClothingPurchases(){
+  const list=filteredClothingPurchases(), body=document.getElementById("clPurchaseBody"); document.getElementById("clPurchaseCount").textContent=`${list.length} item${list.length===1?"":"s"}`;
+  body.innerHTML=list.length?list.map(p=>{ const s=clothingStatusInfo(p), totals=clothingPurchaseTotals(p); return `<tr class="${p.archived?"archived":""}"><td data-label="Date">${esc(p.purchaseDate?fmtDate(p.purchaseDate):"—")}</td><td data-label="Person">${esc(clothingPersonName(p))}</td><td data-label="Item"><b>${esc(p.description||"(untitled)")}</b><br><span style="color:var(--muted)">${esc(CLOTHING_CATEGORIES[p.category]||p.category)} · ${esc(CLOTHING_CONDITIONS[p.condition]||p.condition)}</span></td><td data-label="Status"><span class="cl-status ${s.cls}">${esc(s.label)}</span></td><td class="money" data-label="Paid">${money(totals.total)}</td><td class="money" data-label="Parent">${money(totals.parent)}</td><td class="money" data-label="Child">${money(totals.child)}</td><td data-label="Actions"><div class="cl-row-actions"><button class="iconbtn cl-edit" data-id="${p.id}" title="View or edit">✎</button>${p.status==="completed"&&!p.returned&&!p.deleted?`<button class="iconbtn cl-return" data-id="${p.id}" title="Return">↩</button>`:""}<button class="iconbtn cl-archive" data-id="${p.id}" title="${p.archived?"Unarchive":"Archive"}">□</button><button class="iconbtn del cl-delete" data-id="${p.id}" title="Delete erroneous purchase">✕</button></div></td></tr>`; }).join(""):`<tr><td colspan="8"><div class="empty-state" style="padding:24px"><div class="big">No purchases here.</div></div></td></tr>`;
+  body.querySelectorAll(".cl-edit").forEach(b=>b.addEventListener("click",()=>openClothingPurchaseModal(b.dataset.id)));
+  body.querySelectorAll(".cl-return").forEach(b=>b.addEventListener("click",()=>openClothingReturnModal(b.dataset.id)));
+  body.querySelectorAll(".cl-archive").forEach(b=>b.addEventListener("click",()=>{ const p=clothingPurchases.find(x=>x.id===b.dataset.id); if(!p)return; p.archived=!p.archived;p.updated=Date.now();saveClothing();renderClothingPage(); }));
+  body.querySelectorAll(".cl-delete").forEach(b=>b.addEventListener("click",()=>{ const p=clothingPurchases.find(x=>x.id===b.dataset.id); if(!p||p.deleted)return; const note=prompt("Why is this purchase being deleted? An audit tombstone and exact wallet reversal will be preserved."); if(note==null||!note.trim()) return; if(confirm(`Reverse and tombstone “${p.description||"this purchase"}”?`)){ deleteErroneousClothingPurchase(p.id,note);renderClothingPage(); } }));
+}
+document.getElementById("clPersonFilter").addEventListener("change",renderClothingPurchases); document.getElementById("clStatusFilter").addEventListener("change",renderClothingPurchases);
+function renderClothingVerificationQueue(){
+  const queue=clothingPurchases.filter(p=>!p.deleted&&!p.returned&&p.claimedRetailPrice>0&&p.verificationStatus==="unverified"); const el=document.getElementById("clVerificationQueue"); document.getElementById("clVerificationCount").textContent=queue.length?`${queue.length} waiting`:"None waiting";
+  el.innerHTML=queue.length?queue.map(p=>`<div class="place-row"><div class="place-body"><div class="place-name">${esc(p.description||"(untitled)")}</div><div class="place-meta">${esc(clothingPersonName(p))} · claimed ${money(p.claimedRetailPrice)} · paid ${money(p.pricePaid)}</div></div><button class="btn sm cl-verify" data-id="${p.id}">Review</button></div>`).join(""):`<div style="color:var(--muted);font-size:12px">No claimed retail prices need review.</div>`;
+  el.querySelectorAll(".cl-verify").forEach(b=>b.addEventListener("click",()=>openClothingVerificationModal(b.dataset.id)));
+}
+function openClothingLedgerModal(personId){
+  const person=people.find(p=>p.id===personId), entries=clothingWalletLedger.filter(e=>e.personId===personId).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.created||0)-(a.created||0));
+  openClModal(modal=>{ modal.innerHTML=`<h2>${esc(person?person.name:"Wallet")} · Ledger</h2><div class="cl-modal-sub">Balance ${money(clothingBalance(personId))}. Financial history is preserved; adjustments require a note.</div>
+    <div class="cl-table-wrap"><table class="cl-table"><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th></tr></thead><tbody>${entries.map(e=>`<tr><td data-label="Date">${esc(e.date)}</td><td data-label="Type">${esc(e.type)}</td><td data-label="Description">${esc(e.description)}${e.parentNote?`<br><span style="color:var(--muted)">${esc(e.parentNote)}</span>`:""}</td><td data-label="Amount" class="money">${money(e.amount)}</td></tr>`).join("")||'<tr><td colspan="4">No ledger entries.</td></tr>'}</tbody></table></div>
+    <div class="cl-form-grid" style="margin-top:14px"><div class="cl-field"><label>Manual adjustment</label><input id="claAmount" type="number" step="0.01" placeholder="Use - to subtract"></div><div class="cl-field"><label>Required parent note</label><input id="claNote" type="text"></div></div><div class="cl-error hidden" id="claError"></div><div class="cl-modal-actions"><button class="btn" id="claClose">Close</button><button class="btn add" id="claSave">Add adjustment</button></div>`;
+    modal.querySelector("#claClose").addEventListener("click",closeClModal); modal.querySelector("#claSave").addEventListener("click",()=>{ const raw=Number(modal.querySelector("#claAmount").value),note=modal.querySelector("#claNote").value.trim(),err=modal.querySelector("#claError"); if(!Number.isFinite(raw)||raw===0||!note){err.textContent="Enter a non-zero amount and a parent note.";err.classList.remove("hidden");return;} addClothingLedgerEntry({personId,date:todayStr(),type:"manual-adjustment",amount:Math.round(raw*100),description:"Manual wallet adjustment",parentNote:note});saveClothing();closeClModal();renderClothingPage(); });
+  });
+}
+function clothingPersonOptions(selected){ return activeClothingPeople().map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.name)}</option>`).join(""); }
+function clothingCategoryOptions(selected){ return Object.entries(CLOTHING_CATEGORIES).map(([k,l])=>`<option value="${k}" ${k===selected?"selected":""}>${esc(l)}</option>`).join(""); }
+function openClothingPurchaseModal(id,opts){
+  opts=opts||{}; const existing=id?clothingPurchases.find(x=>x.id===id):null, calculator=!!opts.calculator; const p=migrateClothingPurchase(existing||Object.assign(blankClothingPurchase(),{personId:opts.personId||((activeClothingPeople()[0]||{}).id||"")}));
+  if(!p.personId){ alert("Enable at least one clothing wallet in Settings first."); return; }
+  const isCompleted=!!existing&&existing.status==="completed";
+  openClModal(modal=>{
+    modal.innerHTML=`<h2>${calculator?"Deal calculator":isCompleted?"Purchase details":"New clothing purchase"}</h2><div class="cl-modal-sub">Prices exclude tax and shipping. Every receipt item is calculated separately.</div>
+      <div class="cl-form-grid">
+        <div class="cl-field"><label>Family member</label><select id="clfPerson" ${isCompleted?"disabled":""}>${clothingPersonOptions(p.personId)}</select></div><div class="cl-field"><label>Purchase date</label><input id="clfDate" type="date" value="${p.purchaseDate||todayStr()}"></div>
+        <div class="cl-field full"><label>Item description</label><input id="clfDesc" type="text" value="${esc(p.description)}" placeholder="One receipt item"></div>
+        <div class="cl-field"><label>Category</label><select id="clfCategory">${clothingCategoryOptions(p.category)}</select></div><div class="cl-field"><label>Condition</label><select id="clfCondition">${Object.entries(CLOTHING_CONDITIONS).map(([k,l])=>`<option value="${k}" ${k===p.condition?"selected":""}>${l}</option>`).join("")}</select></div>
+        <div class="cl-field"><label>Purchase lane</label><select id="clfLane"><option value="discretionary" ${p.necessaryOrDiscretionary==="discretionary"?"selected":""}>Discretionary (default)</option><option value="necessary" ${p.necessaryOrDiscretionary==="necessary"?"selected":""}>Necessary · parent marked</option></select></div><div class="cl-field"><label>Store</label><input id="clfStore" value="${esc(p.store)}"></div>
+        <div class="cl-field"><label>Price paid</label><input id="clfPaid" type="number" min="0" step="0.01" value="${(p.pricePaid/100).toFixed(2)}"></div><div class="cl-field"><label>Category cap used</label><input id="clfCap" type="number" min="0" step="0.01" value="${((p.categoryCapUsed||clothingSettings.categoryCaps[p.category]||0)/100).toFixed(2)}"></div>
+        <div class="cl-field"><label>Claimed retail</label><input id="clfClaimed" type="number" min="0" step="0.01" value="${(p.claimedRetailPrice/100).toFixed(2)}"></div><div class="cl-field"><label>Verified retail</label><input id="clfVerified" type="number" min="0" step="0.01" value="${(p.verifiedRetailPrice/100).toFixed(2)}"></div>
+        <div class="cl-field"><label>Verification status</label><select id="clfVStatus">${Object.entries(CLOTHING_VERIFICATION).map(([k,l])=>`<option value="${k}" ${k===p.verificationStatus?"selected":""}>${l}</option>`).join("")}</select></div><div class="cl-field"><label>Verified by</label><input id="clfVBy" value="${esc(p.verifiedBy)}" placeholder="Parent name"></div><div class="cl-field"><label>Verification method</label><input id="clfVMethod" value="${esc(p.verificationMethod)}" placeholder="Same SKU, receipt, tag…"></div>
+        <div class="cl-field full"><label>Verification URL (no images stored)</label><input id="clfVUrl" type="url" value="${esc(p.verificationUrl)}" placeholder="Avoid private or token-bearing links"></div><div class="cl-field full"><label>Verification note</label><input id="clfVNote" value="${esc(p.verificationNote)}"></div>
+        <div class="cl-field"><label>Tax</label><input id="clfTax" type="number" min="0" step="0.01" value="${(p.tax/100).toFixed(2)}"></div><div class="cl-field"><label>Shipping</label><input id="clfShipping" type="number" min="0" step="0.01" value="${(p.shipping/100).toFixed(2)}"></div>
+        <div class="cl-field"><label>Shipping type</label><select id="clfShippingType"><option value="standard" ${p.shippingType!=="expedited"?"selected":""}>Standard · proportional</option><option value="expedited" ${p.shippingType==="expedited"?"selected":""}>Expedited · child pays</option></select></div><div class="cl-field"><label>Return deadline</label><input id="clfReturn" type="date" value="${p.returnDeadline||""}"></div>
+        <div class="cl-field full"><label>Notes</label><textarea id="clfNotes">${esc(p.notes)}</textarea></div>
+        <div class="cl-field"><label>Parent contribution override (optional)</label><input id="clfOverride" type="number" min="0" step="0.01" value="${p.parentOverrideContribution==null?"":(p.parentOverrideContribution/100).toFixed(2)}"></div><div class="cl-field"><label>Required override reason</label><input id="clfOverrideReason" value="${esc(p.parentOverrideReason)}"></div>
+        <label class="cl-check"><input id="clfParentApproved" type="checkbox" ${p.parentApproved?"checked":""}> Parent approved</label><label class="cl-check"><input id="clfWaiveCooling" type="checkbox"> Parent waives cooling-off period</label>
+      </div><div id="clfReflections" class="cl-reflections"></div><div class="cl-calc" id="clfCalc"></div><div class="cl-warning" id="clfWarning"></div><div class="cl-error hidden" id="clfError"></div>
+      <div class="cl-modal-actions"><button class="btn" id="clfCancel">Close</button>${calculator?"":`<button class="btn" id="clfPending">Save pending</button><button class="btn add" id="clfSave">${isCompleted?"Recalculate purchase":"Complete purchase"}</button>`}</div>`;
+    const personEl=modal.querySelector("#clfPerson"),categoryEl=modal.querySelector("#clfCategory"),capEl=modal.querySelector("#clfCap"), reflections=modal.querySelector("#clfReflections");
+    function paintReflections(){ const cfg=clothingPersonSettings(personEl.value); reflections.innerHTML=(cfg.reflectionPrompts||cfg.mode==="intentional")?`<div class="cl-section-title">Intentional-purchase reflection</div>`+CLOTHING_REFLECTION_PROMPTS.map((q,i)=>`<div class="cl-field"><label>${esc(q)}</label><input data-ref="${i}" value="${esc((p.reflectionAnswers||{})[i]||"")}"></div>`).join(""):""; }
+    function collect(){ const overrideRaw=modal.querySelector("#clfOverride").value.trim(), overrideReason=modal.querySelector("#clfOverrideReason").value.trim(), verificationStatus=modal.querySelector("#clfVStatus").value, live=existing?(clothingPurchases.find(x=>x.id===p.id)||p):p; const out=migrateClothingPurchase(Object.assign({},live,{personId:personEl.value,purchaseDate:modal.querySelector("#clfDate").value,description:modal.querySelector("#clfDesc").value.trim(),category:categoryEl.value,condition:modal.querySelector("#clfCondition").value,necessaryOrDiscretionary:modal.querySelector("#clfLane").value,store:modal.querySelector("#clfStore").value.trim(),pricePaid:parseMoneyToCents(modal.querySelector("#clfPaid").value),categoryCapUsed:parseMoneyToCents(capEl.value),claimedRetailPrice:parseMoneyToCents(modal.querySelector("#clfClaimed").value),verifiedRetailPrice:parseMoneyToCents(modal.querySelector("#clfVerified").value),verificationStatus,verifiedBy:modal.querySelector("#clfVBy").value.trim(),verifiedAt:["parent-approved","parent-corrected"].includes(verificationStatus)?(live.verifiedAt||Date.now()):0,verificationMethod:modal.querySelector("#clfVMethod").value.trim(),verificationUrl:modal.querySelector("#clfVUrl").value.trim(),verificationNote:modal.querySelector("#clfVNote").value.trim(),tax:parseMoneyToCents(modal.querySelector("#clfTax").value),shipping:parseMoneyToCents(modal.querySelector("#clfShipping").value),shippingType:modal.querySelector("#clfShippingType").value,returnDeadline:modal.querySelector("#clfReturn").value,notes:modal.querySelector("#clfNotes").value.trim(),parentOverride:overrideRaw!=="",parentOverrideContribution:overrideRaw===""?null:parseMoneyToCents(overrideRaw),parentOverrideReason:overrideReason,parentApproved:modal.querySelector("#clfParentApproved").checked})); out.reflectionAnswers={}; modal.querySelectorAll("[data-ref]").forEach(x=>{ if(x.value.trim())out.reflectionAnswers[x.dataset.ref]=x.value.trim(); }); return out; }
+    function paintCalc(){ const out=collect(), cfg=clothingPersonSettings(out.personId), bal=clothingBalance(out.personId)+(isCompleted&&p.necessaryOrDiscretionary==="discretionary"?p.actualParentContribution:0), useCurrent=modal.querySelector("#clfUseCurrent"), snap=isCompleted&&(!useCurrent||!useCurrent.checked)?p.policySnapshot:clothingPolicySnapshot(out.personId,out.categoryCapUsed), c=calculateClothingPurchase(out,snap,bal); modal.querySelector("#clfCalc").innerHTML=`<div class="cl-calc-grid"><div class="cl-calc-item"><b>${bpsLabel(c.discount)}</b><span>Verified discount</span></div><div class="cl-calc-item"><b>${bpsLabel(c.parentPayPercent)}</b><span>Parent rate</span></div><div class="cl-calc-item"><b>${money(c.actualParentContribution)}</b><span>Parent item contribution</span></div><div class="cl-calc-item"><b>${money(c.childTotal)}</b><span>Child total</span></div><div class="cl-calc-item"><b>${money(c.projectedWallet)}</b><span>Projected wallet</span></div><div class="cl-calc-item"><b>${esc(nextLocalMonthStart())}</b><span>Next deposit</span></div></div>`; const warnings=[]; if(!verifiedRetailApproved(out))warnings.push("Retail is not parent-approved, so discount is 0." ); if(cfg.mode==="training-wheels")warnings.push("Training Wheels uses the configured fixed parent percentage."); if(out.condition==="secondhand"&&!verifiedRetailApproved(out)&&cfg.mode!=="training-wheels")warnings.push("Unverified secondhand item receives the fixed 15-point bonus only."); modal.querySelector("#clfWarning").textContent=warnings.join(" "); }
+    if(isCompleted){ const use=document.createElement("label");use.className="cl-check";use.innerHTML='<input id="clfUseCurrent" type="checkbox"> Explicitly recalculate with current policy instead of saved snapshot';modal.querySelector(".cl-form-grid").appendChild(use); }
+    personEl.addEventListener("change",()=>{paintReflections();paintCalc();}); categoryEl.addEventListener("change",()=>{capEl.value=((clothingSettings.categoryCaps[categoryEl.value]||0)/100).toFixed(2);paintCalc();}); modal.querySelectorAll("input,select,textarea").forEach(x=>x.addEventListener("input",paintCalc)); paintReflections(); paintCalc();
+    modal.querySelector("#clfCancel").addEventListener("click",closeClModal);
+    if(!calculator){ modal.querySelector("#clfPending").addEventListener("click",()=>{ const out=collect(); if(!out.description||!out.pricePaid){showErr("Description and price paid are required.");return;} const cfg=clothingPersonSettings(out.personId); if(cfg.coolingOffHours&&!out.coolingOffUntil)out.coolingOffUntil=Date.now()+cfg.coolingOffHours*3600000;savePendingClothingPurchase(out);closeClModal();renderClothingPage(); });
+      modal.querySelector("#clfSave").addEventListener("click",()=>{ const out=collect(),cfg=clothingPersonSettings(out.personId); if(!out.description||!out.pricePaid){showErr("Description and price paid are required.");return;} if(out.category==="formal-event"&&!out.categoryCapUsed){showErr("Enter the parent-approved cap for formal/special-event clothing.");return;} if(["parent-approved","parent-corrected"].includes(out.verificationStatus)&&(!out.verifiedRetailPrice||!out.verifiedBy)){showErr("Approved retail requires a verified price and who verified it.");return;} if(out.verificationUrl&&/^(data|blob):/i.test(out.verificationUrl)){showErr("Store only a normal verification URL, never embedded image data.");return;} if(out.necessaryOrDiscretionary==="necessary"){out.parentOverride=true;if(!out.parentOverrideReason){showErr("Marking an item necessary requires a parent explanation.");return;}} if(out.parentOverride&&!out.parentOverrideReason){showErr("A parent override requires an explanation.");return;} const defaultCap=clothingSettings.categoryCaps[out.category]||0;if(out.categoryCapUsed!==defaultCap){out.parentOverride=true;if(!out.parentOverrideReason){showErr("Changing the category cap requires an override explanation.");return;}} if(!isCompleted&&cfg.coolingOffHours&&!modal.querySelector("#clfWaiveCooling").checked&&!out.coolingOffUntil)out.coolingOffUntil=Date.now()+cfg.coolingOffHours*3600000; if(modal.querySelector("#clfWaiveCooling").checked){out.coolingOffUntil=0;out.parentOverride=true;out.parentOverrideReason=out.parentOverrideReason||"Cooling-off period waived";}
+        if(isCompleted){ const res=recalculateCompletedClothingPurchase(p.id,out,modal.querySelector("#clfUseCurrent").checked);if(!res.ok&&!res.cancelled)showErr(res.error);else if(res.ok){closeClModal();renderClothingPage();} }
+        else { const res=completeClothingPurchase(out);if(res.pending){savePendingClothingPurchase(out);showErr(res.error+" The purchase was saved as pending.");renderClothingPage();}else if(!res.ok)showErr(res.error);else{closeClModal();renderClothingPage();} }
+      }); }
+    function showErr(msg){ const e=modal.querySelector("#clfError");e.textContent=msg;e.classList.remove("hidden"); }
+  });
+}
+function openClothingReturnModal(id){ const p=clothingPurchases.find(x=>x.id===id);if(!p)return;openClModal(modal=>{modal.innerHTML=`<h2>Return purchase</h2><div class="cl-modal-sub">This restores exactly ${money(p.necessaryOrDiscretionary==="necessary"?0:p.actualParentContribution)} to ${esc(clothingPersonName(p))}’s discretionary wallet. It cannot be refunded twice.</div><div class="cl-field"><label>Return note</label><textarea id="clrNote" placeholder="Reason, receipt, or refund detail"></textarea></div><div class="cl-error hidden" id="clrError"></div><div class="cl-modal-actions"><button class="btn" id="clrCancel">Cancel</button><button class="btn add" id="clrSave">Record return</button></div>`;modal.querySelector("#clrCancel").addEventListener("click",closeClModal);modal.querySelector("#clrSave").addEventListener("click",()=>{const note=modal.querySelector("#clrNote").value.trim();if(!note){const e=modal.querySelector("#clrError");e.textContent="A return note is required.";e.classList.remove("hidden");return;}if(!confirm(`Record “${p.description}” as returned?`))return;if(returnClothingPurchase(id,note)){closeClModal();renderClothingPage();}});}); }
+function openClothingVerificationModal(id){ const p=clothingPurchases.find(x=>x.id===id);if(!p)return;openClModal(modal=>{modal.innerHTML=`<h2>Verify retail price</h2><div class="cl-modal-sub">${esc(p.description)} · claimed ${money(p.claimedRetailPrice)} · paid ${money(p.pricePaid)}</div><div class="cl-form-grid"><div class="cl-field"><label>Decision</label><select id="clvStatus"><option value="parent-approved">Approve claimed retail</option><option value="parent-corrected">Correct retail</option><option value="rejected">Reject claim</option></select></div><div class="cl-field"><label>Verified retail</label><input id="clvRetail" type="number" min="0" step="0.01" value="${((p.verifiedRetailPrice||p.claimedRetailPrice)/100).toFixed(2)}"></div><div class="cl-field"><label>Verified by</label><input id="clvBy" value="Parent"></div><div class="cl-field"><label>Method</label><input id="clvMethod" value="${esc(p.verificationMethod)}"></div><div class="cl-field full"><label>Note</label><input id="clvNote" value="${esc(p.verificationNote)}"></div></div><div class="cl-error hidden" id="clvError"></div><div class="cl-modal-actions"><button class="btn" id="clvCancel">Cancel</button><button class="btn add" id="clvSave">Apply decision</button></div>`;modal.querySelector("#clvCancel").addEventListener("click",closeClModal);modal.querySelector("#clvSave").addEventListener("click",()=>{const current=clothingPurchases.find(x=>x.id===id);if(!current){closeClModal();return;}const status=modal.querySelector("#clvStatus").value,retail=status==="rejected"?0:parseMoneyToCents(modal.querySelector("#clvRetail").value),update={verificationStatus:status,verifiedRetailPrice:retail,verifiedBy:modal.querySelector("#clvBy").value.trim(),verifiedAt:Date.now(),verificationMethod:modal.querySelector("#clvMethod").value.trim(),verificationNote:modal.querySelector("#clvNote").value.trim()};if(status!=="rejected"&&(!retail||!update.verifiedBy)){const e=modal.querySelector("#clvError");e.textContent="A positive verified retail price and verifier name are required.";e.classList.remove("hidden");return;}if(current.status==="completed"){const res=recalculateCompletedClothingPurchase(id,update,false);if(!res.ok)return;}else{Object.assign(current,update,{updated:Date.now()});saveClothing();}closeClModal();renderClothingPage();});}); }
+function openClothingSettingsModal(){
+  openClModal(modal=>{ modal.innerHTML=`<h2>Clothing settings</h2><div class="cl-modal-sub">Current settings affect new purchases only. Completed purchases retain policy snapshots.</div><div class="cl-form-grid"><div class="cl-field"><label>Baseline parent %</label><input id="clsBase" type="number" min="0" max="100" step="0.01" value="${clothingSettings.baselineBps/100}"></div><div class="cl-field"><label>Ceiling parent %</label><input id="clsCeil" type="number" min="0" max="100" step="0.01" value="${clothingSettings.ceilingBps/100}"></div><div class="cl-field"><label>Unverified secondhand bonus points</label><input id="clsBonus" type="number" min="0" max="100" step="0.01" value="${clothingSettings.secondhandBonusBps/100}"></div></div>
+    <div class="cl-section-title" style="margin:16px 0 8px">Per-child wallets and modes</div><div id="clsPeople">${people.map(p=>{const c=clothingPersonSettings(p.id);return `<div class="cl-section" data-person="${p.id}" style="box-shadow:none"><div class="cl-section-head"><b>${esc(p.name)}</b><label class="cl-check"><input class="cls-enabled" type="checkbox" ${c.enabled?"checked":""}> Wallet enabled</label></div><div class="cl-form-grid"><div class="cl-field"><label>Mode</label><select class="cls-mode">${Object.entries(CLOTHING_MODES).map(([k,l])=>`<option value="${k}" ${k===c.mode?"selected":""}>${l}</option>`).join("")}</select></div><div class="cl-field"><label>Monthly deposit</label><input class="cls-deposit" type="number" min="0" step="0.01" value="${(c.monthlyDepositCents/100).toFixed(2)}"></div><div class="cl-field"><label>Maximum balance</label><input class="cls-max" type="number" min="0" step="0.01" value="${(c.walletMaximumCents/100).toFixed(2)}"></div><div class="cl-field"><label>Training Wheels parent %</label><input class="cls-fixed" type="number" min="0" max="100" step="0.01" value="${c.fixedParentBps/100}"></div><div class="cl-field"><label>Cooling-off hours</label><input class="cls-cooling" type="number" min="0" step="1" value="${c.coolingOffHours}"></div><label class="cl-check"><input class="cls-reflect" type="checkbox" ${c.reflectionPrompts?"checked":""}> Reflection prompts</label><label class="cl-check"><input class="cls-approval" type="checkbox" ${c.parentApprovalRequired?"checked":""}> Parent approval required</label></div></div>`;}).join("")}</div>
+    <div class="cl-section-title" style="margin:16px 0 8px">Category caps</div><div class="cl-form-grid" id="clsCaps">${Object.entries(CLOTHING_CATEGORIES).map(([k,l])=>`<div class="cl-field"><label>${esc(l)}</label><input data-cap="${k}" type="number" min="0" step="0.01" value="${(clothingSettings.categoryCaps[k]/100).toFixed(2)}" placeholder="${k==="formal-event"?"Enter per purchase":""}"></div>`).join("")}</div><div class="cl-error hidden" id="clsError"></div><div class="cl-modal-actions"><button class="btn" id="clsCancel">Cancel</button><button class="btn add" id="clsSave">Save settings</button></div>`;
+    modal.querySelector("#clsCancel").addEventListener("click",closeClModal);modal.querySelector("#clsSave").addEventListener("click",()=>{const base=Math.round(Number(modal.querySelector("#clsBase").value)*100),ceil=Math.round(Number(modal.querySelector("#clsCeil").value)*100);if(!Number.isFinite(base)||!Number.isFinite(ceil)||base<0||ceil>10000||ceil<base){const e=modal.querySelector("#clsError");e.textContent="Use valid percentages and keep the ceiling at or above the baseline.";e.classList.remove("hidden");return;}clothingSettings.baselineBps=base;clothingSettings.ceilingBps=ceil;clothingSettings.secondhandBonusBps=clampInt(Math.round(Number(modal.querySelector("#clsBonus").value)*100),0,10000);modal.querySelectorAll("[data-person]").forEach(row=>{const c=clothingPersonSettings(row.dataset.person);c.enabled=row.querySelector(".cls-enabled").checked;c.mode=row.querySelector(".cls-mode").value;c.monthlyDepositCents=parseMoneyToCents(row.querySelector(".cls-deposit").value);c.walletMaximumCents=parseMoneyToCents(row.querySelector(".cls-max").value);c.fixedParentBps=clampInt(Math.round(Number(row.querySelector(".cls-fixed").value)*100),0,10000);c.coolingOffHours=nonNegativeInt(row.querySelector(".cls-cooling").value,0);c.reflectionPrompts=row.querySelector(".cls-reflect").checked;c.parentApprovalRequired=row.querySelector(".cls-approval").checked;});modal.querySelectorAll("[data-cap]").forEach(x=>clothingSettings.categoryCaps[x.dataset.cap]=parseMoneyToCents(x.value));saveClothing();closeClModal();renderClothingPage();});
+  });
+}
+document.getElementById("clNewPurchaseBtn").addEventListener("click",()=>openClothingPurchaseModal()); document.getElementById("clCalculatorBtn").addEventListener("click",()=>openClothingPurchaseModal(null,{calculator:true})); document.getElementById("clSettingsBtn").addEventListener("click",openClothingSettingsModal);
+
 /* ---------------- quick add / add ---------------- */
 document.getElementById("quickInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; const t=blankTask(v); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); e.target.value=""; saveTasks(); render(); });
 document.getElementById("addBtn").addEventListener("click",()=>{
@@ -2986,7 +3400,7 @@ document.getElementById("printBtn").addEventListener("pointerdown",e=>{
 });
 document.getElementById("printBtn").addEventListener("click",openPrintCenter);
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -3015,8 +3429,11 @@ document.getElementById("importFile").addEventListener("change",e=>{
       if(Array.isArray(d.beforeYouLeave)) beforeYouLeave=d.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");
       if(typeof d.beforeYouLeaveTitle==="string" && d.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(d.beforeYouLeaveTitle);
       if(Array.isArray(d.calendarExclusions)) calendarExclusions=d.calendarExclusions.filter(x=>typeof x==="string");
+      if(Array.isArray(d.clothingPurchases)) clothingPurchases=d.clothingPurchases.map(migrateClothingPurchase);
+      if(Array.isArray(d.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(d.clothingWalletLedger.map(migrateClothingLedgerEntry));
+      if(d.clothingSettings&&typeof d.clothingSettings==="object"&&!Array.isArray(d.clothingSettings)) clothingSettings=migrateClothingSettings(d.clothingSettings);
     }
-    editingId=null; placeEditingId=null; dateEditingId=null; savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); render();
+    editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveClothing(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
 });
@@ -3071,6 +3488,7 @@ function readPrintOptions(){
       byl: document.getElementById("pmSecBYL").checked,
       shop: document.getElementById("pmSecShop").checked,
       calendar: document.getElementById("pmSecCalendar").checked,
+      clothing: document.getElementById("pmSecClothing").checked,
     },
     hideCompleted: document.getElementById("pmHideCompleted").checked,
     includeLater: document.getElementById("pmIncludeLater").checked,
@@ -3129,6 +3547,15 @@ function printFilterPlaces(opts){
 function printFilterBYL(opts){ return sortedBYL().filter(b=>!(opts.hideCompleted && b.done)); } // profile-independent by design
 function printFilterShop(opts){
   return [...shop].sort((a,b)=>(a.got?1:0)-(b.got?1:0)).filter(s=>!(opts.hideCompleted && s.got));
+}
+function printFilterClothing(opts){
+  const personIds=opts.profile==="all"?activeClothingPeople().map(p=>p.id):[opts.profile];
+  const month=localMonthKey();
+  return personIds.map(personId=>{
+    const person=people.find(p=>p.id===personId); if(!person||!clothingPersonSettings(personId).enabled) return null;
+    const purchases=clothingPurchases.filter(p=>p.personId===personId&&p.status==="completed"&&!p.deleted&&!p.returned&&String(p.purchaseDate||"").slice(0,7)===month);
+    return {personId,name:person.name,balance:clothingBalance(personId),count:purchases.length,savings:purchases.filter(verifiedRetailApproved).reduce((s,p)=>s+Math.max(0,p.verifiedRetailPrice-p.pricePaid),0),parent:purchases.reduce((s,p)=>s+clothingPurchaseTotals(p).parent,0),child:purchases.reduce((s,p)=>s+clothingPurchaseTotals(p).child,0)};
+  }).filter(Boolean);
 }
 /* Calendar print section — same pure, listener-free, string-building convention as every other
    printFilter-/print-Row function above (so there is nothing interactive to hide: no nav/add/edit/delete
@@ -3241,6 +3668,7 @@ function printShopRow(s){
 function printSectionHtml(title, count, bodyHtml){
   return `<div class="print-section"><div class="print-section-head"><span class="ps-title">${esc(title)}</span><span class="ps-count">${count}</span></div>${bodyHtml}</div>`;
 }
+function printClothingRow(r){ return `<div class="print-date"><div class="pd-title">${esc(r.name)} · Wallet ${money(r.balance)}</div><div class="pd-meta">${r.count} purchase${r.count===1?"":"s"} this month · Parent ${money(r.parent)} · Child ${money(r.child)} · Verified savings ${money(r.savings)}</div></div>`; }
 function buildPrintBody(data, opts){
   let html="";
   if(opts.sections.calendar){
@@ -3257,6 +3685,7 @@ function buildPrintBody(data, opts){
   if(opts.sections.places && data.places.length) lower.push(printSectionHtml("Places to Go", data.places.length, data.places.map(printPlaceRow).join("")));
   if(opts.sections.byl && data.byl.length) lower.push(printSectionHtml(bylTitle, data.byl.length, data.byl.map(printBYLRow).join("")));
   if(opts.sections.shop && data.shop.length) lower.push(printSectionHtml("Shopping List", data.shop.length, data.shop.map(printShopRow).join("")));
+  if(opts.sections.clothing && data.clothing.length) lower.push(printSectionHtml("Clothing Summary", data.clothing.length, data.clothing.map(printClothingRow).join("")));
   if(lower.length) html+=`<div class="print-grid">${lower.join("")}</div>`;
   return html;
 }
@@ -3274,6 +3703,7 @@ function buildPrintSheet(opts){
     byl: opts.sections.byl ? printFilterBYL(opts) : [],
     shop: opts.sections.shop ? printFilterShop(opts) : [],
     calendar: opts.sections.calendar ? printFilterCalendarAgenda(opts) : [],
+    clothing: opts.sections.clothing ? printFilterClothing(opts) : [],
   };
   const hasAny = Object.keys(data).some(k=>opts.sections[k] && data[k].length) || opts.sections.calendar;
 
@@ -3340,7 +3770,7 @@ function generateAndPrint(opts){
 window.addEventListener("beforeprint", ()=>{
   if(document.querySelector(".print-sheet")) return; // Print Center already built one for this print
   const sheet=buildPrintSheet({ format:"fridge", profile:"all",
-    sections:{tasks:true,dates:true,notes:true,places:true,byl:true,shop:true},
+    sections:{tasks:true,dates:true,notes:true,places:true,byl:true,shop:true,calendar:false,clothing:false},
     hideCompleted:true, includeLater:false, dateRange:"next7" });
   sheet.classList.add("print-sheet-fallback");
   document.body.appendChild(sheet);
@@ -3368,6 +3798,8 @@ function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=
 document.getElementById("datestr").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
 { const vp=loadJSON(K_PREFS); if(vp){ document.getElementById("showDone").checked=typeof vp.showDone==="boolean"?vp.showDone:(typeof vp.hideDone==="boolean"?!vp.hideDone:false); document.getElementById("showLater").checked=!!vp.showLater; document.getElementById("showSomeday").checked=!!vp.showSomeday; } }
 updateSoundToggleLabel();
+const clothingInitChanged=ensureClothingPersonSettings()|ensureMonthlyClothingDeposits();
+if(clothingInitChanged) saveClothing();
 render(); initSync(); tick(); setInterval(tick,1000);
 /* Deep link: opening index.html#calendar goes straight to Calendar instead of Home. */
 if(location.hash==="#calendar") showCalendarPage();
