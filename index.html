@@ -222,6 +222,7 @@
   .dc-count.ongoing { color:#23B877; }
   .dc-count.today { color:var(--star); }
   .dc-cat { font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--cat); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dc-badges { display:flex; flex-wrap:wrap; gap:4px; }
   .dc-title { font-size:14px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .dc-when { font-family:var(--mono); font-size:11.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .dc-sub { font-size:11px; color:var(--muted-2); display:flex; flex-wrap:wrap; gap:5px; align-items:center; overflow:hidden; }
@@ -1087,10 +1088,15 @@ function parseMoneyToCents(v){ const n=Number(String(v==null?"":v).replace(/[$,\
 function bpsLabel(bps){ return (clampInt(bps,0,10000)/100).toFixed((bps%100)?2:0)+"%"; }
 function localMonthKey(d){ d=d||new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
 function nextLocalMonthStart(){ const d=new Date(); return new Date(d.getFullYear(),d.getMonth()+1,1).toLocaleDateString(undefined,{month:"short",day:"numeric"}); }
-function initialClothingMode(personId){
-  const childIds=SEED_PEOPLE.slice(1).map(p=>p.id), i=childIds.indexOf(personId);
-  return i===1?"intentional":i===2?"training-wheels":"deal-match";
-}
+/* Every new child starts on the same baseline mode. (Previously staggered by a child's position in
+   the hardcoded SEED_PEOPLE array — that broke the moment the family list was reordered or renamed,
+   since a person's id no longer lined up with their original seed position. See
+   CLOTHING_MODE_NAME_CORRECTIONS / migrateClothingSettings() below for the one-time correction of
+   data already affected by that bug.) */
+function initialClothingMode(personId){ return "deal-match"; }
+/* One-time correction target for the mode-by-position bug above — matched by current name, the one
+   reliable signal available once the stored ids no longer reflect who's who. */
+const CLOTHING_MODE_NAME_CORRECTIONS={bella:"deal-match",abby:"intentional",ariel:"training-wheels"};
 const CLOTHING_ADULT_ROLE_NAMES=new Set(["dad","daddy","father","mom","mommy","mama","mother","nana","grandma","grandmother","grandpa","grandfather"]);
 function isClothingParticipant(person){
   if(!person||person.clothingParticipant===false) return false;
@@ -1103,7 +1109,7 @@ function blankPersonClothingSettings(personId){
     fixedParentBps:5000,reflectionPrompts:initialClothingMode(personId)==="intentional",parentApprovalRequired:initialClothingMode(personId)==="training-wheels",coolingOffHours:initialClothingMode(personId)==="training-wheels"?24:0};
 }
 function blankClothingSettings(){ return {policyVersion:CLOTHING_POLICY_VERSION,baselineBps:5000,ceilingBps:9500,secondhandBonusBps:1500,
-  taxPolicy:"parent-paid",shippingPolicy:"child-paid",categoryCaps:Object.assign({},DEFAULT_CLOTHING_CAPS),people:{}}; }
+  taxPolicy:"parent-paid",shippingPolicy:"child-paid",categoryCaps:Object.assign({},DEFAULT_CLOTHING_CAPS),people:{},modeMigrationV1Applied:false}; }
 function migrateClothingSettings(raw){
   const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
   const s=Object.assign(blankClothingSettings(),src);
@@ -1111,6 +1117,7 @@ function migrateClothingSettings(raw){
   s.baselineBps=clampInt(s.baselineBps,0,10000); s.ceilingBps=clampInt(s.ceilingBps,s.baselineBps,10000); s.secondhandBonusBps=clampInt(s.secondhandBonusBps,0,10000);
   s.categoryCaps=Object.assign({},DEFAULT_CLOTHING_CAPS,(src.categoryCaps&&typeof src.categoryCaps==="object")?src.categoryCaps:{});
   Object.keys(CLOTHING_CATEGORIES).forEach(k=>{ s.categoryCaps[k]=nonNegativeInt(s.categoryCaps[k],DEFAULT_CLOTHING_CAPS[k]); });
+  s.modeMigrationV1Applied=!!s.modeMigrationV1Applied;
   const rawPeople=(src.people&&typeof src.people==="object"&&!Array.isArray(src.people))?src.people:{}; s.people={};
   Object.keys(rawPeople).forEach(id=>{
     const p=Object.assign(blankPersonClothingSettings(id),rawPeople[id]||{});
@@ -1119,6 +1126,22 @@ function migrateClothingSettings(raw){
     p.fixedParentBps=clampInt(p.fixedParentBps,0,10000); p.reflectionPrompts=!!p.reflectionPrompts; p.parentApprovalRequired=!!p.parentApprovalRequired; p.coolingOffHours=nonNegativeInt(p.coolingOffHours,0);
     s.people[id]=p;
   });
+  if(!s.modeMigrationV1Applied){
+    /* One-time correction, guarded so it can only ever run once (flag is persisted and synced) and
+       can never undo a real mode change a parent makes later. Touches only .mode and its three
+       directly-dependent fields for the specific named children affected — wallets, ledger,
+       purchases, deposits, wallet maximums, and category caps are never read or written here. */
+    people.forEach(person=>{
+      const correctMode=CLOTHING_MODE_NAME_CORRECTIONS[String(person.name||"").trim().toLowerCase()];
+      const cfg=s.people[person.id];
+      if(!correctMode||!cfg||cfg.mode===correctMode) return;
+      cfg.mode=correctMode;
+      cfg.reflectionPrompts=correctMode==="intentional";
+      cfg.parentApprovalRequired=correctMode==="training-wheels";
+      cfg.coolingOffHours=correctMode==="training-wheels"?24:0;
+    });
+    s.modeMigrationV1Applied=true;
+  }
   return s;
 }
 function clothingPersonSettings(personId){
@@ -2595,7 +2618,8 @@ function renderDateCard(d){
   const hasTime = !!(d.startTime || d.endTime);
   const hasPeople = d.people && d.people.length;
   el.innerHTML=`
-    <div class="dc-top"><span class="dc-count ${countClass}">${esc(countdown)}</span><span class="dc-cat" id="dc-cat">${esc(cat.label)}</span>${schoolImpactBadgeHtml(d.schoolImpact)}${d.tentative?'<span class="si-badge tentative">Tentative</span>':""}</div>
+    <div class="dc-top"><span class="dc-count ${countClass}">${esc(countdown)}</span><span class="dc-cat" id="dc-cat">${esc(cat.label)}</span></div>
+    ${(d.schoolImpact||d.tentative)?`<div class="dc-badges">${schoolImpactBadgeHtml(d.schoolImpact)}${d.tentative?'<span class="si-badge tentative">Tentative</span>':""}</div>`:""}
     <div class="dc-title" id="dc-title">${esc(d.title)||"(untitled)"}</div>
     <div class="dc-when"><span id="dc-date">${esc(dateDatePartText(d))}</span>${hasTime?` · <span id="dc-time">${esc(dateTimePartText(d))}</span>`:""}</div>
     ${hasPeople?`<div class="dc-people" id="dc-people">${peopleChipsHtml(d.people)}</div>`:""}
