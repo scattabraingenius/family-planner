@@ -1421,7 +1421,7 @@ function showHomePage(){
   document.getElementById("clothingPage").classList.add("hidden");
   render(); // Calendar-triggered edits only refresh Calendar's own DOM while it's the active page;
             // refresh Home here so it's never stale when the user switches back to it.
-  if(location.hash==="#calendar") history.replaceState(null,"",location.pathname+location.search);
+  if(location.hash==="#calendar"||location.hash==="#clothing") history.replaceState(null,"",location.pathname+location.search);
 }
 function showCalendarPage(){
   currentPage="calendar"; closeActiveEdit(true);
@@ -1438,7 +1438,7 @@ function showClothingPage(){
   currentPage="clothing"; closeActiveEdit(true);
   document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("clothingPage").classList.remove("hidden");
   renderClothingPage();
-  if(location.hash==="#calendar") history.replaceState(null,"",location.pathname+location.search);
+  if(location.hash!=="#clothing") history.replaceState(null,"","#clothing");
 }
 document.getElementById("calendarBtn").addEventListener("click", showCalendarPage);
 document.getElementById("calBackBtn").addEventListener("click", showHomePage);
@@ -3809,8 +3809,14 @@ updateSoundToggleLabel();
 const clothingInitChanged=ensureClothingPersonSettings()|ensureMonthlyClothingDeposits();
 if(clothingInitChanged) saveClothing();
 render(); initSync(); tick(); setInterval(tick,1000);
-/* Deep link: opening index.html#calendar goes straight to Calendar instead of Home. */
-if(location.hash==="#calendar") showCalendarPage();
+/* Shareable page links work both on initial load and when a hash link is selected in an open tab. */
+function routePageFromHash(){
+  if(location.hash==="#calendar"){ if(currentPage!=="calendar") showCalendarPage(); return; }
+  if(location.hash==="#clothing"){ if(currentPage!=="clothing") showClothingPage(); return; }
+  if(currentPage!=="home") showHomePage();
+}
+window.addEventListener("hashchange",routePageFromHash);
+routePageFromHash();
 </script>
 </body>
 </html>
