@@ -326,13 +326,14 @@ Calculate each receipt item separately. Do not calculate one discount across an 
 
 Default tax policy:
 
-- Split tax using the final parent/child proportions.
+- The parent pays all tax.
 
 Default shipping policy:
 
-- Standard shipping may be split proportionally.
-- Optional expedited shipping is paid by the child.
-- Make this configurable.
+- Shipping is included in the displayed purchase total.
+- The child pays all standard and expedited shipping.
+- The interface should encourage free-shipping or pickup options.
+- Shipping that exceeds the item price requires an explicit parent override and explanation.
 
 ## Policy snapshot
 
