@@ -560,6 +560,7 @@
   .cl-mode { font-family:var(--mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:99px; padding:2px 7px; white-space:nowrap; }
   .cl-balance { font-family:var(--mono); font-size:28px; font-weight:800; margin:10px 0 2px; }
   .cl-wallet-meta { font-size:11.5px; color:var(--muted); }
+  .cl-wallet-help { margin-top:8px; color:var(--star); border-color:rgba(242,193,78,.45); }
   .cl-wallet-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:11px; }
   /* Reimbursement summary — visually subordinate to the wallet balance above it, because the two are
      different quantities and must not read as one number. */
@@ -608,6 +609,10 @@
   .cl-modal { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 0 0 3px rgba(236,72,153,.12),var(--shadow); width:min(760px,100%); max-height:92vh; overflow-y:auto; padding:20px; }
   .cl-modal h2 { margin:0 0 3px; font-size:19px; }
   .cl-modal-sub { color:var(--muted); font-size:12px; margin-bottom:14px; }
+  .cl-guide-image { display:block; width:100%; max-width:700px; height:auto; margin:0 auto; border:1px solid var(--line); border-radius:12px; background:#fff; }
+  .cl-guide-pages { display:flex; justify-content:center; gap:7px; flex-wrap:wrap; margin-top:12px; }
+  .cl-guide-page { min-width:34px; }
+  .cl-guide-page.active { border-color:var(--signal); color:var(--signal); box-shadow:0 0 0 2px rgba(236,72,153,.12); }
   .cl-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px 14px; }
   .cl-field { display:flex; flex-direction:column; gap:4px; min-width:0; }
   .cl-field.full { grid-column:1/-1; }
@@ -779,6 +784,7 @@
   <header class="cl-top">
     <div class="cl-top-left"><button class="btn sm" id="clBackBtn">← Back to Home</button><h1 class="cl-page-title">Clothing</h1></div>
     <div class="cl-top-actions">
+      <button class="btn sm" id="clHelpBtn">Kid guides</button>
       <button class="btn sm" id="clCalculatorBtn">Deal calculator</button>
       <button class="btn add" id="clNewPurchaseBtn">+ New purchase</button>
       <button class="btn sm" id="clSettingsBtn">Settings</button>
@@ -3400,6 +3406,26 @@ function clModalKeyHandler(e){
 }
 function openClModal(build){ closeActiveEdit(true); const bd=document.getElementById("clModalBackdrop"), modal=document.getElementById("clModal"); clModalPrevFocus=document.activeElement; bd.classList.remove("hidden"); document.addEventListener("keydown",clModalKeyHandler,true); build(modal); modal.focus(); }
 document.getElementById("clModalBackdrop").addEventListener("mousedown",e=>{ if(e.target.id==="clModalBackdrop") closeClModal(); });
+const CLOTHING_HELP_GUIDES=[
+  {title:"How the clothing wallet works",src:"docs/kid-purchase-guide/06-how-the-clothing-wallet-works.jpg",alt:"A kid-friendly explanation showing how the monthly clothing wallet gets smaller as Dad contributes to purchases."},
+  {title:"Start here",src:"docs/kid-purchase-guide/01-start-here.jpg",alt:"Kid guide explaining how to start entering a clothing purchase."},
+  {title:"Item and price",src:"docs/kid-purchase-guide/02-item-and-price.jpg",alt:"Kid guide explaining the item and price boxes in a clothing purchase."},
+  {title:"Parent section",src:"docs/kid-purchase-guide/03-parent-section.jpg",alt:"Kid guide showing which clothing purchase boxes are for a parent."},
+  {title:"Finish the receipt",src:"docs/kid-purchase-guide/04-finish-receipt.jpg",alt:"Kid guide explaining how to finish entering a clothing receipt."},
+  {title:"Get a parent",src:"docs/kid-purchase-guide/05-get-a-parent.jpg",alt:"Kid guide reminding the child to get a parent for the final review."}
+];
+function openClothingHelpModal(startIndex=0){
+  openClModal(modal=>{
+    let index=Math.max(0,Math.min(CLOTHING_HELP_GUIDES.length-1,Number(startIndex)||0));
+    const paint=()=>{ const guide=CLOTHING_HELP_GUIDES[index]; modal.innerHTML=`<h2>Clothing kid guides</h2><div class="cl-modal-sub"><b>${esc(guide.title)}</b> · Page ${index+1} of ${CLOTHING_HELP_GUIDES.length}</div><img class="cl-guide-image" src="${guide.src}" alt="${esc(guide.alt)}"><div class="cl-guide-pages" aria-label="Choose a guide">${CLOTHING_HELP_GUIDES.map((g,i)=>`<button class="btn sm cl-guide-page ${i===index?"active":""}" data-page="${i}" aria-label="Open guide ${i+1}: ${esc(g.title)}" ${i===index?'aria-current="page"':""}>${i+1}</button>`).join("")}</div><div class="cl-modal-actions"><button class="btn" id="clgPrev" ${index===0?"disabled":""}>← Previous</button><button class="btn" id="clgClose">Close</button><button class="btn add" id="clgNext" ${index===CLOTHING_HELP_GUIDES.length-1?"disabled":""}>Next →</button></div>`;
+      modal.querySelector("#clgClose").addEventListener("click",closeClModal);
+      modal.querySelector("#clgPrev").addEventListener("click",()=>{ if(index>0){ index--; paint(); } });
+      modal.querySelector("#clgNext").addEventListener("click",()=>{ if(index<CLOTHING_HELP_GUIDES.length-1){ index++; paint(); } });
+      modal.querySelectorAll(".cl-guide-page").forEach(b=>b.addEventListener("click",()=>{ index=Number(b.dataset.page); paint(); }));
+    };
+    paint();
+  });
+}
 function clothingPersonName(p){ const current=people.find(x=>x.id===p.personId); return current?current.name:(p.personName||"Former family member"); }
 function clothingStatusInfo(p){
   if(p.deleted) return {label:"Deleted · reversed",cls:""}; if(p.returned) return {label:"Returned",cls:""}; if(p.status==="pending-cooling-off") return {label:"Cooling off",cls:"attn"};
@@ -3426,12 +3452,13 @@ function renderClothingPage(){
   wallet.innerHTML=enabled.length?enabled.map(p=>{ const cfg=clothingPersonSettings(p.id),bal=clothingBalance(p.id),pct=cfg.walletMaximumCents?Math.max(0,Math.min(100,bal/cfg.walletMaximumCents*100)):0; return `<article class="cl-wallet" style="--person-color:${p.color}">
     <div class="cl-wallet-top"><span class="cl-wallet-name">${esc(p.name)}</span><span class="cl-mode">${esc(CLOTHING_MODES[cfg.mode])}</span></div><div class="cl-balance">${money(bal)}</div>
     <div class="cl-wallet-meta">of ${money(cfg.walletMaximumCents)} maximum · ${money(cfg.monthlyDepositCents)}/month</div><div class="bar" style="width:100%;margin-top:8px"><span style="width:${pct}%"></span></div>
-    <div class="cl-wallet-meta" style="margin-top:7px">Next deposit: ${esc(nextLocalMonthStart())}</div>
+    <div class="cl-wallet-meta" style="margin-top:7px">Next deposit: ${esc(nextLocalMonthStart())}</div>${bal<=0?'<button class="btn sm cl-wallet-help">Why is Dad paying $0?</button>':""}
     ${clothingSettlementCardHtml(p.id)}
     <div class="cl-wallet-actions"><button class="btn sm cl-wallet-history" data-id="${p.id}">Ledger</button><button class="btn sm cl-wallet-settle" data-id="${p.id}">Settle up</button><button class="btn sm cl-wallet-add" data-id="${p.id}">New purchase</button></div></article>`; }).join(""):`<div class="empty-state"><div class="big">No clothing wallets enabled.</div>Open Settings to enable a family member.</div>`;
   wallet.querySelectorAll(".cl-wallet-history").forEach(b=>b.addEventListener("click",()=>openClothingLedgerModal(b.dataset.id)));
   wallet.querySelectorAll(".cl-wallet-settle").forEach(b=>b.addEventListener("click",()=>openClothingSettlementModal(b.dataset.id)));
   wallet.querySelectorAll(".cl-wallet-add").forEach(b=>b.addEventListener("click",()=>openClothingPurchaseModal(null,{personId:b.dataset.id})));
+  wallet.querySelectorAll(".cl-wallet-help").forEach(b=>b.addEventListener("click",()=>openClothingHelpModal(0)));
   const participantIds=new Set(clothingParticipants().map(p=>p.id));
   const completed=clothingPurchases.filter(p=>participantIds.has(p.personId)&&p.status==="completed"&&!p.deleted&&!p.returned), verified=completed.filter(verifiedRetailApproved), spent=completed.reduce((s,p)=>s+p.pricePaid+p.tax+p.shipping,0), retail=verified.reduce((s,p)=>s+p.verifiedRetailPrice,0);
   const saved=verified.reduce((s,p)=>s+Math.max(0,p.verifiedRetailPrice-p.pricePaid),0), parent=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).parent,0), child=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).child,0);
@@ -3617,7 +3644,7 @@ function openClothingSettingsModal(){
     modal.querySelector("#clsCancel").addEventListener("click",closeClModal);modal.querySelector("#clsSave").addEventListener("click",()=>{const base=Math.round(Number(modal.querySelector("#clsBase").value)*100),ceil=Math.round(Number(modal.querySelector("#clsCeil").value)*100);if(!Number.isFinite(base)||!Number.isFinite(ceil)||base<0||ceil>10000||ceil<base){const e=modal.querySelector("#clsError");e.textContent="Use valid percentages and keep the ceiling at or above the baseline.";e.classList.remove("hidden");return;}clothingSettings.baselineBps=base;clothingSettings.ceilingBps=ceil;clothingSettings.secondhandBonusBps=clampInt(Math.round(Number(modal.querySelector("#clsBonus").value)*100),0,10000);modal.querySelectorAll("[data-person]").forEach(row=>{const c=clothingPersonSettings(row.dataset.person);c.enabled=row.querySelector(".cls-enabled").checked;c.mode=row.querySelector(".cls-mode").value;c.monthlyDepositCents=parseMoneyToCents(row.querySelector(".cls-deposit").value);c.walletMaximumCents=parseMoneyToCents(row.querySelector(".cls-max").value);c.fixedParentBps=clampInt(Math.round(Number(row.querySelector(".cls-fixed").value)*100),0,10000);c.coolingOffHours=nonNegativeInt(row.querySelector(".cls-cooling").value,0);c.reflectionPrompts=row.querySelector(".cls-reflect").checked;c.parentApprovalRequired=row.querySelector(".cls-approval").checked;});modal.querySelectorAll("[data-cap]").forEach(x=>clothingSettings.categoryCaps[x.dataset.cap]=parseMoneyToCents(x.value));saveClothing();closeClModal();renderClothingPage();});
   });
 }
-document.getElementById("clNewPurchaseBtn").addEventListener("click",()=>openClothingPurchaseModal()); document.getElementById("clCalculatorBtn").addEventListener("click",()=>openClothingPurchaseModal(null,{calculator:true})); document.getElementById("clSettingsBtn").addEventListener("click",openClothingSettingsModal);
+document.getElementById("clHelpBtn").addEventListener("click",()=>openClothingHelpModal(0)); document.getElementById("clNewPurchaseBtn").addEventListener("click",()=>openClothingPurchaseModal()); document.getElementById("clCalculatorBtn").addEventListener("click",()=>openClothingPurchaseModal(null,{calculator:true})); document.getElementById("clSettingsBtn").addEventListener("click",openClothingSettingsModal);
 
 /* ---------------- quick add / add ---------------- */
 document.getElementById("quickInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; const t=blankTask(v); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); e.target.value=""; saveTasks(); render(); });
