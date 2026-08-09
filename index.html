@@ -561,6 +561,19 @@
   .cl-balance { font-family:var(--mono); font-size:28px; font-weight:800; margin:10px 0 2px; }
   .cl-wallet-meta { font-size:11.5px; color:var(--muted); }
   .cl-wallet-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:11px; }
+  /* Reimbursement summary — visually subordinate to the wallet balance above it, because the two are
+     different quantities and must not read as one number. */
+  .cl-settle { margin-top:9px; padding-top:9px; border-top:1px solid var(--line); font-size:12px; }
+  .cl-settle-amt { font-family:var(--mono); font-weight:700; font-size:14px; }
+  .cl-settle-amt.owed { color:var(--star); }
+  .cl-settle-amt.owing { color:var(--place-accent); }
+  .cl-settle-dir { color:var(--muted); }
+  .cl-settle-gap { color:var(--muted-2); font-size:10.5px; margin-top:3px; }
+  .cl-settle-headline { font-size:17px; font-weight:700; margin:12px 0 4px; }
+  .cl-settle-headline.owed { color:var(--star); }
+  .cl-settle-headline.owing { color:var(--place-accent); }
+  .cl-bulk-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:9px; }
+  .cl-bulk-label { color:var(--muted); font-size:11px; }
   .cl-stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; margin-bottom:16px; }
   .cl-stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 12px; min-width:0; }
   .cl-stat-value { font-family:var(--mono); font-size:18px; font-weight:750; overflow:hidden; text-overflow:ellipsis; }
@@ -863,7 +876,7 @@ const VERSION = "1.13-beta";
 
 /* ---------------- storage ---------------- */
 const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1";
-const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1";
+const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1", K_CLOTHING_SETTLEMENTS="home.clothingSettlements.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
@@ -883,6 +896,7 @@ function saveClothing(){
     localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases));
     localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger));
     localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings));
+    localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements));
   }catch(e){}
   pushCloud();
 }
@@ -934,10 +948,12 @@ function initSync(){
       if(Array.isArray(v.clothingPurchases)) clothingPurchases=v.clothingPurchases.map(migrateClothingPurchase);
       if(Array.isArray(v.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(v.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(v.clothingSettings && typeof v.clothingSettings==="object" && !Array.isArray(v.clothingSettings)) clothingSettings=migrateClothingSettings(v.clothingSettings);
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); }catch(e){}
+      if(Array.isArray(v.clothingSettlements)) clothingSettlements=v.clothingSettlements.map(migrateClothingSettlement);  // only overwrite if present → older clients never erase this
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); }catch(e){}
       remoteApplying=false;
+      const migratedPayer=applyCheckoutPayerMigration();
       const deposited=ensureMonthlyClothingDeposits();
-      if(deposited) saveClothing();
+      if(migratedPayer||deposited) saveClothing();
       // Data is always safe to merge in (every commit path re-fetches its entity by id), but a full render()
       // would blow away a focused inline editor's DOM — so defer the redraw until editing ends.
       if(!editingActive()) render(); else pendingRemoteRender=true;
@@ -952,7 +968,7 @@ function pushCloud(force){
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
      protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
-  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(on){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -1067,6 +1083,13 @@ function normalizeBYLTitle(raw){
 const CLOTHING_POLICY_VERSION="1.1";
 const CLOTHING_MODES={"deal-match":"Deal Match","intentional":"Intentional Purchase","training-wheels":"Training Wheels"};
 const CLOTHING_CONDITIONS={new:"New",outlet:"Outlet",clearance:"Clearance",secondhand:"Secondhand"};
+/* Who actually handed over money at the register. This is separate from who the formula says SHOULD
+   bear each share, and it is what makes a real reimbursement balance computable: if the parent paid,
+   the child's share becomes money owed to the parent; if the child paid, the parent's share becomes
+   money owed to the child. Historical purchases predate this field and stay "" (unspecified) — they
+   are deliberately excluded from every balance rather than guessed at, so no invented number is ever
+   displayed. */
+const CLOTHING_CHECKOUT_PAYERS={parent:"Parent paid at checkout",child:"Child paid at checkout"};
 const CLOTHING_VERIFICATION={unverified:"Unverified","parent-approved":"Parent approved","parent-corrected":"Parent corrected",rejected:"Rejected"};
 const CLOTHING_CATEGORIES={
   "tshirt-tank":"T-shirt / tank", "blouse-top":"Blouse / specialty top", "sweater-hoodie":"Sweater / hoodie",
@@ -1118,6 +1141,7 @@ function migrateClothingSettings(raw){
   s.categoryCaps=Object.assign({},DEFAULT_CLOTHING_CAPS,(src.categoryCaps&&typeof src.categoryCaps==="object")?src.categoryCaps:{});
   Object.keys(CLOTHING_CATEGORIES).forEach(k=>{ s.categoryCaps[k]=nonNegativeInt(s.categoryCaps[k],DEFAULT_CLOTHING_CAPS[k]); });
   s.modeMigrationV1Applied=!!s.modeMigrationV1Applied;
+  s.checkoutPayerMigrationV1Applied=!!s.checkoutPayerMigrationV1Applied;
   const rawPeople=(src.people&&typeof src.people==="object"&&!Array.isArray(src.people))?src.people:{}; s.people={};
   Object.keys(rawPeople).forEach(id=>{
     const p=Object.assign(blankPersonClothingSettings(id),rawPeople[id]||{});
@@ -1153,6 +1177,7 @@ function blankClothingPurchase(){ const now=Date.now(); return {id:uid("clp"),pe
   claimedRetailPrice:0,verifiedRetailPrice:0,pricePaid:0,categoryCapUsed:0,discount:0,parentPayPercent:0,calculatedParentContribution:0,actualParentContribution:0,childContribution:0,
   tax:0,shipping:0,shippingType:"standard",parentTaxContribution:0,childTaxContribution:0,parentShippingContribution:0,childShippingContribution:0,
   verificationMethod:"",verificationUrl:"",verificationNote:"",verificationStatus:"unverified",verifiedBy:"",verifiedAt:0,returnDeadline:"",returned:false,returnedAt:0,returnNote:"",
+  paidAtCheckoutBy:"",
   archived:false,deleted:false,deletedAt:0,parentOverride:false,parentOverrideContribution:null,parentOverrideReason:"",notes:"",reflectionAnswers:{},status:"draft",coolingOffUntil:0,parentApproved:false,
   policySnapshot:null,timesWorn:0,wouldBuyAgain:null,created:now,updated:now}; }
 function migrateClothingPurchase(raw){
@@ -1164,6 +1189,7 @@ function migrateClothingPurchase(raw){
   p.discount=clampInt(p.discount,0,10000); p.parentPayPercent=clampInt(p.parentPayPercent,0,10000);
   p.parentOverrideContribution=p.parentOverrideContribution==null?null:nonNegativeInt(p.parentOverrideContribution,0);
   if(!CLOTHING_VERIFICATION[p.verificationStatus]) p.verificationStatus="unverified";
+  p.paidAtCheckoutBy=CLOTHING_CHECKOUT_PAYERS[p.paidAtCheckoutBy]?p.paidAtCheckoutBy:"";
   p.verificationUrl=String(p.verificationUrl||"").trim(); if(/^(data|blob):/i.test(p.verificationUrl)) p.verificationUrl="";
   p.returned=!!p.returned; p.archived=!!p.archived; p.deleted=!!p.deleted; p.parentOverride=!!p.parentOverride; p.parentApproved=!!p.parentApproved;
   p.reflectionAnswers=(p.reflectionAnswers&&typeof p.reflectionAnswers==="object"&&!Array.isArray(p.reflectionAnswers))?p.reflectionAnswers:{};
@@ -1182,6 +1208,59 @@ function dedupeClothingLedger(entries){
   return [...byId.values()];
 }
 function clothingBalance(personId){ return clothingWalletLedger.filter(e=>e.personId===personId).reduce((sum,e)=>sum+finiteInt(e.amount,0),0); }
+
+/* ---------------- reimbursement settlement ----------------
+   Deliberately a SEPARATE collection from clothingWalletLedger. That ledger means one thing only:
+   "how much subsidy budget remains." Settlement is a different quantity — real cash owed between two
+   people — and mixing them would corrupt clothingBalance() and destroy the wallet's audit meaning.
+   Positive settlement balance = the child owes the parent. Negative = the parent owes the child. */
+function blankClothingSettlement(){ const now=Date.now(); return {id:uid("cls"),personId:"",date:todayStr(),amount:0,direction:"child-to-parent",note:"",created:now,updated:now}; }
+function migrateClothingSettlement(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{}; const s=Object.assign(blankClothingSettlement(),src);
+  if(typeof s.id!=="string"||!s.id) s.id=uid("cls");
+  s.personId=String(s.personId||""); s.amount=nonNegativeInt(s.amount,0);
+  if(!["child-to-parent","parent-to-child"].includes(s.direction)) s.direction="child-to-parent";
+  s.note=String(s.note||"").trim();
+  s.created=Number.isFinite(s.created)?s.created:Date.now(); s.updated=Number.isFinite(s.updated)?s.updated:s.created;
+  return s;
+}
+/* Per-purchase cash effect. Returns cents the child owes the parent (positive) or the parent owes the
+   child (negative). Unspecified payer, or any reversed/excluded purchase, contributes exactly 0. */
+function purchaseSettlementDelta(p){
+  if(!p||p.deleted||p.returned||p.status!=="completed") return 0;
+  const t=clothingPurchaseTotals(p);
+  if(p.paidAtCheckoutBy==="parent") return t.child;   // parent fronted the whole receipt
+  if(p.paidAtCheckoutBy==="child") return -t.parent;  // child fronted it, parent still owes their share
+  return 0;                                           // unspecified — never guessed
+}
+function clothingSettlementBalance(personId){
+  const fromPurchases=clothingPurchases.filter(p=>p.personId===personId).reduce((sum,p)=>sum+purchaseSettlementDelta(p),0);
+  const paid=clothingSettlements.filter(s=>s.personId===personId)
+    .reduce((sum,s)=>sum+(s.direction==="child-to-parent"?-s.amount:s.amount),0);
+  return fromPurchases+paid;
+}
+function clothingUnclassifiedCount(personId){
+  return clothingPurchases.filter(p=>p.personId===personId&&p.status==="completed"&&!p.deleted&&!p.returned&&!p.paidAtCheckoutBy).length;
+}
+/* One-time backfill for purchases recorded before paidAtCheckoutBy existed. Every purchase in the
+   planner at that point was paid for by the child at the register, so they are set to "child" rather
+   than left excluded from the settlement balance forever. Guarded by a persisted, synced flag so it
+   runs exactly once per family and can never re-stamp a purchase the parent later reclassifies.
+   Only fills blanks — an explicitly chosen value is never overwritten. */
+function applyCheckoutPayerMigration(){
+  if(clothingSettings.checkoutPayerMigrationV1Applied) return false;
+  let changed=false;
+  clothingPurchases.forEach(p=>{ if(!p.paidAtCheckoutBy){ p.paidAtCheckoutBy="child"; p.updated=Date.now(); changed=true; } });
+  clothingSettings.checkoutPayerMigrationV1Applied=true;
+  return true; // flag itself must persist even when there was nothing to backfill
+}
+function clothingSettlementEntry(id){ return clothingSettlements.find(s=>s.id===id); }
+function addClothingSettlement(fields){
+  const s=migrateClothingSettlement(Object.assign(blankClothingSettlement(),fields||{}));
+  if(!s.personId||s.amount<=0) return null;
+  if(clothingSettlementEntry(s.id)) return null;
+  clothingSettlements.push(s); return s;
+}
 function clothingLedgerEntry(id){ return clothingWalletLedger.find(e=>e.id===id); }
 function addClothingLedgerEntry(fields){ const e=migrateClothingLedgerEntry(Object.assign(blankClothingLedgerEntry(),fields||{})); if(clothingLedgerEntry(e.id)) return null; clothingWalletLedger.push(e); return e; }
 function ensureMonthlyClothingDeposits(now){
@@ -1416,6 +1495,12 @@ const clothingPurchasesRaw=loadJSON(K_CLOTHING_PURCHASES);
 let clothingPurchases=(Array.isArray(clothingPurchasesRaw)?clothingPurchasesRaw:[]).map(migrateClothingPurchase);
 const clothingLedgerRaw=loadJSON(K_CLOTHING_LEDGER);
 let clothingWalletLedger=dedupeClothingLedger((Array.isArray(clothingLedgerRaw)?clothingLedgerRaw:[]).map(migrateClothingLedgerEntry));
+const clothingSettlementsRaw=loadJSON(K_CLOTHING_SETTLEMENTS);
+let clothingSettlements=(Array.isArray(clothingSettlementsRaw)?clothingSettlementsRaw:[]).map(migrateClothingSettlement);
+/* Runs after all three clothing collections exist, since it reads purchases and writes the flag into
+   settings. pushCloud() is a no-op this early (sync is not up yet), so this only writes localStorage;
+   the same call in the Firebase receive handler covers data arriving from another device. */
+if(applyCheckoutPayerMigration()) saveClothing();
 
 /* ---------------- state ---------------- */
 let editingId=null, placeEditingId=null, dateEditingId=null, overdueSet=new Set();
@@ -3296,6 +3381,19 @@ function clothingStatusInfo(p){
   if(p.deleted) return {label:"Deleted · reversed",cls:""}; if(p.returned) return {label:"Returned",cls:""}; if(p.status==="pending-cooling-off") return {label:"Cooling off",cls:"attn"};
   if(p.status==="pending-approval") return {label:"Parent review",cls:"attn"}; if(p.archived) return {label:"Archived",cls:""}; return {label:"Completed",cls:"done"};
 }
+/* Reimbursement summary shown under each wallet balance. The wallet balance above it is remaining
+   subsidy budget; this is real cash owed in one direction or the other. Purchases with no recorded
+   checkout payer are reported as an explicit gap rather than folded silently into the total. */
+function clothingSettlementCardHtml(personId){
+  const net=clothingSettlementBalance(personId), unclassified=clothingUnclassifiedCount(personId);
+  const name=getPerson(personId).name;
+  let line;
+  if(net>0) line=`<span class="cl-settle-amt owed">${money(net)}</span> <span class="cl-settle-dir">${esc(name)} owes you</span>`;
+  else if(net<0) line=`<span class="cl-settle-amt owing">${money(-net)}</span> <span class="cl-settle-dir">you owe ${esc(name)}</span>`;
+  else line=`<span class="cl-settle-dir">Settled up</span>`;
+  const gap=unclassified?`<div class="cl-settle-gap">${unclassified} purchase${unclassified===1?"":"s"} missing a checkout payer — not counted above</div>`:"";
+  return `<div class="cl-settle">${line}${gap}</div>`;
+}
 function clothingParticipants(){ return people.filter(isClothingParticipant); }
 function activeClothingPeople(){ return clothingParticipants().filter(p=>clothingPersonSettings(p.id).enabled); }
 function renderClothingPage(){
@@ -3304,8 +3402,11 @@ function renderClothingPage(){
   wallet.innerHTML=enabled.length?enabled.map(p=>{ const cfg=clothingPersonSettings(p.id),bal=clothingBalance(p.id),pct=cfg.walletMaximumCents?Math.max(0,Math.min(100,bal/cfg.walletMaximumCents*100)):0; return `<article class="cl-wallet" style="--person-color:${p.color}">
     <div class="cl-wallet-top"><span class="cl-wallet-name">${esc(p.name)}</span><span class="cl-mode">${esc(CLOTHING_MODES[cfg.mode])}</span></div><div class="cl-balance">${money(bal)}</div>
     <div class="cl-wallet-meta">of ${money(cfg.walletMaximumCents)} maximum · ${money(cfg.monthlyDepositCents)}/month</div><div class="bar" style="width:100%;margin-top:8px"><span style="width:${pct}%"></span></div>
-    <div class="cl-wallet-meta" style="margin-top:7px">Next deposit: ${esc(nextLocalMonthStart())}</div><div class="cl-wallet-actions"><button class="btn sm cl-wallet-history" data-id="${p.id}">Ledger</button><button class="btn sm cl-wallet-add" data-id="${p.id}">New purchase</button></div></article>`; }).join(""):`<div class="empty-state"><div class="big">No clothing wallets enabled.</div>Open Settings to enable a family member.</div>`;
+    <div class="cl-wallet-meta" style="margin-top:7px">Next deposit: ${esc(nextLocalMonthStart())}</div>
+    ${clothingSettlementCardHtml(p.id)}
+    <div class="cl-wallet-actions"><button class="btn sm cl-wallet-history" data-id="${p.id}">Ledger</button><button class="btn sm cl-wallet-settle" data-id="${p.id}">Settle up</button><button class="btn sm cl-wallet-add" data-id="${p.id}">New purchase</button></div></article>`; }).join(""):`<div class="empty-state"><div class="big">No clothing wallets enabled.</div>Open Settings to enable a family member.</div>`;
   wallet.querySelectorAll(".cl-wallet-history").forEach(b=>b.addEventListener("click",()=>openClothingLedgerModal(b.dataset.id)));
+  wallet.querySelectorAll(".cl-wallet-settle").forEach(b=>b.addEventListener("click",()=>openClothingSettlementModal(b.dataset.id)));
   wallet.querySelectorAll(".cl-wallet-add").forEach(b=>b.addEventListener("click",()=>openClothingPurchaseModal(null,{personId:b.dataset.id})));
   const participantIds=new Set(clothingParticipants().map(p=>p.id));
   const completed=clothingPurchases.filter(p=>participantIds.has(p.personId)&&p.status==="completed"&&!p.deleted&&!p.returned), verified=completed.filter(verifiedRetailApproved), spent=completed.reduce((s,p)=>s+p.pricePaid+p.tax+p.shipping,0), retail=verified.reduce((s,p)=>s+p.verifiedRetailPrice,0);
@@ -3361,6 +3462,7 @@ function openClothingPurchaseModal(id,opts){
         <div class="cl-field full"><label>Verification URL (no images stored)</label><input id="clfVUrl" type="url" value="${esc(p.verificationUrl)}" placeholder="Avoid private or token-bearing links"></div><div class="cl-field full"><label>Verification note</label><input id="clfVNote" value="${esc(p.verificationNote)}"></div>
         <div class="cl-field"><label>Tax</label><input id="clfTax" type="number" min="0" step="0.01" value="${(p.tax/100).toFixed(2)}"></div><div class="cl-field"><label>Shipping</label><input id="clfShipping" type="number" min="0" step="0.01" value="${(p.shipping/100).toFixed(2)}"></div>
         <div class="cl-field"><label>Shipping type</label><select id="clfShippingType"><option value="standard" ${p.shippingType!=="expedited"?"selected":""}>Standard · child pays</option><option value="expedited" ${p.shippingType==="expedited"?"selected":""}>Expedited · child pays</option></select></div><div class="cl-field"><label>Return deadline</label><input id="clfReturn" type="date" value="${p.returnDeadline||""}"></div>
+        <div class="cl-field"><label>Who paid at checkout</label><select id="clfPayer"><option value="" ${p.paidAtCheckoutBy?"":"selected"}>— not recorded —</option>${Object.entries(CLOTHING_CHECKOUT_PAYERS).map(([k,l])=>`<option value="${k}" ${k===p.paidAtCheckoutBy?"selected":""}>${l}</option>`).join("")}</select></div>
         <div class="cl-field full"><label>Notes</label><textarea id="clfNotes">${esc(p.notes)}</textarea></div>
         <div class="cl-field"><label>Parent contribution override (optional)</label><input id="clfOverride" type="number" min="0" step="0.01" value="${p.parentOverrideContribution==null?"":(p.parentOverrideContribution/100).toFixed(2)}"></div><div class="cl-field"><label>Required override reason</label><input id="clfOverrideReason" value="${esc(p.parentOverrideReason)}"></div>
         <label class="cl-check"><input id="clfParentApproved" type="checkbox" ${p.parentApproved?"checked":""}> Parent approved</label><label class="cl-check"><input id="clfWaiveCooling" type="checkbox"> Parent waives cooling-off period</label>
@@ -3368,7 +3470,7 @@ function openClothingPurchaseModal(id,opts){
       <div class="cl-modal-actions"><button class="btn" id="clfCancel">Close</button>${calculator?"":`<button class="btn" id="clfPending">Save pending</button><button class="btn add" id="clfSave">${isCompleted?"Recalculate purchase":"Complete purchase"}</button>`}</div>`;
     const personEl=modal.querySelector("#clfPerson"),categoryEl=modal.querySelector("#clfCategory"),capEl=modal.querySelector("#clfCap"), reflections=modal.querySelector("#clfReflections");
     function paintReflections(){ const cfg=clothingPersonSettings(personEl.value); reflections.innerHTML=(cfg.reflectionPrompts||cfg.mode==="intentional")?`<div class="cl-section-title">Intentional-purchase reflection</div>`+CLOTHING_REFLECTION_PROMPTS.map((q,i)=>`<div class="cl-field"><label>${esc(q)}</label><input data-ref="${i}" value="${esc((p.reflectionAnswers||{})[i]||"")}"></div>`).join(""):""; }
-    function collect(){ const overrideRaw=modal.querySelector("#clfOverride").value.trim(), overrideReason=modal.querySelector("#clfOverrideReason").value.trim(), verificationStatus=modal.querySelector("#clfVStatus").value, live=existing?(clothingPurchases.find(x=>x.id===p.id)||p):p; const out=migrateClothingPurchase(Object.assign({},live,{personId:personEl.value,purchaseDate:modal.querySelector("#clfDate").value,description:modal.querySelector("#clfDesc").value.trim(),category:categoryEl.value,condition:modal.querySelector("#clfCondition").value,necessaryOrDiscretionary:modal.querySelector("#clfLane").value,store:modal.querySelector("#clfStore").value.trim(),pricePaid:parseMoneyToCents(modal.querySelector("#clfPaid").value),categoryCapUsed:parseMoneyToCents(capEl.value),claimedRetailPrice:parseMoneyToCents(modal.querySelector("#clfClaimed").value),verifiedRetailPrice:parseMoneyToCents(modal.querySelector("#clfVerified").value),verificationStatus,verifiedBy:modal.querySelector("#clfVBy").value.trim(),verifiedAt:["parent-approved","parent-corrected"].includes(verificationStatus)?(live.verifiedAt||Date.now()):0,verificationMethod:modal.querySelector("#clfVMethod").value.trim(),verificationUrl:modal.querySelector("#clfVUrl").value.trim(),verificationNote:modal.querySelector("#clfVNote").value.trim(),tax:parseMoneyToCents(modal.querySelector("#clfTax").value),shipping:parseMoneyToCents(modal.querySelector("#clfShipping").value),shippingType:modal.querySelector("#clfShippingType").value,returnDeadline:modal.querySelector("#clfReturn").value,notes:modal.querySelector("#clfNotes").value.trim(),parentOverride:overrideRaw!=="",parentOverrideContribution:overrideRaw===""?null:parseMoneyToCents(overrideRaw),parentOverrideReason:overrideReason,parentApproved:modal.querySelector("#clfParentApproved").checked})); out.reflectionAnswers={}; modal.querySelectorAll("[data-ref]").forEach(x=>{ if(x.value.trim())out.reflectionAnswers[x.dataset.ref]=x.value.trim(); }); return out; }
+    function collect(){ const overrideRaw=modal.querySelector("#clfOverride").value.trim(), overrideReason=modal.querySelector("#clfOverrideReason").value.trim(), verificationStatus=modal.querySelector("#clfVStatus").value, live=existing?(clothingPurchases.find(x=>x.id===p.id)||p):p; const out=migrateClothingPurchase(Object.assign({},live,{personId:personEl.value,purchaseDate:modal.querySelector("#clfDate").value,description:modal.querySelector("#clfDesc").value.trim(),category:categoryEl.value,condition:modal.querySelector("#clfCondition").value,necessaryOrDiscretionary:modal.querySelector("#clfLane").value,store:modal.querySelector("#clfStore").value.trim(),pricePaid:parseMoneyToCents(modal.querySelector("#clfPaid").value),categoryCapUsed:parseMoneyToCents(capEl.value),claimedRetailPrice:parseMoneyToCents(modal.querySelector("#clfClaimed").value),verifiedRetailPrice:parseMoneyToCents(modal.querySelector("#clfVerified").value),verificationStatus,verifiedBy:modal.querySelector("#clfVBy").value.trim(),verifiedAt:["parent-approved","parent-corrected"].includes(verificationStatus)?(live.verifiedAt||Date.now()):0,verificationMethod:modal.querySelector("#clfVMethod").value.trim(),verificationUrl:modal.querySelector("#clfVUrl").value.trim(),verificationNote:modal.querySelector("#clfVNote").value.trim(),tax:parseMoneyToCents(modal.querySelector("#clfTax").value),shipping:parseMoneyToCents(modal.querySelector("#clfShipping").value),shippingType:modal.querySelector("#clfShippingType").value,returnDeadline:modal.querySelector("#clfReturn").value,paidAtCheckoutBy:modal.querySelector("#clfPayer").value,notes:modal.querySelector("#clfNotes").value.trim(),parentOverride:overrideRaw!=="",parentOverrideContribution:overrideRaw===""?null:parseMoneyToCents(overrideRaw),parentOverrideReason:overrideReason,parentApproved:modal.querySelector("#clfParentApproved").checked})); out.reflectionAnswers={}; modal.querySelectorAll("[data-ref]").forEach(x=>{ if(x.value.trim())out.reflectionAnswers[x.dataset.ref]=x.value.trim(); }); return out; }
     function paintCalc(){ const out=collect(), cfg=clothingPersonSettings(out.personId), bal=clothingBalance(out.personId)+(isCompleted&&p.necessaryOrDiscretionary==="discretionary"?p.actualParentContribution:0), useCurrent=modal.querySelector("#clfUseCurrent"), snap=isCompleted&&(!useCurrent||!useCurrent.checked)?p.policySnapshot:clothingPolicySnapshot(out.personId,out.categoryCapUsed), c=calculateClothingPurchase(out,snap,bal), total=out.pricePaid+out.tax+out.shipping; modal.querySelector("#clfCalc").innerHTML=`<div class="cl-calc-grid"><div class="cl-calc-item"><b>${money(total)}</b><span>Total with tax + shipping</span></div><div class="cl-calc-item"><b>${bpsLabel(c.discount)}</b><span>Verified discount</span></div><div class="cl-calc-item"><b>${bpsLabel(c.parentPayPercent)}</b><span>Parent rate</span></div><div class="cl-calc-item"><b>${money(c.parentTotal)}</b><span>Parent total · includes tax</span></div><div class="cl-calc-item"><b>${money(c.childTotal)}</b><span>Child total · includes shipping</span></div><div class="cl-calc-item"><b>${money(out.shipping)}</b><span>Shipping · child pays</span></div><div class="cl-calc-item"><b>${money(c.projectedWallet)}</b><span>Projected wallet</span></div><div class="cl-calc-item"><b>${esc(nextLocalMonthStart())}</b><span>Next deposit</span></div></div>`; const warnings=[]; if(!verifiedRetailApproved(out))warnings.push("Retail is not parent-approved, so discount is 0." ); if(cfg.mode==="training-wheels")warnings.push("Training Wheels uses the configured fixed parent percentage."); if(out.condition==="secondhand"&&!verifiedRetailApproved(out)&&cfg.mode!=="training-wheels")warnings.push("Unverified secondhand item receives the fixed 15-point bonus only."); if(out.shipping>out.pricePaid&&out.shipping>0)warnings.push("Shipping costs more than the item. Find free shipping or pickup, or record a parent override."); else if(out.shipping>0)warnings.push("Shipping is included in the total and paid by the child; look for a free-shipping option."); modal.querySelector("#clfWarning").textContent=warnings.join(" "); }
     if(isCompleted){ const use=document.createElement("label");use.className="cl-check";use.innerHTML='<input id="clfUseCurrent" type="checkbox"> Explicitly recalculate with current policy instead of saved snapshot';modal.querySelector(".cl-form-grid").appendChild(use); }
     personEl.addEventListener("change",()=>{paintReflections();paintCalc();}); categoryEl.addEventListener("change",()=>{capEl.value=((clothingSettings.categoryCaps[categoryEl.value]||0)/100).toFixed(2);paintCalc();}); modal.querySelectorAll("input,select,textarea").forEach(x=>x.addEventListener("input",paintCalc)); paintReflections(); paintCalc();
@@ -3383,6 +3485,67 @@ function openClothingPurchaseModal(id,opts){
 }
 function openClothingReturnModal(id){ const p=clothingPurchases.find(x=>x.id===id);if(!p)return;openClModal(modal=>{modal.innerHTML=`<h2>Return purchase</h2><div class="cl-modal-sub">This restores exactly ${money(p.necessaryOrDiscretionary==="necessary"?0:p.actualParentContribution)} to ${esc(clothingPersonName(p))}’s discretionary wallet. It cannot be refunded twice.</div><div class="cl-field"><label>Return note</label><textarea id="clrNote" placeholder="Reason, receipt, or refund detail"></textarea></div><div class="cl-error hidden" id="clrError"></div><div class="cl-modal-actions"><button class="btn" id="clrCancel">Cancel</button><button class="btn add" id="clrSave">Record return</button></div>`;modal.querySelector("#clrCancel").addEventListener("click",closeClModal);modal.querySelector("#clrSave").addEventListener("click",()=>{const note=modal.querySelector("#clrNote").value.trim();if(!note){const e=modal.querySelector("#clrError");e.textContent="A return note is required.";e.classList.remove("hidden");return;}if(!confirm(`Record “${p.description}” as returned?`))return;if(returnClothingPurchase(id,note)){closeClModal();renderClothingPage();}});}); }
 function openClothingVerificationModal(id){ const p=clothingPurchases.find(x=>x.id===id);if(!p)return;openClModal(modal=>{modal.innerHTML=`<h2>Verify retail price</h2><div class="cl-modal-sub">${esc(p.description)} · claimed ${money(p.claimedRetailPrice)} · paid ${money(p.pricePaid)}</div><div class="cl-form-grid"><div class="cl-field"><label>Decision</label><select id="clvStatus"><option value="parent-approved">Approve claimed retail</option><option value="parent-corrected">Correct retail</option><option value="rejected">Reject claim</option></select></div><div class="cl-field"><label>Verified retail</label><input id="clvRetail" type="number" min="0" step="0.01" value="${((p.verifiedRetailPrice||p.claimedRetailPrice)/100).toFixed(2)}"></div><div class="cl-field"><label>Verified by</label><input id="clvBy" value="Parent"></div><div class="cl-field"><label>Method</label><input id="clvMethod" value="${esc(p.verificationMethod)}"></div><div class="cl-field full"><label>Note</label><input id="clvNote" value="${esc(p.verificationNote)}"></div></div><div class="cl-error hidden" id="clvError"></div><div class="cl-modal-actions"><button class="btn" id="clvCancel">Cancel</button><button class="btn add" id="clvSave">Apply decision</button></div>`;modal.querySelector("#clvCancel").addEventListener("click",closeClModal);modal.querySelector("#clvSave").addEventListener("click",()=>{const current=clothingPurchases.find(x=>x.id===id);if(!current){closeClModal();return;}const status=modal.querySelector("#clvStatus").value,retail=status==="rejected"?0:parseMoneyToCents(modal.querySelector("#clvRetail").value),update={verificationStatus:status,verifiedRetailPrice:retail,verifiedBy:modal.querySelector("#clvBy").value.trim(),verifiedAt:Date.now(),verificationMethod:modal.querySelector("#clvMethod").value.trim(),verificationNote:modal.querySelector("#clvNote").value.trim()};if(status!=="rejected"&&(!retail||!update.verifiedBy)){const e=modal.querySelector("#clvError");e.textContent="A positive verified retail price and verifier name are required.";e.classList.remove("hidden");return;}if(current.status==="completed"){const res=recalculateCompletedClothingPurchase(id,update,false);if(!res.ok)return;}else{Object.assign(current,update,{updated:Date.now()});saveClothing();}closeClModal();renderClothingPage();});}); }
+/* Settle-up view: current reimbursement balance, the purchases that produced it, any purchases still
+   missing a checkout payer, recorded payments, and a form to record a new one. Payments are additive
+   history — never edited in place — so the running balance stays auditable. */
+function openClothingSettlementModal(personId){
+  const person=getPerson(personId); if(!person||!person.id) return;
+  openClModal(modal=>{
+    function paint(){
+      const net=clothingSettlementBalance(personId);
+      const rows=clothingPurchases.filter(p=>p.personId===personId&&purchaseSettlementDelta(p)!==0)
+        .sort((a,b)=>(b.purchaseDate||"").localeCompare(a.purchaseDate||""));
+      const missing=clothingPurchases.filter(p=>p.personId===personId&&p.status==="completed"&&!p.deleted&&!p.returned&&!p.paidAtCheckoutBy)
+        .sort((a,b)=>(b.purchaseDate||"").localeCompare(a.purchaseDate||""));
+      const payments=clothingSettlements.filter(s=>s.personId===personId).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||b.created-a.created);
+      const headline = net>0?`${esc(person.name)} owes you ${money(net)}`:net<0?`You owe ${esc(person.name)} ${money(-net)}`:`Settled up`;
+      modal.innerHTML=`<h2>Settle up · ${esc(person.name)}</h2>
+        <div class="cl-modal-sub">Reimbursement of real money. This is separate from the clothing wallet, which tracks remaining subsidy budget.</div>
+        <div class="cl-settle-headline ${net>0?"owed":net<0?"owing":""}">${headline}</div>
+        ${missing.length?`<div class="cl-warning">${missing.length} completed purchase${missing.length===1?"":"s"} ${missing.length===1?"has":"have"} no recorded checkout payer, so ${missing.length===1?"it is":"they are"} excluded from the balance:<br>${missing.map(p=>esc(p.description||"(untitled)")+" · "+esc(fmtDate(p.purchaseDate))).join("<br>")}
+          <div class="cl-bulk-actions"><span class="cl-bulk-label">Set all ${missing.length} at once:</span><button class="btn sm" id="clsetBulkChild">${esc(person.name)} paid</button><button class="btn sm" id="clsetBulkParent">I paid</button></div></div>`:""}
+        <div class="cl-section-title" style="margin:14px 0 8px">Record a payment</div>
+        <div class="cl-form-grid">
+          <div class="cl-field"><label>Direction</label><select id="clsetDir"><option value="child-to-parent">${esc(person.name)} paid you</option><option value="parent-to-child">You paid ${esc(person.name)}</option></select></div>
+          <div class="cl-field"><label>Amount</label><input id="clsetAmt" type="number" min="0" step="0.01" value=""></div>
+          <div class="cl-field"><label>Date</label><input id="clsetDate" type="date" value="${todayStr()}"></div>
+          <div class="cl-field full"><label>Note</label><input id="clsetNote" placeholder="Cash, Venmo, chores traded…"></div>
+        </div>
+        <div class="cl-error hidden" id="clsetError"></div>
+        <div class="cl-modal-actions" style="margin-bottom:6px"><button class="btn add" id="clsetSave">Record payment</button></div>
+        ${payments.length?`<div class="cl-section-title" style="margin:14px 0 8px">Payments (${payments.length})</div><table class="cl-table"><tbody>${payments.map(s=>`<tr><td data-label="Date">${esc(fmtDate(s.date))}</td><td data-label="Direction">${s.direction==="child-to-parent"?esc(person.name)+" → you":"you → "+esc(person.name)}</td><td class="money" data-label="Amount">${money(s.amount)}</td><td data-label="Note">${esc(s.note||"—")}</td><td data-label="Actions"><button class="iconbtn del clsetDel" data-id="${s.id}" title="Remove this payment record">✕</button></td></tr>`).join("")}</tbody></table>`:""}
+        ${rows.length?`<div class="cl-section-title" style="margin:14px 0 8px">Purchases in this balance (${rows.length})</div><table class="cl-table"><tbody>${rows.map(p=>{const d=purchaseSettlementDelta(p);return `<tr><td data-label="Date">${esc(fmtDate(p.purchaseDate))}</td><td data-label="Item">${esc(p.description||"(untitled)")}</td><td data-label="Payer">${esc(CLOTHING_CHECKOUT_PAYERS[p.paidAtCheckoutBy]||"—")}</td><td class="money" data-label="Effect">${d>0?"+"+money(d):"−"+money(-d)}</td></tr>`;}).join("")}</tbody></table><div class="cl-modal-sub" style="margin-top:6px">Positive increases what ${esc(person.name)} owes you; negative increases what you owe ${esc(person.name)}.</div>`:""}
+        <div class="cl-modal-actions"><button class="btn" id="clsetClose">Close</button></div>`;
+      modal.querySelector("#clsetClose").addEventListener("click",closeClModal);
+      /* Bulk classify — only ever touches purchases with NO payer recorded, so it can never silently
+         overwrite a deliberate per-purchase choice. Re-resolved from the live array at click time. */
+      function bulkSetPayer(payer,label){
+        const targets=clothingPurchases.filter(p=>p.personId===personId&&p.status==="completed"&&!p.deleted&&!p.returned&&!p.paidAtCheckoutBy);
+        if(!targets.length) return;
+        if(!confirm(`Mark all ${targets.length} unclassified purchase${targets.length===1?"":"s"} as “${label}”? Purchases you already classified are not affected.`)) return;
+        const now=Date.now();
+        targets.forEach(p=>{ p.paidAtCheckoutBy=payer; p.updated=now; });
+        saveClothing(); paint(); renderClothingPage();
+      }
+      const bulkChild=modal.querySelector("#clsetBulkChild"), bulkParent=modal.querySelector("#clsetBulkParent");
+      if(bulkChild) bulkChild.addEventListener("click",()=>bulkSetPayer("child",CLOTHING_CHECKOUT_PAYERS.child));
+      if(bulkParent) bulkParent.addEventListener("click",()=>bulkSetPayer("parent",CLOTHING_CHECKOUT_PAYERS.parent));
+      modal.querySelector("#clsetSave").addEventListener("click",()=>{
+        const amt=parseMoneyToCents(modal.querySelector("#clsetAmt").value);
+        const err=modal.querySelector("#clsetError");
+        if(amt<=0){ err.textContent="Enter a payment amount greater than zero."; err.classList.remove("hidden"); return; }
+        addClothingSettlement({personId,amount:amt,direction:modal.querySelector("#clsetDir").value,date:modal.querySelector("#clsetDate").value||todayStr(),note:modal.querySelector("#clsetNote").value.trim()});
+        saveClothing(); paint(); renderClothingPage();
+      });
+      modal.querySelectorAll(".clsetDel").forEach(b=>b.addEventListener("click",()=>{
+        const s=clothingSettlementEntry(b.dataset.id); if(!s) return;
+        if(!confirm(`Remove this ${money(s.amount)} payment record? The balance will go back up.`)) return;
+        clothingSettlements=clothingSettlements.filter(x=>x.id!==s.id); saveClothing(); paint(); renderClothingPage();
+      }));
+    }
+    paint();
+  });
+}
 function openClothingSettingsModal(){
   openClModal(modal=>{ modal.innerHTML=`<h2>Clothing settings</h2><div class="cl-modal-sub">Current settings affect new purchases only. Completed purchases retain policy snapshots.</div><div class="cl-form-grid"><div class="cl-field"><label>Baseline parent %</label><input id="clsBase" type="number" min="0" max="100" step="0.01" value="${clothingSettings.baselineBps/100}"></div><div class="cl-field"><label>Ceiling parent %</label><input id="clsCeil" type="number" min="0" max="100" step="0.01" value="${clothingSettings.ceilingBps/100}"></div><div class="cl-field"><label>Unverified secondhand bonus points</label><input id="clsBonus" type="number" min="0" max="100" step="0.01" value="${clothingSettings.secondhandBonusBps/100}"></div></div>
     <div class="cl-section-title" style="margin:16px 0 8px">Per-child wallets and modes</div><div id="clsPeople">${clothingParticipants().map(p=>{const c=clothingPersonSettings(p.id);return `<div class="cl-section" data-person="${p.id}" style="box-shadow:none"><div class="cl-section-head"><b>${esc(p.name)}</b><label class="cl-check"><input class="cls-enabled" type="checkbox" ${c.enabled?"checked":""}> Wallet enabled</label></div><div class="cl-form-grid"><div class="cl-field"><label>Mode</label><select class="cls-mode">${Object.entries(CLOTHING_MODES).map(([k,l])=>`<option value="${k}" ${k===c.mode?"selected":""}>${l}</option>`).join("")}</select></div><div class="cl-field"><label>Monthly deposit</label><input class="cls-deposit" type="number" min="0" step="0.01" value="${(c.monthlyDepositCents/100).toFixed(2)}"></div><div class="cl-field"><label>Maximum balance</label><input class="cls-max" type="number" min="0" step="0.01" value="${(c.walletMaximumCents/100).toFixed(2)}"></div><div class="cl-field"><label>Training Wheels parent %</label><input class="cls-fixed" type="number" min="0" max="100" step="0.01" value="${c.fixedParentBps/100}"></div><div class="cl-field"><label>Cooling-off hours</label><input class="cls-cooling" type="number" min="0" step="1" value="${c.coolingOffHours}"></div><label class="cl-check"><input class="cls-reflect" type="checkbox" ${c.reflectionPrompts?"checked":""}> Reflection prompts</label><label class="cl-check"><input class="cls-approval" type="checkbox" ${c.parentApprovalRequired?"checked":""}> Parent approval required</label></div></div>`;}).join("")}</div>
@@ -3432,7 +3595,7 @@ document.getElementById("printBtn").addEventListener("pointerdown",e=>{
 });
 document.getElementById("printBtn").addEventListener("click",openPrintCenter);
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -3464,6 +3627,7 @@ document.getElementById("importFile").addEventListener("change",e=>{
       if(Array.isArray(d.clothingPurchases)) clothingPurchases=d.clothingPurchases.map(migrateClothingPurchase);
       if(Array.isArray(d.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(d.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(d.clothingSettings&&typeof d.clothingSettings==="object"&&!Array.isArray(d.clothingSettings)) clothingSettings=migrateClothingSettings(d.clothingSettings);
+      if(Array.isArray(d.clothingSettlements)) clothingSettlements=d.clothingSettlements.map(migrateClothingSettlement);
     }
     editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveClothing(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
