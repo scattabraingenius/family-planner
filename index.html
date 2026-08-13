@@ -352,6 +352,25 @@
   .note-pin.on { color:var(--signal); }
   .note-pin:hover { color:var(--ink); } .note-del:hover { color:var(--alarm); }
 
+  /* countdown widgets — pinned Important Dates, big enough to read from across the room */
+  .countdowns { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+  .cd-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:10px; }
+  .cd-card { --cat:#66788B; background:var(--surface-2); border:1px solid var(--line); border-left:4px solid var(--cat); border-radius:10px; padding:12px 12px 11px; text-align:center; cursor:pointer; min-width:0; }
+  .cd-card:hover { border-color:var(--muted-2); }
+  .cd-card:focus-visible { outline:2px solid var(--signal); outline-offset:2px; }
+  .cd-num { font-family:var(--mono); font-size:34px; font-weight:800; line-height:1; color:var(--signal-dim); }
+  .cd-unit { font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted-2); margin-top:3px; }
+  /* Live h:m:s. font-variant-numeric keeps digit widths equal so the clock doesn't jitter each second. */
+  .cd-clock { font-family:var(--mono); font-size:15px; font-weight:700; color:var(--ink); margin-top:5px; font-variant-numeric:tabular-nums; letter-spacing:.02em; }
+  .cd-card.final-day .cd-num { font-size:22px; color:var(--star); }
+  .cd-card.final-day .cd-clock { font-size:21px; color:var(--star); }
+  .cd-card.final-day { border-color:var(--star); box-shadow:0 0 0 1px var(--star); }
+  .cd-party { font-size:30px; }
+  @media (prefers-reduced-motion:no-preference){ .cd-card.final-day .cd-clock { animation:cdPulse 2s ease-in-out infinite; } }
+  @keyframes cdPulse { 0%,100%{ opacity:1; } 50%{ opacity:.72; } }
+  .cd-title { font-size:13.5px; font-weight:700; margin-top:7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cd-when { font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
   .places { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
   .place-list { display:flex; flex-direction:column; gap:6px; }
   .place-row { display:flex; align-items:center; gap:9px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface-2); }
@@ -741,6 +760,8 @@
     </div>
 
     <div class="side">
+      <div class="countdowns" id="countdownPanel"></div>
+
       <div class="notes hidden">
         <div class="panel-title">Quick notes <span class="shop-count" id="noteCount"></span></div>
         <div class="add-inline"><span class="plus">+</span><input id="noteInput" type="text" placeholder="Jot something down, then Enter…" aria-label="Add note"></div>
@@ -1393,7 +1414,7 @@ const AUDIENCE_LABELS = {
   "seniors":"Seniors", "ecse":"ECSE", "atps":"ATPS",
 };
 function blankImportantDate(name){ return { id:uid("d"), title:name||"", startDate:"", endDate:"", startTime:"", endTime:"", people:[], location:"", note:"", category:"other",
-  allDay:true, source:"", sourceRevision:"", sourceEventId:"", schoolImpact:"", audience:[], tentative:false, userModified:false,
+  allDay:true, source:"", sourceRevision:"", sourceEventId:"", schoolImpact:"", audience:[], tentative:false, userModified:false, countdownPinned:false,
   created:Date.now(), updated:Date.now() }; }
 function migrateImportantDate(raw){
   const d=Object.assign(blankImportantDate(), raw||{});
@@ -1407,6 +1428,7 @@ function migrateImportantDate(raw){
   d.audience = Array.isArray(d.audience) ? d.audience.filter(a=>AUDIENCE_LABELS[a]) : [];
   d.tentative = !!d.tentative;
   d.userModified = !!d.userModified;
+  d.countdownPinned = !!d.countdownPinned;
   if(typeof d.created!=="number") d.created=Date.now();
   if(typeof d.updated!=="number") d.updated=d.created;
   return d;
@@ -1913,6 +1935,7 @@ function render(){
   renderShop();
   renderPlaces();
   renderBYL();
+  renderCountdowns();
   renderDatesSection();
   const view=currentView();
   const next=computeNextUp();
@@ -2531,6 +2554,72 @@ document.getElementById("bylTitleReset").addEventListener("click",()=>{
   bylTitle=DEFAULT_BYL_TITLE; saveBYLTitle(); renderBYLTitle();
 });
 
+/* ---------------- countdown widgets ----------------
+   Reads pinned Important Dates rather than storing its own list, so a countdown date still appears
+   in Calendar, print, and the date cards — there is no second place to maintain. A date drops out of
+   this panel on its own once it has passed, so nothing needs cleaning up after the fact. */
+function pinnedCountdownDates(){
+  return importantDates.filter(d=>d.countdownPinned&&d.startDate&&!isPastDate(d))
+    .sort((a,b)=>(a.startDate||"").localeCompare(b.startDate||"")||(a.startTime||"").localeCompare(b.startTime||""));
+}
+/* Live countdown split. Counts to the real moment (the date's start time, or midnight when it is an
+   all-day date), so the seconds are genuinely accurate rather than a calendar-day approximation.
+   Note this can read one lower than the date card's "In N days": at 1pm on Aug 13, Aug 17 is
+   calendar-day 4 away but only 3 full days and 11 hours of actual time away. The clock is the
+   precise one. */
+function countdownParts(targetMs, now){
+  let ms=Math.max(0,targetMs-(now||Date.now()));
+  return { days:Math.floor(ms/86400000), hours:Math.floor(ms/3600000)%24, mins:Math.floor(ms/60000)%60, secs:Math.floor(ms/1000)%60, done:ms<=0 };
+}
+function countdownTargetMs(d){ const m=localMoment(d.startDate, d.startTime||"00:00"); return m?m.getTime():0; }
+function countdownClockText(p){ return `${pad2(p.hours)}:${pad2(p.mins)}:${pad2(p.secs)}`; }
+function countdownFaceHtml(d){
+  const ts=todayStr(), start=d.startDate, end=d.endDate||d.startDate;
+  const cat=DATE_CATEGORIES[d.category]||DATE_CATEGORIES.other;
+  const live = ts<start;                       // still in the future → tick it
+  const target = live?countdownTargetMs(d):0;
+  const p = live?countdownParts(target):null;
+  const when=dateDatePartText(d)+(dateTimePartText(d)?` · ${dateTimePartText(d)}`:"");
+  const body = live
+    ? `<div class="cd-num">${p.days}</div><div class="cd-unit">${p.days===1?"day":"days"}</div><div class="cd-clock">${countdownClockText(p)}</div>`
+    : (ts<=end ? `<div class="cd-num cd-party">🎉</div><div class="cd-unit">${isDateRange(d)?"happening now":"it's today!"}</div>` : `<div class="cd-num">—</div><div class="cd-unit"></div>`);
+  return `<div class="cd-card${live&&p.days===0?" final-day":""}" style="--cat:${cat.color}" data-id="${esc(d.id)}" data-ts="${live?target:""}" role="button" tabindex="0" aria-label="${esc(d.title||"date")} — ${esc(dateCountdown(d))}. Activate to edit.">
+    ${body}
+    <div class="cd-title">${esc(d.title)||"(untitled)"}</div>
+    <div class="cd-when">${esc(when)}</div>
+  </div>`;
+}
+/* Per-second patch driven by the existing 1s tick — updates only text nodes inside the countdown
+   cards, never rebuilds them, so it cannot disturb an open editor or steal focus. */
+function updateCountdownTicks(){
+  const cards=document.querySelectorAll("#countdownPanel .cd-card[data-ts]");
+  if(!cards.length) return;
+  const now=Date.now(); let rolled=false;
+  cards.forEach(card=>{
+    const target=Number(card.dataset.ts); if(!target) return;
+    const p=countdownParts(target,now);
+    if(p.done){ rolled=true; return; }                 // crossed zero → let render() rebuild it
+    const num=card.querySelector(".cd-num"), unit=card.querySelector(".cd-unit"), clock=card.querySelector(".cd-clock");
+    if(num&&num.textContent!==String(p.days)) num.textContent=String(p.days);
+    if(unit){ const u=p.days===1?"day":"days"; if(unit.textContent!==u) unit.textContent=u; }
+    if(clock){ const t=countdownClockText(p); if(clock.textContent!==t) clock.textContent=t; }
+    card.classList.toggle("final-day",p.days===0);
+  });
+  if(rolled&&!editingActive()) renderCountdowns();
+}
+function renderCountdowns(){
+  const el=document.getElementById("countdownPanel"); if(!el) return;
+  const list=pinnedCountdownDates();
+  if(!list.length){ el.classList.add("hidden"); el.innerHTML=""; return; }
+  el.classList.remove("hidden");
+  el.innerHTML=`<div class="panel-title">Countdown</div><div class="cd-list">${list.map(countdownFaceHtml).join("")}</div>`;
+  el.querySelectorAll(".cd-card").forEach(card=>{
+    const open=()=>{ closeActiveEdit(true); dateEditingId=card.dataset.id; datesAllOpen=true; renderDatesSection(); };
+    card.addEventListener("click",open);
+    card.addEventListener("keydown",e=>{ if(e.target!==card) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  });
+}
+
 /* ---------------- important dates: rendering ---------------- */
 function renderDatesSection(){
   renderDatesQuick();
@@ -2781,6 +2870,7 @@ function buildDateEditorFields(container, d, opts){
       <div class="field full"><label>Who's involved (optional)</label><div class="who-picker" id="de-who"></div></div>
       <div class="field"><label>School impact (optional)</label><select id="de-impact"><option value="">—</option>${Object.entries(SCHOOL_IMPACT_LABELS).map(([k,l])=>`<option value="${k}" ${k===d.schoolImpact?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
       <div class="field"><label class="starbox" style="padding:24px 0 0"><input type="checkbox" id="de-tentative" ${d.tentative?"checked":""}> Tentative</label></div>
+      <div class="field full"><label class="starbox" style="padding:0"><input type="checkbox" id="de-countdown" ${d.countdownPinned?"checked":""}> Show a countdown for this on Home</label></div>
       <div class="field full"><label>Audience (optional)</label><div class="who-picker aud-picker" id="de-audience"></div></div>
       <div class="field full"><label>Note (optional)</label><textarea id="de-note" placeholder="anything to remember">${esc(d.note)}</textarea></div>
     </div>
@@ -2823,6 +2913,7 @@ function buildDateEditorFields(container, d, opts){
     rec.schoolImpact = SCHOOL_IMPACT_LABELS[impactVal] ? impactVal : "";
     rec.audience = audSel.slice();
     rec.tentative = container.querySelector("#de-tentative").checked;
+    rec.countdownPinned = container.querySelector("#de-countdown").checked;
     rec.updated=Date.now();
     markUserModifiedIfSourced(rec);
     saveDates();
@@ -3461,7 +3552,11 @@ function renderClothingPage(){
   wallet.querySelectorAll(".cl-wallet-help").forEach(b=>b.addEventListener("click",()=>openClothingHelpModal(0)));
   const participantIds=new Set(clothingParticipants().map(p=>p.id));
   const completed=clothingPurchases.filter(p=>participantIds.has(p.personId)&&p.status==="completed"&&!p.deleted&&!p.returned), verified=completed.filter(verifiedRetailApproved), spent=completed.reduce((s,p)=>s+p.pricePaid+p.tax+p.shipping,0), retail=verified.reduce((s,p)=>s+p.verifiedRetailPrice,0);
-  const saved=verified.reduce((s,p)=>s+Math.max(0,p.verifiedRetailPrice-p.pricePaid),0), parent=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).parent,0), child=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).child,0);
+  const saved=verified.reduce((s,p)=>s+Math.max(0,p.verifiedRetailPrice-p.pricePaid),0), parentOwed=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).parent,0), child=completed.reduce((s,p)=>s+clothingPurchaseTotals(p).child,0);
+  /* Parent Total counts both sides of Dad's contribution: monthly wallet money already donated and
+     the parent share/reimbursement generated by the purchases. Only wallet money actually consumed by
+     completed discretionary purchases belongs in this activity total; unused balances are not spent. */
+  const walletDonated=completed.filter(p=>p.necessaryOrDiscretionary==="discretionary").reduce((s,p)=>s+effectiveParentContribution(p),0), parent=parentOwed+walletDonated;
   const avg=verified.length?Math.round(verified.reduce((s,p)=>s+p.discount,0)/verified.length):0, best=verified.slice().sort((a,b)=>b.discount-a.discount)[0], dollars=verified.slice().sort((a,b)=>(b.verifiedRetailPrice-b.pricePaid)-(a.verifiedRetailPrice-a.pricePaid))[0];
   const fullRetail=completed.filter(p=>p.discount===0).length, soon=completed.filter(p=>p.returnDeadline&&p.returnDeadline>=todayStr()&&p.returnDeadline<=addDaysStr(todayStr(),7)).length;
   const stats=[[money(retail),"Verified retail"],[money(spent),"Actually spent"],[money(saved),"Verified savings"],[bpsLabel(avg),"Average discount"],[money(parent),"Parent total"],[money(child),"Child total"],[best?bpsLabel(best.discount):"—","Best % deal"],[dollars?money(Math.max(0,dollars.verifiedRetailPrice-dollars.pricePaid)):"—","Most saved"],[String(fullRetail),"Full-retail items"],[String(soon),"Returns due ≤7d"]];
@@ -4069,6 +4164,9 @@ window.addEventListener("afterprint", ()=>{
 
 /* ---------------- tick ---------------- */
 function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=`${pad2(d.getHours())}:${pad2(d.getMinutes())}<span class="sec">:${pad2(d.getSeconds())}</span>`;
+  /* Countdowns patch text in place and never rebuild DOM, so they run even while an editor is open —
+     the clock should not freeze just because someone is typing elsewhere on the page. */
+  updateCountdownTicks();
   /* editingActive() covers the full task editor, place editor, date editor, AND any inline text/popover —
      nothing the 1s tick does may ever rebuild DOM out from under an open editor. */
   if(!editingActive()){
