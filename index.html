@@ -2703,8 +2703,12 @@ function countdownClockText(p){ return `${pad2(p.hours)}:${pad2(p.mins)}:${pad2(
 function countdownFaceHtml(d){
   const ts=todayStr(), start=d.startDate, end=d.endDate||d.startDate;
   const cat=DATE_CATEGORIES[d.category]||DATE_CATEGORIES.other;
-  const live = ts<start;                       // still in the future → tick it
-  const target = live?countdownTargetMs(d):0;
+  /* Live until the actual MOMENT passes, not until the calendar day arrives. Comparing date strings
+     threw the start time away, so a 3pm arrival stopped counting down at midnight and sat on 🎉 for
+     the fifteen hours it was still genuinely counting toward. An all-day date has no time, so its
+     target is midnight and it still flips the moment its day begins — that behaviour is unchanged. */
+  const target = countdownTargetMs(d);
+  const live = target > Date.now();
   const p = live?countdownParts(target):null;
   const when=dateDatePartText(d)+(dateTimePartText(d)?` · ${dateTimePartText(d)}`:"");
   const body = live
@@ -2749,6 +2753,10 @@ function renderCountdowns(){
 
 /* ---------------- important dates: rendering ---------------- */
 function renderDatesSection(){
+  /* The countdown panel is a second view of this same data, so it has to be redrawn whenever the
+     dates change. Without this, pinning a date or editing its time left the panel showing whatever
+     it rendered on page load, which reads exactly like the countdown feature being broken. */
+  renderCountdowns();
   renderDatesQuick();
   const allBox=document.getElementById("datesAll");
   const btn=document.getElementById("viewAllDatesBtn");
