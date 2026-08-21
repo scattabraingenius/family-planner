@@ -999,6 +999,22 @@ function initSync(){
     /* LOCAL persistence is the browser default, but it is set explicitly so a kid's tablet stays
        signed in across sessions instead of prompting every visit. */
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+    /* Completes a sign-in that went the full-page redirect route. Without this call the returning
+       page never resolved the pending redirect and never learned why it failed, so a phone would
+       bounce straight back to a fresh "Sign in" button with nothing on screen explaining it.
+       The marker distinguishes "no redirect was ever attempted" (the ordinary case on every normal
+       page load) from "we sent this phone to Google and it came back with nobody", which is the
+       failure worth naming. */
+    const pendingRedirect = (function(){ try{ return sessionStorage.getItem(REDIRECT_FLAG)==="1"; }catch(e){ return false; } })();
+    firebase.auth().getRedirectResult().then(res=>{
+      clearRedirectFlag();
+      if(pendingRedirect && !(res && res.user)){
+        authBusy=false; authErrorCode="redirect-no-session"; renderAuthUI();
+      }
+    }).catch(err=>{
+      clearRedirectFlag();
+      authBusy=false; authErrorCode=(err&&err.code)||"sign-in failed"; renderAuthUI();
+    });
     firebase.auth().onAuthStateChanged(user=>{
       authReady=true; authBusy=false; authUser=user||null;
       if(user) attachCloud(); else detachCloud();
@@ -1007,16 +1023,26 @@ function initSync(){
     });
   }catch(e){ syncing=false; updateSyncBadge(); renderAuthUI(); }
 }
+const REDIRECT_FLAG="fp.pendingGoogleRedirect";
+function clearRedirectFlag(){ try{ sessionStorage.removeItem(REDIRECT_FLAG); }catch(e){} }
 function signInWithGoogle(){
   if(!authAvailable() || authBusy) return;
-  authBusy=true; authErrorCode=""; renderAuthUI();
   const provider=new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider).catch(err=>{
+  /* The popup is opened SYNCHRONOUSLY, before anything repaints. renderAuthUI() rebuilds the notice,
+     which destroys the very button being tapped; doing that first spent the browser's transient user
+     activation on some phones, the popup got blocked, and we fell through to the redirect route
+     below — which is the one that was failing invisibly. Open first, repaint after. */
+  const attempt = firebase.auth().signInWithPopup(provider);
+  authBusy=true; authErrorCode=""; renderAuthUI();
+  attempt.catch(err=>{
     const code=(err&&err.code)||"";
-    /* Blocked popups are the normal failure on phones and tablets, so fall back to a full-page
-       redirect rather than dead-ending a kid's sign-in. */
+    /* Redirect is the last resort, not the preferred path. This app is served from
+       scattabraingenius.github.io while Firebase's auth handler lives on firebaseapp.com, and mobile
+       browsers increasingly block the cross-site storage that round trip depends on. It is still
+       worth attempting, but it is now flagged so a silent return can be reported instead of looping. */
     if(code==="auth/popup-blocked" || code==="auth/operation-not-supported-in-this-environment" || code==="auth/cancelled-popup-request"){
-      firebase.auth().signInWithRedirect(provider).catch(e2=>{ authBusy=false; authErrorCode=(e2&&e2.code)||"sign-in failed"; renderAuthUI(); });
+      try{ sessionStorage.setItem(REDIRECT_FLAG,"1"); }catch(e){}
+      firebase.auth().signInWithRedirect(provider).catch(e2=>{ clearRedirectFlag(); authBusy=false; authErrorCode=(e2&&e2.code)||"sign-in failed"; renderAuthUI(); });
       return;
     }
     authBusy=false;
@@ -1108,6 +1134,18 @@ function updateSyncBadge(){
 }
 /* The sign-in surface. Two states are worth interrupting for — signed out, and signed in with an
    account the rules refuse — and nothing else; when sync is healthy this renders nothing. */
+/* Sign-in failures are shown to whoever is holding the phone, which includes the kids, so they are
+   phrased as something to DO rather than as the raw Firebase code. The code is still appended for
+   diagnosis when it is one we have no specific advice for. */
+function authErrorText(code){
+  if(!code) return "";
+  if(code==="redirect-no-session") return "Your browser blocked the sign-in from finishing. Try the button again — and if it keeps bouncing back, open this page in Chrome, or turn off private/incognito browsing.";
+  if(code==="auth/popup-blocked") return "Your browser blocked the sign-in window. Allow pop-ups for this site, then tap the button again.";
+  if(code==="auth/network-request-failed") return "No internet connection. Check your signal or Wi-Fi and try again.";
+  if(code==="auth/unauthorized-domain") return "This site isn't set up for sign-in yet — tell Dad.";
+  if(code==="auth/too-many-requests") return "Too many tries. Wait a minute, then try again.";
+  return "Sign-in didn't finish. Try again — if it keeps happening, send Dad this code: "+code;
+}
 function renderAuthUI(){
   const btn=document.getElementById("authBtn"), who=document.getElementById("authWho"), notice=document.getElementById("authNotice");
   if(!btn||!who||!notice) return;
@@ -1127,7 +1165,7 @@ function renderAuthUI(){
   if(!authUser){
     notice.innerHTML=`
       <div class="an-title">Sign in to see the family planner</div>
-      <div class="an-body">The planner is working and saving on this device. Sign in with your Google account to load the shared family list, so everyone sees the same tasks, dates, and clothing wallet.${authErrorCode?` <span style="color:var(--alarm)">Sign-in problem: ${esc(authErrorCode)}</span>`:""}</div>
+      <div class="an-body">The planner is working and saving on this device. Sign in with your Google account to load the shared family list, so everyone sees the same tasks, dates, and clothing wallet.${authErrorCode?`<br><br><span style="color:var(--alarm)">${esc(authErrorText(authErrorCode))}</span>`:""}</div>
       <div class="an-actions"><button class="btn add" id="anSignIn"${authBusy?" disabled":""}>${authBusy?"Signing in…":"Sign in with Google"}</button></div>`;
     const b=document.getElementById("anSignIn"); if(b) b.addEventListener("click", signInWithGoogle);
     return;
