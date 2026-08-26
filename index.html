@@ -475,6 +475,9 @@
   .custody-key-dot { width:8px; height:8px; border-radius:50%; flex:none; }
 
   .cal-filters { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:16px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; box-shadow:var(--shadow); }
+  .cal-filter-details { flex:1 1 100%; }
+  .cal-filter-details summary { cursor:pointer; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .cal-filter-options { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:9px; }
   .cal-filter-group.cal-person-filter { display:flex; flex-wrap:wrap; gap:6px; }
   .cal-impact-filter { font-size:12px; color:var(--muted); }
   .cal-impact-filter summary { cursor:pointer; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
@@ -704,9 +707,19 @@
   @media (max-width:640px){
     .calendar-wrap { padding:14px 12px 60px; }
     .cal-top-actions { width:100%; justify-content:space-between; }
-    .cal-month-cell { min-height:64px; padding:4px; }
-    .cmc-item { font-size:9.5px; }
-    .cal-filters { gap:8px; }
+    .cal-filters { gap:7px; padding:8px 10px; margin-bottom:10px; }
+    .cal-filter-options { gap:8px; }
+    .cal-month-toolbar { gap:5px; margin-bottom:8px; }
+    .cal-month-toolbar .btn { padding:6px 8px; font-size:11px; }
+    .cal-month-title { font-size:14px; }
+    .cal-month-grid { gap:2px; }
+    .cal-weekday-head { font-size:8.5px; padding-bottom:3px; }
+    .cal-month-cell { min-height:54px; padding:3px; border-radius:7px; gap:2px; }
+    .cmc-add, .cmc-today-tag { display:none; }
+    button.cmc-daynum { width:20px; height:20px; font-size:11px; }
+    .cmc-item { font-size:8.5px; gap:2px; }
+    .cmc-dot { width:5px; height:5px; }
+    .cmc-more { font-size:8px; }
   }
 
   @media (max-width:640px){
@@ -3528,10 +3541,11 @@ function renderMonthView(container){
   const entries=calendarEntries(gridStartYmd,gridEndYmd);
   const byDate={}; entries.forEach(e=>{ (byDate[e.date]=byDate[e.date]||[]).push(e); });
   const today=todayStr();
+  const compactMonth=window.matchMedia("(max-width:640px)").matches;
   const weekdayLabels=[0,1,2,3,4,5,6].map(i=>new Date(2023,0,1+i).toLocaleDateString(undefined,{weekday:"short"}));
   let html=`<div class="cal-month-toolbar">
     <button class="btn sm" id="calMoTodayBtn">Today</button>
-    <button class="btn sm" id="calMoSetMonthBtn">Set whole month</button>
+    <button class="btn sm" id="calMoSetMonthBtn">Set month</button>
     <button class="btn sm" id="calMoPrevBtn" aria-label="Previous month">‹</button>
     <div class="cal-month-title">${esc(monthKeyLabel(calState.monthCursor))}</div>
     <button class="btn sm" id="calMoNextBtn" aria-label="Next month">›</button>
@@ -3543,7 +3557,7 @@ function renderMonthView(container){
       const inMonth=ymd>=monthStartYmd && ymd<=monthEndYmd;
       const isToday_=ymd===today;
       const dayEntries=byDate[ymd]||[];
-      const shown=dayEntries.slice(0,3);
+      const shown=dayEntries.slice(0,compactMonth?2:3);
       const more=dayEntries.length-shown.length;
       const fullLabel=d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
       return `<div class="cal-month-cell${inMonth?"":" dim"}${isToday_?" today":""}" data-date="${ymd}" role="button" tabindex="0" aria-label="${esc(fullLabel)}, ${dayEntries.length} event${dayEntries.length===1?"":"s"}">
@@ -3572,17 +3586,21 @@ function renderMonthView(container){
 function renderCalendarFilters(){
   const el=document.getElementById("calFilters"); const f=calState.filters;
   el.innerHTML=`
-    <div class="cal-filter-group cal-person-filter" id="calPersonFilter"></div>
     <div class="custody-legend"><span>Kids:</span>${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<span class="custody-key"><span class="custody-key-dot" style="background:${p.color}"></span>${esc(p.label)}</span>`).join("")}</div>
-    <label class="toggle"><input type="checkbox" id="calFDates" ${f.dates?"checked":""}> Dates</label>
-    <label class="toggle"><input type="checkbox" id="calFTasks" ${f.tasks?"checked":""}> Tasks</label>
-    <label class="toggle"><input type="checkbox" id="calFPlaces" ${f.places?"checked":""}> Places</label>
-    <label class="toggle"><input type="checkbox" id="calFSchool" ${f.school?"checked":""}> School events</label>
-    <label class="toggle"><input type="checkbox" id="calFAllSchool" ${f.allSchoolEvents?"checked":""}> All school events</label>
-    <label class="toggle"><input type="checkbox" id="calFDone" ${f.showCompletedTasks?"checked":""}> Show completed tasks</label>
-    <label class="toggle"><input type="checkbox" id="calFVisited" ${f.showVisitedPlaces?"checked":""}> Show visited places</label>
-    <details class="cal-impact-filter"><summary>School impact type</summary>
-      <div class="cal-impact-options">${Object.entries(SCHOOL_IMPACT_LABELS).map(([k,l])=>`<label class="pm-check"><input type="checkbox" class="cal-impact-cb" value="${k}" ${f.impact.includes(k)?"checked":""}> ${esc(l)}</label>`).join("")}</div>
+    <details class="cal-filter-details" ${window.matchMedia("(min-width:641px)").matches?"open":""}><summary>Calendar filters</summary>
+      <div class="cal-filter-options">
+        <div class="cal-filter-group cal-person-filter" id="calPersonFilter"></div>
+        <label class="toggle"><input type="checkbox" id="calFDates" ${f.dates?"checked":""}> Dates</label>
+        <label class="toggle"><input type="checkbox" id="calFTasks" ${f.tasks?"checked":""}> Tasks</label>
+        <label class="toggle"><input type="checkbox" id="calFPlaces" ${f.places?"checked":""}> Places</label>
+        <label class="toggle"><input type="checkbox" id="calFSchool" ${f.school?"checked":""}> School events</label>
+        <label class="toggle"><input type="checkbox" id="calFAllSchool" ${f.allSchoolEvents?"checked":""}> All school events</label>
+        <label class="toggle"><input type="checkbox" id="calFDone" ${f.showCompletedTasks?"checked":""}> Show completed tasks</label>
+        <label class="toggle"><input type="checkbox" id="calFVisited" ${f.showVisitedPlaces?"checked":""}> Show visited places</label>
+        <details class="cal-impact-filter"><summary>School impact type</summary>
+          <div class="cal-impact-options">${Object.entries(SCHOOL_IMPACT_LABELS).map(([k,l])=>`<label class="pm-check"><input type="checkbox" class="cal-impact-cb" value="${k}" ${f.impact.includes(k)?"checked":""}> ${esc(l)}</label>`).join("")}</div>
+        </details>
+      </div>
     </details>`;
   const pf=el.querySelector("#calPersonFilter");
   const chip=(id,name,color,all)=>`<button type="button" class="pfilter ${all?"all":""} ${calState.person===id?"active":""}" data-p="${id}">${all?"":`<span class="dot" style="background:${color}"></span>`}${esc(name)}</button>`;
