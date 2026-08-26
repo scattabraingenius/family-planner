@@ -77,6 +77,7 @@
     .print-cal-table td.pc-dim { color:#aaa; background:#fafafa; }
     .print-cal-table td.pc-today { background:#fde8f1; border-color:#C2185B; }
     .pc-daynum { font-weight:700; color:#111; font-size:10px; margin-bottom:1px; }
+    .pc-custody { font-weight:700; border-left:3px solid #777; padding-left:3px; margin:1px 0 2px; line-height:1.2; }
     .pc-item { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .pc-more { color:#777; }
     .print-cal-agenda { margin-top:4px; }
@@ -469,6 +470,9 @@
   .cal-viewtoggle { display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
   .cal-view-btn { border-radius:0; box-shadow:none; }
   .cal-view-btn.active { background:var(--signal); border-color:var(--signal); color:#04333B; }
+  .custody-legend { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-family:var(--mono); font-size:10.5px; color:var(--muted); }
+  .custody-key { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:99px; padding:3px 8px; background:var(--card); }
+  .custody-key-dot { width:8px; height:8px; border-radius:50%; flex:none; }
 
   .cal-filters { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:16px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; box-shadow:var(--shadow); }
   .cal-filter-group.cal-person-filter { display:flex; flex-wrap:wrap; gap:6px; }
@@ -526,10 +530,27 @@
   .cal-month-cell.today { border-color:var(--signal); box-shadow:0 0 0 1px var(--signal); }
   .cmc-top { display:flex; align-items:center; gap:4px; }
   .cmc-daynum { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--ink); }
+  button.cmc-daynum { appearance:none; width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; border:0; border-radius:50%; padding:0; background:transparent; cursor:pointer; }
+  button.cmc-daynum:hover, button.cmc-daynum:focus-visible { outline:2px solid var(--signal); outline-offset:1px; }
+  button.cmc-daynum.custody-troy { background:#9B87F5; color:#171126; }
+  button.cmc-daynum.custody-tracy { background:#F2C14E; color:#2D2205; }
   .cmc-today-tag { font-family:var(--mono); font-size:8.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#04333B; background:var(--signal); border-radius:5px; padding:1px 4px; }
   .cmc-add { margin-left:auto; width:18px; height:18px; line-height:16px; text-align:center; font-size:13px; font-weight:700; color:var(--muted-2); background:none; border:1px solid var(--line); border-radius:5px; cursor:pointer; padding:0; flex:none; }
   .cmc-add:hover, .cmc-add:focus-visible { color:var(--ink); border-color:var(--signal); }
   .cmc-items { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .cal-day-custody-tag { display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:9px; font-weight:700; color:var(--muted); margin-left:7px; border:0; background:transparent; padding:1px 3px; border-radius:5px; cursor:pointer; }
+  .cal-day-custody-tag:hover, .cal-day-custody-tag:focus-visible { color:var(--ink); outline:1px solid var(--line); }
+  .cal-day-custody-dot { width:7px; height:7px; border-radius:50%; flex:none; }
+  .cal-custody-card { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--line); border-left:5px solid var(--custody-color,var(--line)); border-radius:10px; padding:9px 11px; background:var(--card); }
+  .cal-custody-summary { display:flex; gap:12px; flex-wrap:wrap; align-items:baseline; }
+  .cal-custody-with { font-weight:800; }
+  .custody-form { display:flex; flex-direction:column; gap:14px; }
+  .custody-choice-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+  .custody-choice { border:1px solid var(--line); border-radius:9px; padding:9px 8px; background:var(--surface-2); color:var(--ink); cursor:pointer; font-weight:700; }
+  .custody-choice.active { border-color:var(--choice-color,var(--signal)); box-shadow:0 0 0 2px rgba(22,187,212,.22); }
+  .custody-field { display:flex; flex-direction:column; gap:5px; }
+  .custody-field-label { font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .custody-apply-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .cmc-item { --cal-accent:#66788B; display:flex; align-items:center; gap:4px; font-size:10.5px; line-height:1.3; overflow:hidden; min-width:0; }
   .cmc-item-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1; }
   .cmc-dot { width:6px; height:6px; border-radius:50%; background:var(--cal-accent); flex:none; }
@@ -855,6 +876,8 @@
         <button class="btn sm cal-view-btn" id="calViewMonthBtn" role="tab" aria-selected="false">Month</button>
       </div>
       <button class="btn sm" id="calAddBtn">+ Add event</button>
+      <button class="btn sm" id="calCustodyBtn">Edit kids schedule</button>
+      <button class="btn sm" id="calCustodyPatternBtn">Fill weekly pattern</button>
       <button class="btn sm" id="calImportBtn">Import School Calendar</button>
       <button class="btn sm" id="calManageRcsBtn">Manage School Calendar</button>
     </div>
@@ -928,10 +951,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.14-beta";
+const VERSION = "1.15-beta";
 
 /* ---------------- storage ---------------- */
-const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1";
+const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1", K_CUSTODY="home.custodyDays.v1";
 const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1", K_CLOTHING_SETTLEMENTS="home.clothingSettlements.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
@@ -945,6 +968,7 @@ function saveBYLTitle(){ try{ localStorage.setItem(K_BYL_TITLE, JSON.stringify(b
 /* Persisted tombstones for deleted/excluded school-calendar import events — a shared family
    decision, so this is synced like every other collection above, not device-local. */
 function saveCalExclusions(){ try{ localStorage.setItem(K_CAL_EXCLUSIONS, JSON.stringify(calendarExclusions)); }catch(e){} pushCloud(); }
+function saveCustody(){ try{ localStorage.setItem(K_CUSTODY, JSON.stringify(custodyDays)); }catch(e){} pushCloud(); }
 /* Clothing purchases and their ledger are a single financial unit. Every clothing mutation writes
    all three local collections first, then schedules exactly one debounced cloud update. */
 function saveClothing(){
@@ -1085,7 +1109,7 @@ function onCloudError(err){
    seed path below so a freshly signed-in, empty device can never blank the family's data. */
 function hasLocalPlannerData(){
   return !!(tasks.length || shop.length || places.length || importantDates.length || notes.length ||
-            beforeYouLeave.length || calendarExclusions.length || clothingPurchases.length ||
+            beforeYouLeave.length || calendarExclusions.length || Object.keys(custodyDays).length || clothingPurchases.length ||
             clothingWalletLedger.length || clothingSettlements.length);
 }
 function applyFamilySnapshot(snap){
@@ -1101,11 +1125,12 @@ function applyFamilySnapshot(snap){
       if(Array.isArray(v.beforeYouLeave)) beforeYouLeave=v.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");  // same rule → older clients never erase this
       if(typeof v.beforeYouLeaveTitle==="string" && v.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(v.beforeYouLeaveTitle);
       if(Array.isArray(v.calendarExclusions)) calendarExclusions=v.calendarExclusions.filter(x=>typeof x==="string");  // same rule → older clients never erase this
+      if(v.custodyDays && typeof v.custodyDays==="object" && !Array.isArray(v.custodyDays)) custodyDays=migrateCustodyDays(v.custodyDays);
       if(Array.isArray(v.clothingPurchases)) clothingPurchases=v.clothingPurchases.map(migrateClothingPurchase);
       if(Array.isArray(v.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(v.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(v.clothingSettings && typeof v.clothingSettings==="object" && !Array.isArray(v.clothingSettings)) clothingSettings=migrateClothingSettings(v.clothingSettings);
       if(Array.isArray(v.clothingSettlements)) clothingSettlements=v.clothingSettlements.map(migrateClothingSettlement);  // only overwrite if present → older clients never erase this
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); }catch(e){}
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CUSTODY,JSON.stringify(custodyDays)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); }catch(e){}
       remoteApplying=false;
       const migratedPayer=applyCheckoutPayerMigration();
       const deposited=ensureMonthlyClothingDeposits();
@@ -1121,7 +1146,7 @@ function pushCloud(force){
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
      protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
-  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -1693,6 +1718,24 @@ function ymdOf(y, m0, day){ const d=new Date(y, m0, day); return `${d.getFullYea
 function shiftMonthKey(ymKey, delta){ const [y,m]=ymKey.split("-").map(Number); const d=new Date(y, m-1+delta, 1); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`; }
 function monthKeyLabel(ymKey){ const [y,m]=ymKey.split("-").map(Number); const d=new Date(y, m-1, 1); return d.toLocaleDateString(undefined,{month:"long",year:"numeric"}); }
 
+/* One compact record per calendar date. These are intentionally fixed household labels rather
+   than Family members. Text is always rendered with the color so the schedule stays accessible. */
+const CUSTODY_PEOPLE={
+  troy:{label:"Troy",color:"#9B87F5"},
+  tracy:{label:"Tracy",color:"#F2C14E"},
+};
+function validCustodyPerson(value){ return Object.prototype.hasOwnProperty.call(CUSTODY_PEOPLE,value)?value:""; }
+function migrateCustodyDays(raw){
+  const out={};
+  if(!raw||typeof raw!=="object"||Array.isArray(raw)) return out;
+  Object.entries(raw).forEach(([date,value])=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!value||typeof value!=="object") return;
+    const withPerson=validCustodyPerson(value.with);
+    if(withPerson) out[date]={with:withPerson,updated:Number(value.updated)||Date.now()};
+  });
+  return out;
+}
+
 let tasks = loadJSON(K_TASKS); if(!tasks){ tasks=[]; saveTasks(); }
 tasks = tasks.map(migrateTask);
 let shop = (loadJSON(K_SHOP) || []).map(s=>Object.assign(blankShop(),s));
@@ -1706,6 +1749,7 @@ let bylTitle = normalizeBYLTitle(loadJSON(K_BYL_TITLE));
 let settings = Object.assign({ soundEnabled:true }, loadJSON(K_SETTINGS)||{});
 const calExclusionsRaw = loadJSON(K_CAL_EXCLUSIONS);
 let calendarExclusions = (Array.isArray(calExclusionsRaw) ? calExclusionsRaw : []).filter(x=>typeof x==="string");
+let custodyDays = migrateCustodyDays(loadJSON(K_CUSTODY)||{});
 let clothingSettings = migrateClothingSettings(loadJSON(K_CLOTHING_SETTINGS)||{});
 const clothingPurchasesRaw=loadJSON(K_CLOTHING_PURCHASES);
 let clothingPurchases=(Array.isArray(clothingPurchasesRaw)?clothingPurchasesRaw:[]).map(migrateClothingPurchase);
@@ -3268,6 +3312,110 @@ function addCalendarEvent(seed){
   openDateEditorModal(d.id);
 }
 
+/* ---------------- kids schedule ---------------- */
+function custodyRecord(date){ return custodyDays[date]||{with:""}; }
+function custodyPersonLabel(id){ return CUSTODY_PEOPLE[id]?CUSTODY_PEOPLE[id].label:""; }
+function custodyColorFor(rec){ return rec&&CUSTODY_PEOPLE[rec.with]?CUSTODY_PEOPLE[rec.with].color:"var(--line)"; }
+function custodyDayNumberHtml(date,dayNumber,fullLabel){
+  const rec=custodyRecord(date), withLabel=custodyPersonLabel(rec.with);
+  const label=withLabel?`${fullLabel}; kids with ${withLabel}. Click to edit.`:`${fullLabel}; kids schedule not set. Click to edit.`;
+  return `<button type="button" class="cmc-daynum${rec.with?` custody-${rec.with}`:""}" data-custody-date="${date}" aria-label="${esc(label)}" title="${withLabel?`Kids with ${esc(withLabel)}`:"Set kids schedule"}">${dayNumber}</button>`;
+}
+function custodyAgendaTagHtml(date){
+  const rec=custodyRecord(date), withLabel=custodyPersonLabel(rec.with);
+  return withLabel?`<button type="button" class="cal-day-custody-tag" data-custody-date="${date}" title="Edit kids schedule"><span class="cal-day-custody-dot" style="background:${custodyColorFor(rec)}"></span>${esc(withLabel)}</button>`:"";
+}
+function openCustodyEditor(date){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) date=todayStr();
+  const current=custodyRecord(date);
+  let withPerson=current.with||"";
+  openCalModal((modal,close)=>{
+    const choiceButtons=(field,value)=>`<div class="custody-choice-row">
+      <button type="button" class="custody-choice ${value===""?"active":""}" data-field="${field}" data-value="">None</button>
+      ${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<button type="button" class="custody-choice ${value===id?"active":""}" data-field="${field}" data-value="${id}" style="--choice-color:${p.color}">${esc(p.label)}</button>`).join("")}
+    </div>`;
+    modal.innerHTML=`<h2 class="cal-modal-title">Kids schedule</h2>
+      <div class="cal-modal-sub">${esc(localMoment(date).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"}))}</div>
+      <div class="custody-form">
+        <div class="custody-field"><span class="custody-field-label">Who has the kids?</span><div id="custodyWith">${choiceButtons("with",withPerson)}</div></div>
+        <div class="custody-apply-row">
+          <label class="custody-field"><span class="custody-field-label">Apply to</span><select class="ctrl" id="custodyApply"><option value="day">This day only</option><option value="range">Every day through</option><option value="weekday">Every ${esc(localMoment(date).toLocaleDateString(undefined,{weekday:"long"}))} through</option></select></label>
+          <label class="custody-field"><span class="custody-field-label">Through</span><input class="ctrl" id="custodyThrough" type="date" min="${date}" value="${date}" disabled></label>
+        </div>
+      </div>
+      <div class="cal-modal-actions"><button type="button" class="btn" id="custodyCancel">Cancel</button><button type="button" class="btn add" id="custodySave">Save schedule</button></div>`;
+    function paint(field,value){
+      modal.querySelectorAll(`.custody-choice[data-field="${field}"]`).forEach(btn=>{ const on=btn.dataset.value===value; btn.classList.toggle("active",on); btn.setAttribute("aria-pressed",on?"true":"false"); });
+    }
+    modal.querySelectorAll(".custody-choice").forEach(btn=>btn.addEventListener("click",()=>{ withPerson=btn.dataset.value; paint(btn.dataset.field,btn.dataset.value); }));
+    const apply=modal.querySelector("#custodyApply"), through=modal.querySelector("#custodyThrough");
+    apply.addEventListener("change",()=>{ through.disabled=apply.value==="day"; if(through.disabled) through.value=date; });
+    modal.querySelector("#custodyCancel").addEventListener("click",close);
+    modal.querySelector("#custodySave").addEventListener("click",()=>{
+      const end=apply.value==="day"?date:through.value;
+      if(!end||end<date){ through.focus(); return; }
+      const sourceDow=localMoment(date).getDay();
+      for(let day=date;day<=end;day=addDaysStr(day,1)){
+        if(apply.value==="weekday"&&localMoment(day).getDay()!==sourceDow) continue;
+        if(withPerson) custodyDays[day]={with:withPerson,updated:Date.now()}; else delete custodyDays[day];
+      }
+      saveCustody(); close(); renderCalendarPage();
+    });
+  });
+}
+
+function openCustodyPatternEditor(){
+  const year=Number((calState.monthCursor||todayStr()).slice(0,4))||new Date().getFullYear();
+  const start=`${year}-01-01`, end=`${year}-12-31`;
+  openCalModal((modal,close)=>{
+    modal.innerHTML=`<h2 class="cal-modal-title">Fill weekly kids schedule</h2>
+      <div class="cal-modal-sub">This fills each date in the selected range. Existing kids-schedule entries in that range will be replaced.</div>
+      <div class="custody-form">
+        <div class="cal-custody-card" style="--custody-color:${CUSTODY_PEOPLE.troy.color}"><b>Troy</b><span>Tuesday, Thursday, Friday, Saturday</span></div>
+        <div class="cal-custody-card" style="--custody-color:${CUSTODY_PEOPLE.tracy.color}"><b>Tracy</b><span>Monday, Wednesday, Sunday</span></div>
+        <div class="custody-apply-row">
+          <label class="custody-field"><span class="custody-field-label">Start date</span><input class="ctrl" id="custodyPatternStart" type="date" value="${start}"></label>
+          <label class="custody-field"><span class="custody-field-label">End date</span><input class="ctrl" id="custodyPatternEnd" type="date" value="${end}"></label>
+        </div>
+        <div class="cal-modal-sub" style="margin:0">Sunday is labeled Tracy because the kids sleep there Sunday night.</div>
+      </div>
+      <div class="cal-modal-actions"><button type="button" class="btn" id="custodyPatternCancel">Cancel</button><button type="button" class="btn add" id="custodyPatternSave">Fill schedule</button></div>`;
+    modal.querySelector("#custodyPatternCancel").addEventListener("click",close);
+    modal.querySelector("#custodyPatternSave").addEventListener("click",()=>{
+      const from=modal.querySelector("#custodyPatternStart"), through=modal.querySelector("#custodyPatternEnd");
+      if(!from.value||!through.value||through.value<from.value){ through.focus(); return; }
+      const personByDay=["tracy","tracy","troy","tracy","troy","troy","troy"];
+      for(let day=from.value;day<=through.value;day=addDaysStr(day,1)) custodyDays[day]={with:personByDay[localMoment(day).getDay()],updated:Date.now()};
+      saveCustody(); close(); renderCalendarPage();
+    });
+  });
+}
+
+function openMonthCustodyEditor(ymKey){
+  const [year,month]=ymKey.split("-").map(Number), start=ymdOf(year,month-1,1), end=ymdOf(year,month-1,new Date(year,month,0).getDate());
+  let selected="troy";
+  openCalModal((modal,close)=>{
+    modal.innerHTML=`<h2 class="cal-modal-title">Set all of ${esc(monthKeyLabel(ymKey))}</h2>
+      <div class="cal-modal-sub">Choose one person for every day in this month. This replaces existing kids-schedule entries for the month, but does not change school dates or other calendar events.</div>
+      <div class="custody-choice-row" id="custodyMonthChoices">
+        ${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<button type="button" class="custody-choice ${id===selected?"active":""}" data-value="${id}" style="--choice-color:${p.color}">${esc(p.label)}</button>`).join("")}
+        <button type="button" class="custody-choice" data-value="">Clear month</button>
+      </div>
+      <div class="cal-modal-actions"><button type="button" class="btn" id="custodyMonthCancel">Cancel</button><button type="button" class="btn add" id="custodyMonthSave">Apply to month</button></div>`;
+    const buttons=[...modal.querySelectorAll("#custodyMonthChoices .custody-choice")];
+    buttons.forEach(btn=>btn.addEventListener("click",()=>{ selected=btn.dataset.value; buttons.forEach(x=>{const on=x===btn;x.classList.toggle("active",on);x.setAttribute("aria-pressed",on?"true":"false");}); }));
+    modal.querySelector("#custodyMonthCancel").addEventListener("click",close);
+    modal.querySelector("#custodyMonthSave").addEventListener("click",()=>{
+      for(let day=start;day<=end;day=addDaysStr(day,1)){ if(selected) custodyDays[day]={with:selected,updated:Date.now()}; else delete custodyDays[day]; }
+      saveCustody(); close(); renderCalendarPage();
+    });
+  });
+}
+
+function wireCustodyButtons(container){
+  container.querySelectorAll("[data-custody-date]").forEach(btn=>btn.addEventListener("click",e=>{ e.stopPropagation(); openCustodyEditor(btn.dataset.custodyDate); }));
+}
+
 /* ---------------- calendar entry cards (Agenda + Month-cell-driven Agenda) ---------------- */
 function renderCalEntryCard(e){
   const el=document.createElement("div");
@@ -3346,10 +3494,10 @@ function renderAgendaView(container){
       <button class="btn sm" id="calAgNextMonth" aria-label="Next month">Month ›</button>
     </div>
   </div>`;
-  if(!dates.length){ html+=`<div class="empty-state"><div class="big">Nothing in this range.</div>Try Today, another filter, or add an event.</div>`; }
+  if(!dates.length){ html+=`<div class="empty-state"><div class="big">Nothing in this range.</div>Try Today, another filter, add an event, or set the kids schedule.</div>`; }
   else {
     dates.forEach(ymd=>{
-      html+=`<div class="cal-day-group"><div class="cal-day-head"><span class="cal-day-head-label">${esc(agendaDayLabel(ymd))}</span><button class="cmc-add cal-day-add" data-date="${ymd}" aria-label="Add event on ${esc(agendaDayLabel(ymd))}">+ Add</button></div><div class="cal-day-cards" id="cal-day-cards-${ymd}"></div></div>`;
+      html+=`<div class="cal-day-group"><div class="cal-day-head"><span class="cal-day-head-label">${esc(agendaDayLabel(ymd))}${custodyAgendaTagHtml(ymd)}</span><button class="cmc-add cal-day-add" data-date="${ymd}" aria-label="Add event on ${esc(agendaDayLabel(ymd))}">+ Add</button></div><div class="cal-day-cards" id="cal-day-cards-${ymd}"></div></div>`;
     });
   }
   container.innerHTML=html;
@@ -3360,9 +3508,10 @@ function renderAgendaView(container){
   document.getElementById("calAgNextMonth").addEventListener("click",()=>{ calState.agendaAnchor=addDaysStr(anchor,30); saveCalPrefs(); renderCalendarPage(); });
   dates.forEach(ymd=>{
     const host=document.getElementById(`cal-day-cards-${ymd}`);
-    byDate[ymd].forEach(e=>host.appendChild(renderCalEntryCard(e)));
+    (byDate[ymd]||[]).forEach(e=>host.appendChild(renderCalEntryCard(e)));
   });
   container.querySelectorAll(".cal-day-add").forEach(btn=>btn.addEventListener("click",()=>addCalendarEvent({startDate:btn.dataset.date})));
+  wireCustodyButtons(container);
 }
 
 /* ---------------- Month view ---------------- */
@@ -3382,6 +3531,7 @@ function renderMonthView(container){
   const weekdayLabels=[0,1,2,3,4,5,6].map(i=>new Date(2023,0,1+i).toLocaleDateString(undefined,{weekday:"short"}));
   let html=`<div class="cal-month-toolbar">
     <button class="btn sm" id="calMoTodayBtn">Today</button>
+    <button class="btn sm" id="calMoSetMonthBtn">Set whole month</button>
     <button class="btn sm" id="calMoPrevBtn" aria-label="Previous month">‹</button>
     <div class="cal-month-title">${esc(monthKeyLabel(calState.monthCursor))}</div>
     <button class="btn sm" id="calMoNextBtn" aria-label="Next month">›</button>
@@ -3397,7 +3547,7 @@ function renderMonthView(container){
       const more=dayEntries.length-shown.length;
       const fullLabel=d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
       return `<div class="cal-month-cell${inMonth?"":" dim"}${isToday_?" today":""}" data-date="${ymd}" role="button" tabindex="0" aria-label="${esc(fullLabel)}, ${dayEntries.length} event${dayEntries.length===1?"":"s"}">
-        <div class="cmc-top"><span class="cmc-daynum">${d.getDate()}</span>${isToday_?'<span class="cmc-today-tag">Today</span>':""}<button type="button" class="cmc-add" data-date="${ymd}" aria-label="Add event on ${esc(fullLabel)}">+</button></div>
+        <div class="cmc-top">${custodyDayNumberHtml(ymd,d.getDate(),fullLabel)}${isToday_?'<span class="cmc-today-tag">Today</span>':""}<button type="button" class="cmc-add" data-date="${ymd}" aria-label="Add event on ${esc(fullLabel)}">+</button></div>
         <div class="cmc-items">${shown.map(e=>`<div class="cmc-item" style="--cal-accent:${calEntryAccentColor(e)}"><span class="cmc-dot"></span><span class="cmc-item-title">${esc(e.title)}</span></div>`).join("")}</div>
         ${more>0?`<div class="cmc-more">+ ${more} more</div>`:""}
       </div>`;
@@ -3405,6 +3555,7 @@ function renderMonthView(container){
   </div>`;
   container.innerHTML=html;
   document.getElementById("calMoTodayBtn").addEventListener("click",()=>{ calState.monthCursor=todayStr().slice(0,7); saveCalPrefs(); renderCalendarPage(); });
+  document.getElementById("calMoSetMonthBtn").addEventListener("click",()=>openMonthCustodyEditor(calState.monthCursor));
   document.getElementById("calMoPrevBtn").addEventListener("click",()=>{ calState.monthCursor=shiftMonthKey(calState.monthCursor,-1); saveCalPrefs(); renderCalendarPage(); });
   document.getElementById("calMoNextBtn").addEventListener("click",()=>{ calState.monthCursor=shiftMonthKey(calState.monthCursor,1); saveCalPrefs(); renderCalendarPage(); });
   container.querySelectorAll(".cal-month-cell").forEach(cell=>{
@@ -3414,6 +3565,7 @@ function renderMonthView(container){
     cell.addEventListener("keydown",e=>{ if(e.target!==cell) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); jump(); } });
   });
   container.querySelectorAll(".cmc-add").forEach(btn=>btn.addEventListener("click",e=>{ e.stopPropagation(); addCalendarEvent({startDate:btn.dataset.date}); }));
+  wireCustodyButtons(container);
 }
 
 /* ---------------- filters ---------------- */
@@ -3421,6 +3573,7 @@ function renderCalendarFilters(){
   const el=document.getElementById("calFilters"); const f=calState.filters;
   el.innerHTML=`
     <div class="cal-filter-group cal-person-filter" id="calPersonFilter"></div>
+    <div class="custody-legend"><span>Kids:</span>${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<span class="custody-key"><span class="custody-key-dot" style="background:${p.color}"></span>${esc(p.label)}</span>`).join("")}</div>
     <label class="toggle"><input type="checkbox" id="calFDates" ${f.dates?"checked":""}> Dates</label>
     <label class="toggle"><input type="checkbox" id="calFTasks" ${f.tasks?"checked":""}> Tasks</label>
     <label class="toggle"><input type="checkbox" id="calFPlaces" ${f.places?"checked":""}> Places</label>
@@ -3653,6 +3806,8 @@ function renderCalendarPage(){
 document.getElementById("calViewAgendaBtn").addEventListener("click",()=>{ calState.view="agenda"; saveCalPrefs(); renderCalendarPage(); });
 document.getElementById("calViewMonthBtn").addEventListener("click",()=>{ calState.view="month"; saveCalPrefs(); renderCalendarPage(); });
 document.getElementById("calAddBtn").addEventListener("click",()=>addCalendarEvent({startDate: calState.selectedDay||todayStr()}));
+document.getElementById("calCustodyBtn").addEventListener("click",()=>openCustodyEditor(calState.selectedDay||todayStr()));
+document.getElementById("calCustodyPatternBtn").addEventListener("click",openCustodyPatternEditor);
 
 /* =====================================================================
    CLOTHING DEAL-MATCH PAGE
@@ -3954,7 +4109,7 @@ document.getElementById("printBtn").addEventListener("pointerdown",e=>{
 });
 document.getElementById("printBtn").addEventListener("click",openPrintCenter);
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -3983,12 +4138,13 @@ document.getElementById("importFile").addEventListener("change",e=>{
       if(Array.isArray(d.beforeYouLeave)) beforeYouLeave=d.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");
       if(typeof d.beforeYouLeaveTitle==="string" && d.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(d.beforeYouLeaveTitle);
       if(Array.isArray(d.calendarExclusions)) calendarExclusions=d.calendarExclusions.filter(x=>typeof x==="string");
+      if(d.custodyDays&&typeof d.custodyDays==="object"&&!Array.isArray(d.custodyDays)) custodyDays=migrateCustodyDays(d.custodyDays);
       if(Array.isArray(d.clothingPurchases)) clothingPurchases=d.clothingPurchases.map(migrateClothingPurchase);
       if(Array.isArray(d.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(d.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(d.clothingSettings&&typeof d.clothingSettings==="object"&&!Array.isArray(d.clothingSettings)) clothingSettings=migrateClothingSettings(d.clothingSettings);
       if(Array.isArray(d.clothingSettlements)) clothingSettlements=d.clothingSettlements.map(migrateClothingSettlement);
     }
-    editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveClothing(); render();
+    editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveCustody(); saveClothing(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
 });
@@ -4163,7 +4319,9 @@ function printCalendarMonthGridHtml(){
       const inMonth = ymd>=monthStartYmd && ymd<=monthEndYmd;
       const dayItems=byDate[ymd]||[];
       const isToday_ = ymd===today;
-      html+=`<td class="${inMonth?"":"pc-dim"}${isToday_?" pc-today":""}"><div class="pc-daynum">${d.getDate()}</div>${dayItems.slice(0,3).map(e=>`<div class="pc-item">${esc(e.title)}</div>`).join("")}${dayItems.length>3?`<div class="pc-more">+${dayItems.length-3} more</div>`:""}</td>`;
+      const custody=custodyRecord(ymd), withLabel=custodyPersonLabel(custody.with);
+      const custodyHtml=withLabel?`<div class="pc-custody" style="border-left-color:${CUSTODY_PEOPLE[custody.with].color}">Kids: ${esc(withLabel)}</div>`:"";
+      html+=`<td class="${inMonth?"":"pc-dim"}${isToday_?" pc-today":""}"><div class="pc-daynum">${d.getDate()}</div>${custodyHtml}${dayItems.slice(0,2).map(e=>`<div class="pc-item">${esc(e.title)}</div>`).join("")}${dayItems.length>2?`<div class="pc-more">+${dayItems.length-2} more</div>`:""}</td>`;
     }
     html+="</tr>";
   }
