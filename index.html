@@ -1128,6 +1128,7 @@ function hasLocalPlannerData(){
 function applyFamilySnapshot(snap){
       const v=snap.val();
       if(!v){ if(hasLocalPlannerData()) pushCloud(true); return; }   // cloud empty → seed from this device, but only if this device actually has something
+      const cloudHasCustody = !!(v.custodyDays && typeof v.custodyDays==="object" && !Array.isArray(v.custodyDays));
       remoteApplying=true;
       if(Array.isArray(v.people)) people=v.people;
       if(Array.isArray(v.tasks))  tasks=v.tasks.map(migrateTask);
@@ -1138,7 +1139,7 @@ function applyFamilySnapshot(snap){
       if(Array.isArray(v.beforeYouLeave)) beforeYouLeave=v.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");  // same rule → older clients never erase this
       if(typeof v.beforeYouLeaveTitle==="string" && v.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(v.beforeYouLeaveTitle);
       if(Array.isArray(v.calendarExclusions)) calendarExclusions=v.calendarExclusions.filter(x=>typeof x==="string");  // same rule → older clients never erase this
-      if(v.custodyDays && typeof v.custodyDays==="object" && !Array.isArray(v.custodyDays)) custodyDays=migrateCustodyDays(v.custodyDays);
+      if(cloudHasCustody) custodyDays=migrateCustodyDays(v.custodyDays);
       if(Array.isArray(v.clothingPurchases)) clothingPurchases=v.clothingPurchases.map(migrateClothingPurchase);
       if(Array.isArray(v.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(v.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(v.clothingSettings && typeof v.clothingSettings==="object" && !Array.isArray(v.clothingSettings)) clothingSettings=migrateClothingSettings(v.clothingSettings);
@@ -1148,6 +1149,9 @@ function applyFamilySnapshot(snap){
       const migratedPayer=applyCheckoutPayerMigration();
       const deposited=ensureMonthlyClothingDeposits();
       if(migratedPayer||deposited) saveClothing();
+      /* A cloud record created before Kids Schedule has no custodyDays key. Preserve this device's
+         existing local schedule and seed that new field instead of silently leaving it local-only. */
+      if(!cloudHasCustody && Object.keys(custodyDays).length) saveCustody();
       // Data is always safe to merge in (every commit path re-fetches its entity by id), but a full render()
       // would blow away a focused inline editor's DOM — so defer the redraw until editing ends.
       if(!editingActive()) render(); else pendingRemoteRender=true;
@@ -1203,7 +1207,7 @@ function renderAuthUI(){
   if(!authUser){
     notice.innerHTML=`
       <div class="an-title">Sign in to see the family planner</div>
-      <div class="an-body">The planner is working and saving on this device. Sign in with your Google account to load the shared family list, so everyone sees the same tasks, dates, and clothing wallet.${authErrorCode?`<br><br><span style="color:var(--alarm)">${esc(authErrorText(authErrorCode))}</span>`:""}</div>
+      <div class="an-body">The planner is working and saving on this device. Sign in with your Google account to load the shared family list, so everyone sees the same tasks, dates, kids schedule, and clothing wallet.${authErrorCode?`<br><br><span style="color:var(--alarm)">${esc(authErrorText(authErrorCode))}</span>`:""}</div>
       <div class="an-actions"><button class="btn add" id="anSignIn"${authBusy?" disabled":""}>${authBusy?"Signing in…":"Sign in with Google"}</button></div>`;
     const b=document.getElementById("anSignIn"); if(b) b.addEventListener("click", signInWithGoogle);
     return;
