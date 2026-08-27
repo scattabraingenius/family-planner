@@ -127,11 +127,13 @@
   .eyebrow { font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-2); }
 
   /* header */
-  header.top { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
-  .brand { display:flex; align-items:baseline; gap:12px; }
-  .brand h1 { font-size:26px; margin:0; letter-spacing:-.02em; font-weight:800; }
-  .brand .datestr { font-family:var(--mono); font-size:12px; color:var(--muted); }
-  .head-right { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  header.top { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+  .brand { display:flex; align-items:baseline; gap:14px; }
+  .brand h1 { font-size:40px; margin:0; letter-spacing:-.03em; font-weight:800; line-height:1.05; }
+  .brand .eyebrow { font-size:11px; }
+  .brand .datestr { font-family:var(--mono); font-size:15px; color:var(--muted); margin-top:2px; }
+  .head-right { display:flex; flex-direction:column; align-items:flex-end; gap:12px; }
+  .head-meta { display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:flex-end; }
   .clock { font-family:var(--mono); font-size:20px; font-weight:600; }
   .clock .sec { color:var(--signal); }
   .progress-wrap { min-width:180px; }
@@ -139,7 +141,15 @@
   .progress-count { font-family:var(--mono); font-size:13px; font-weight:600; }
   .bar { height:8px; background:var(--track); border-radius:99px; overflow:hidden; width:180px; }
   .bar > span { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--signal),#23B877); border-radius:99px; transition:width .35s ease; }
-  .util { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  /* Primary destinations. Kept deliberately large and few — this planner is used by kids, so
+     Calendar and Agenda must read as the obvious choices, not as two more chips in a toolbar. */
+  .mainnav { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+  .navbtn { display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:var(--sans); font-size:16px; font-weight:700; letter-spacing:-.01em; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:13px 22px; border-radius:14px; cursor:pointer; box-shadow:var(--shadow); white-space:nowrap; min-height:50px; }
+  .navbtn:hover { border-color:var(--signal-dim); }
+  .navbtn:focus-visible { outline:2px solid var(--signal); outline-offset:3px; }
+  .navbtn-icon { font-size:18px; line-height:1; }
+  /* Account state sits apart from the destinations so sign-in never competes with them. */
+  .account { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
   .sync-badge { font-family:var(--mono); font-size:11px; font-weight:600; margin-right:2px; white-space:nowrap; }
 
   .btn { font-family:var(--sans); font-size:13px; font-weight:600; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:8px 12px; border-radius:10px; cursor:pointer; box-shadow:var(--shadow); white-space:nowrap; }
@@ -457,6 +467,10 @@
 
   .empty-state { text-align:center; padding:40px 16px; color:var(--muted); border:1px dashed var(--line); border-radius:var(--radius); background:var(--card); }
   .empty-state .big { font-size:16px; font-weight:600; color:var(--ink); margin-bottom:5px; }
+  /* Grown-up utilities: reachable, but parked at the bottom instead of crowding the top. */
+  .tools { margin-top:34px; padding-top:16px; border-top:1px solid var(--line); }
+  .tools-title { margin-bottom:9px; }
+  .tools-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .hint { font-size:11.5px; color:var(--muted-2); margin-top:22px; text-align:center; font-family:var(--mono); }
 
   /* ============================================================
@@ -467,12 +481,16 @@
   .cal-top-left { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
   .cal-page-title { font-size:22px; margin:0; font-weight:800; letter-spacing:-.02em; }
   .cal-top-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .cal-viewtoggle { display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
-  .cal-view-btn { border-radius:0; box-shadow:none; }
-  .cal-view-btn.active { background:var(--signal); border-color:var(--signal); color:#04333B; }
   .custody-legend { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-family:var(--mono); font-size:10.5px; color:var(--muted); }
   .custody-key { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:99px; padding:3px 8px; background:var(--card); }
   .custody-key-dot { width:8px; height:8px; border-radius:50%; flex:none; }
+  .custody-paint-btn.active { background:var(--signal); border-color:var(--signal); color:#04333B; }
+  .custody-paintbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius); background:var(--card); box-shadow:var(--shadow); }
+  .custody-paintbar-label { font-family:var(--mono); font-size:10.5px; color:var(--muted); }
+  .custody-paint-choice { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:99px; padding:5px 10px; background:var(--surface-2); color:var(--ink); cursor:pointer; font-weight:700; }
+  .custody-paint-choice.active { border-color:var(--choice-color); box-shadow:0 0 0 2px color-mix(in srgb, var(--choice-color) 35%, transparent); }
+  .custody-paint-help { font-size:11px; color:var(--muted-2); }
+  .custody-paint-done { margin-left:auto; }
 
   .cal-filters { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:16px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; box-shadow:var(--shadow); }
   .cal-filter-details { flex:1 1 100%; }
@@ -537,23 +555,13 @@
   button.cmc-daynum:hover, button.cmc-daynum:focus-visible { outline:2px solid var(--signal); outline-offset:1px; }
   button.cmc-daynum.custody-troy { background:#9B87F5; color:#171126; }
   button.cmc-daynum.custody-tracy { background:#F2C14E; color:#2D2205; }
+  .custody-painting button.cmc-daynum { cursor:crosshair; touch-action:none; }
   .cmc-today-tag { font-family:var(--mono); font-size:8.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#04333B; background:var(--signal); border-radius:5px; padding:1px 4px; }
   .cmc-add { margin-left:auto; width:18px; height:18px; line-height:16px; text-align:center; font-size:13px; font-weight:700; color:var(--muted-2); background:none; border:1px solid var(--line); border-radius:5px; cursor:pointer; padding:0; flex:none; }
   .cmc-add:hover, .cmc-add:focus-visible { color:var(--ink); border-color:var(--signal); }
   .cmc-items { display:flex; flex-direction:column; gap:2px; min-width:0; }
-  .cal-day-custody-tag { display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:9px; font-weight:700; color:var(--muted); margin-left:7px; border:0; background:transparent; padding:1px 3px; border-radius:5px; cursor:pointer; }
-  .cal-day-custody-tag:hover, .cal-day-custody-tag:focus-visible { color:var(--ink); outline:1px solid var(--line); }
+  .cal-day-custody-tag { display:inline-flex; align-items:center; gap:4px; font-family:var(--mono); font-size:9px; font-weight:700; color:var(--muted); margin-left:7px; padding:1px 3px; }
   .cal-day-custody-dot { width:7px; height:7px; border-radius:50%; flex:none; }
-  .cal-custody-card { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--line); border-left:5px solid var(--custody-color,var(--line)); border-radius:10px; padding:9px 11px; background:var(--card); }
-  .cal-custody-summary { display:flex; gap:12px; flex-wrap:wrap; align-items:baseline; }
-  .cal-custody-with { font-weight:800; }
-  .custody-form { display:flex; flex-direction:column; gap:14px; }
-  .custody-choice-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
-  .custody-choice { border:1px solid var(--line); border-radius:9px; padding:9px 8px; background:var(--surface-2); color:var(--ink); cursor:pointer; font-weight:700; }
-  .custody-choice.active { border-color:var(--choice-color,var(--signal)); box-shadow:0 0 0 2px rgba(22,187,212,.22); }
-  .custody-field { display:flex; flex-direction:column; gap:5px; }
-  .custody-field-label { font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  .custody-apply-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .cmc-item { --cal-accent:#66788B; display:flex; align-items:center; gap:4px; font-size:10.5px; line-height:1.3; overflow:hidden; min-width:0; }
   .cmc-item-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1; }
   .cmc-dot { width:6px; height:6px; border-radius:50%; background:var(--cal-accent); flex:none; }
@@ -707,6 +715,7 @@
   @media (max-width:640px){
     .calendar-wrap { padding:14px 12px 60px; }
     .cal-top-actions { width:100%; justify-content:space-between; }
+    .cal-top-actions .btn { flex:1 1 auto; }
     .cal-filters { gap:7px; padding:8px 10px; margin-bottom:10px; }
     .cal-filter-options { gap:8px; }
     .cal-month-toolbar { gap:5px; margin-bottom:8px; }
@@ -717,9 +726,22 @@
     .cal-month-cell { min-height:54px; padding:3px; border-radius:7px; gap:2px; }
     .cmc-add, .cmc-today-tag { display:none; }
     button.cmc-daynum { width:20px; height:20px; font-size:11px; }
+    .custody-paintbar { gap:6px; padding:8px; }
+    .custody-paint-help { flex:1 1 100%; order:3; }
     .cmc-item { font-size:8.5px; gap:2px; }
     .cmc-dot { width:5px; height:5px; }
     .cmc-more { font-size:8px; }
+  }
+
+  @media (max-width:640px){
+    header.top { align-items:stretch; }
+    .brand h1 { font-size:32px; }
+    .brand .datestr { font-size:13px; }
+    .head-right { width:100%; align-items:stretch; }
+    .navbtn { flex:1 1 140px; font-size:15px; padding:14px 12px; }
+    .head-meta { justify-content:space-between; }
+    .account { justify-content:flex-start; }
+    .tools-row .btn { flex:1 1 auto; }
   }
 
   @media (max-width:640px){
@@ -739,22 +761,22 @@
       <div><div class="eyebrow">Family day planner</div><div class="datestr" id="datestr"></div></div>
     </div>
     <div class="head-right">
-      <div class="clock" id="clock">--:--<span class="sec">:--</span></div>
-      <div class="progress-wrap">
-        <div class="progress-top"><span class="eyebrow">Today</span><span class="progress-count" id="progressCount">0 of 0 done</span><span class="overdue-chip" id="overdueChip"></span></div>
-        <div class="bar"><span id="progressBar"></span></div>
+      <nav class="mainnav" aria-label="Main">
+        <button class="navbtn" id="calendarBtn"><span class="navbtn-icon" aria-hidden="true">📅</span>Calendar</button>
+        <button class="navbtn" id="agendaBtn"><span class="navbtn-icon" aria-hidden="true">🗒</span>Agenda</button>
+        <button class="navbtn" id="clothingBtn"><span class="navbtn-icon" aria-hidden="true">👕</span>Clothing</button>
+      </nav>
+      <div class="head-meta">
+        <div class="clock" id="clock">--:--<span class="sec">:--</span></div>
+        <div class="progress-wrap">
+          <div class="progress-top"><span class="eyebrow">Today</span><span class="progress-count" id="progressCount">0 of 0 done</span><span class="overdue-chip" id="overdueChip"></span></div>
+          <div class="bar"><span id="progressBar"></span></div>
+        </div>
       </div>
-      <div class="util">
+      <div class="account">
         <span class="sync-badge" id="syncBadge"></span>
         <span class="auth-who" id="authWho"></span>
         <button class="btn sm" id="authBtn" hidden></button>
-        <button class="btn sm" id="soundToggle">Sound: On</button>
-        <button class="btn sm add" id="calendarBtn">📅 Calendar</button>
-        <button class="btn sm" id="clothingBtn">👕 Clothing</button>
-        <button class="btn sm" id="printBtn">🖨 Print</button>
-        <button class="btn sm" id="exportBtn">Export</button>
-        <button class="btn sm" id="importBtn">Import</button>
-        <input type="file" id="importFile" accept="application/json" hidden>
       </div>
     </div>
   </header>
@@ -847,6 +869,17 @@
     </div>
   </div>
 
+  <section class="tools" aria-labelledby="homeToolsTitle">
+    <div class="eyebrow tools-title" id="homeToolsTitle">Settings &amp; tools</div>
+    <div class="tools-row">
+      <button class="btn sm" id="soundToggle">Sound: On</button>
+      <button class="btn sm" id="printBtn">🖨 Print</button>
+      <button class="btn sm" id="exportBtn">Export</button>
+      <button class="btn sm" id="importBtn">Import</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </section>
+
   <p class="hint" id="hint"></p>
 </div>
 
@@ -881,22 +914,22 @@
   <header class="cal-top">
     <div class="cal-top-left">
       <button class="btn sm" id="calBackBtn">← Back to Home</button>
-      <h1 class="cal-page-title">Calendar</h1>
+      <h1 class="cal-page-title" id="calPageTitle">Calendar</h1>
     </div>
     <div class="cal-top-actions">
-      <div class="cal-viewtoggle" role="tablist" aria-label="Calendar view">
-        <button class="btn sm cal-view-btn" id="calViewAgendaBtn" role="tab" aria-selected="true">Agenda</button>
-        <button class="btn sm cal-view-btn" id="calViewMonthBtn" role="tab" aria-selected="false">Month</button>
-      </div>
-      <button class="btn sm" id="calAddBtn">+ Add event</button>
-      <button class="btn sm" id="calCustodyBtn">Edit kids schedule</button>
-      <button class="btn sm" id="calCustodyPatternBtn">Fill weekly pattern</button>
-      <button class="btn sm" id="calImportBtn">Import School Calendar</button>
-      <button class="btn sm" id="calManageRcsBtn">Manage School Calendar</button>
+      <button class="btn add" id="calAddBtn">+ Add event</button>
+      <button class="btn custody-paint-btn" id="calCustodyPaintBtn" aria-pressed="false">🖌 Paint kids schedule</button>
     </div>
   </header>
   <div class="cal-filters" id="calFilters"></div>
   <div id="calBody"></div>
+  <section class="tools" aria-labelledby="calToolsTitle">
+    <div class="eyebrow tools-title" id="calToolsTitle">Settings &amp; tools</div>
+    <div class="tools-row">
+      <button class="btn sm" id="calImportBtn">Import School Calendar</button>
+      <button class="btn sm" id="calManageRcsBtn">Manage School Calendar</button>
+    </div>
+  </section>
 </div>
 
 <div class="cal-modal-backdrop hidden" id="calModalBackdrop">
@@ -1788,44 +1821,53 @@ let datesAllOpen=false, pastDatesOpen=false;
 let pendingRemoteRender=false;
 
 /* ---------------- calendar page state ---------------- */
+/* "calendar" (month grid) and "agenda" are separate destinations that share one page shell,
+   one data model and one filter bar — only the body renderer differs. */
 let currentPage="home"; // always opens on Home; never persisted, matching today's load behavior
+const PAGE_HASHES=["#calendar","#agenda","#clothing"];
+function isCalendarSurface(){ return currentPage==="calendar"||currentPage==="agenda"; }
 function defaultCalState(){ return {
-  view:"agenda",
   monthCursor: todayStr().slice(0,7), // "YYYY-MM"
   agendaAnchor: todayStr(),
   person:"all", // Calendar's OWN person filter — deliberately separate from Home's activePerson
   filters:{ dates:true, tasks:true, places:true, school:true, showCompletedTasks:false, showVisitedPlaces:false, allSchoolEvents:false, impact:[] },
   selectedDay: todayStr(),
 }; }
-let calState = (()=>{ const d=defaultCalState(); const raw=loadJSON(K_CAL_PREFS)||{}; const merged=Object.assign(d,raw); merged.filters=Object.assign(d.filters, raw.filters||{}); return merged; })();
+let calState = (()=>{ const d=defaultCalState(); const raw=loadJSON(K_CAL_PREFS)||{}; const merged=Object.assign(d,raw); merged.filters=Object.assign(d.filters, raw.filters||{}); delete merged.view; /* legacy Agenda/Month toggle */ return merged; })();
+let custodyPaintOpen=false, custodyPaintPerson="", custodyPaintDragging=false, custodyPaintDirty=false;
 
 function showHomePage(){
-  currentPage="home"; closeActiveEdit(true);
+  currentPage="home"; closeActiveEdit(true); exitCustodyPaint();
   document.getElementById("homeWrap").classList.remove("hidden");
   document.getElementById("calendarPage").classList.add("hidden");
   document.getElementById("clothingPage").classList.add("hidden");
   render(); // Calendar-triggered edits only refresh Calendar's own DOM while it's the active page;
             // refresh Home here so it's never stale when the user switches back to it.
-  if(location.hash==="#calendar"||location.hash==="#clothing") history.replaceState(null,"",location.pathname+location.search);
+  if(PAGE_HASHES.includes(location.hash)) history.replaceState(null,"",location.pathname+location.search);
 }
-function showCalendarPage(){
-  currentPage="calendar"; closeActiveEdit(true);
+/* Reflects current page in the URL (replaceState — no extra back-button history entries) so
+   "index.html#calendar" and "index.html#agenda" are real, shareable/bookmarkable deep links
+   straight into each destination. Reload-persistence of the last-viewed page is a separate,
+   not-yet-requested feature. */
+function showCalendarSurface(page,hash){
+  currentPage=page; closeActiveEdit(true);
+  if(page!=="calendar") exitCustodyPaint();
   document.getElementById("homeWrap").classList.add("hidden");
   document.getElementById("clothingPage").classList.add("hidden");
   document.getElementById("calendarPage").classList.remove("hidden");
   renderCalendarPage();
-  /* Reflects current page in the URL (replaceState — no extra back-button history entries) so
-     "index.html#calendar" is a real, shareable/bookmarkable deep link straight into Calendar.
-     Reload-persistence of the last-viewed page is a separate, not-yet-requested feature. */
-  if(location.hash!=="#calendar") history.replaceState(null,"","#calendar");
+  if(location.hash!==hash) history.replaceState(null,"",hash);
 }
+function showCalendarPage(){ showCalendarSurface("calendar","#calendar"); }
+function showAgendaPage(){ showCalendarSurface("agenda","#agenda"); }
 function showClothingPage(){
-  currentPage="clothing"; closeActiveEdit(true);
+  currentPage="clothing"; closeActiveEdit(true); exitCustodyPaint();
   document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("clothingPage").classList.remove("hidden");
   renderClothingPage();
   if(location.hash!=="#clothing") history.replaceState(null,"","#clothing");
 }
 document.getElementById("calendarBtn").addEventListener("click", showCalendarPage);
+document.getElementById("agendaBtn").addEventListener("click", showAgendaPage);
 document.getElementById("calBackBtn").addEventListener("click", showHomePage);
 document.getElementById("clothingBtn").addEventListener("click", showClothingPage);
 document.getElementById("clBackBtn").addEventListener("click", showHomePage);
@@ -2193,7 +2235,7 @@ function render(){
   document.getElementById("hint").textContent=`${tasks.length} items • ${done} done • ${over} overdue • ${laterCount} later • ${places.filter(p=>!p.visited).length} places • ${shop.filter(s=>!s.got).length} to buy • Home v${VERSION}`;
   /* Keep Calendar current after ANY mutation, from either page — every mutation in this app already
      funnels through render(), so this one line is the entire integration point Calendar needs. */
-  if(currentPage==="calendar") renderCalendarPage();
+  if(isCalendarSurface()) renderCalendarPage();
   if(currentPage==="clothing") renderClothingPage();
 }
 
@@ -2260,8 +2302,8 @@ function renderPeopleEditor(){
        identical blur/Enter-commits, Escape-restores rule as name. Purely optional metadata: never
        required, never affects anything outside Calendar's household-relevance filter. */
     const calSel=row.querySelector(".pe-cal"), gradeSel=row.querySelector(".pe-grade"), groupInput=row.querySelector(".pe-group");
-    calSel.addEventListener("change",()=>{ const person=people.find(x=>x.id===id); if(!person) return; person.schoolCalendar=calSel.value; savePeople(); if(typeof currentPage!=="undefined"&&currentPage==="calendar") renderCalendarPage(); });
-    gradeSel.addEventListener("change",()=>{ const person=people.find(x=>x.id===id); if(!person) return; person.schoolGrade=gradeSel.value; savePeople(); if(typeof currentPage!=="undefined"&&currentPage==="calendar") renderCalendarPage(); });
+    calSel.addEventListener("change",()=>{ const person=people.find(x=>x.id===id); if(!person) return; person.schoolCalendar=calSel.value; savePeople(); if(isCalendarSurface()) renderCalendarPage(); });
+    gradeSel.addEventListener("change",()=>{ const person=people.find(x=>x.id===id); if(!person) return; person.schoolGrade=gradeSel.value; savePeople(); if(isCalendarSurface()) renderCalendarPage(); });
     const commitGroup=()=>{ const person=people.find(x=>x.id===id); if(!person) return; const v=groupInput.value.trim(); if(v===(person.schoolGroup||"")) return; person.schoolGroup=v; savePeople(); };
     groupInput.addEventListener("blur",commitGroup);
     groupInput.addEventListener("keydown",e=>{
@@ -3078,7 +3120,7 @@ function renderDateCard(d){
   const openCat=()=>openDateCategoryPopover(catEl,d.id);
   catEl.addEventListener("click",openCat); catEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openCat(); } });
   const locEl=el.querySelector("#dc-loc"); if(locEl) wireDateText(locEl, d.id, "location", "Edit location", false);
-  el.querySelector(".edit").addEventListener("click",()=>{ closeActiveEdit(true); dateEditingId=d.id; renderDatesSection(); if(typeof currentPage!=="undefined" && currentPage==="calendar") renderCalendarPage(); });
+  el.querySelector(".edit").addEventListener("click",()=>{ closeActiveEdit(true); dateEditingId=d.id; renderDatesSection(); if(isCalendarSurface()) renderCalendarPage(); });
   el.querySelector(".del").addEventListener("click",()=>{ deleteImportantDate(d.id); });
   return el;
 }
@@ -3123,11 +3165,11 @@ function buildDateEditorFields(container, d, opts){
   const errEl=container.querySelector("#de-error");
   function finishSaved(){
     if(opts.onSaved) opts.onSaved(); else { dateEditingId=null; renderDatesSection(); }
-    if(typeof currentPage!=="undefined" && currentPage==="calendar") renderCalendarPage();
+    if(isCalendarSurface()) renderCalendarPage();
   }
   function finishCancelled(){
     if(opts.onCancelled) opts.onCancelled(); else { dateEditingId=null; renderDatesSection(); }
-    if(typeof currentPage!=="undefined" && currentPage==="calendar") renderCalendarPage();
+    if(isCalendarSurface()) renderCalendarPage();
   }
   container.querySelector(".save-de").addEventListener("click",()=>{
     const rec=importantDates.find(x=>x.id===id); if(!rec) return;
@@ -3186,10 +3228,10 @@ function deleteImportantDate(id, opts){
   if(dateEditingId===id) dateEditingId=null;
   saveDates();
   if(opts.onDeleted) opts.onDeleted(); else renderDatesSection();
-  if(typeof currentPage!=="undefined" && currentPage==="calendar") renderCalendarPage();
+  if(isCalendarSurface()) renderCalendarPage();
   return true;
 }
-function addImportantDate(seed){ closeActiveEdit(true); const d=Object.assign(blankImportantDate(), seed||{}); importantDates.unshift(d); dateEditingId=d.id; renderDatesSection(); if(typeof currentPage!=="undefined" && currentPage==="calendar") renderCalendarPage(); }
+function addImportantDate(seed){ closeActiveEdit(true); const d=Object.assign(blankImportantDate(), seed||{}); importantDates.unshift(d); dateEditingId=d.id; renderDatesSection(); if(isCalendarSurface()) renderCalendarPage(); }
 document.getElementById("addDateBtn").addEventListener("click",addImportantDate);
 document.getElementById("viewAllDatesBtn").addEventListener("click",()=>{ datesAllOpen=!datesAllOpen; renderDatesSection(); });
 document.getElementById("closeAllDatesBtn").addEventListener("click",()=>{ datesAllOpen=false; renderDatesSection(); });
@@ -3335,102 +3377,50 @@ function custodyPersonLabel(id){ return CUSTODY_PEOPLE[id]?CUSTODY_PEOPLE[id].la
 function custodyColorFor(rec){ return rec&&CUSTODY_PEOPLE[rec.with]?CUSTODY_PEOPLE[rec.with].color:"var(--line)"; }
 function custodyDayNumberHtml(date,dayNumber,fullLabel){
   const rec=custodyRecord(date), withLabel=custodyPersonLabel(rec.with);
-  const label=withLabel?`${fullLabel}; kids with ${withLabel}. Click to edit.`:`${fullLabel}; kids schedule not set. Click to edit.`;
-  return `<button type="button" class="cmc-daynum${rec.with?` custody-${rec.with}`:""}" data-custody-date="${date}" aria-label="${esc(label)}" title="${withLabel?`Kids with ${esc(withLabel)}`:"Set kids schedule"}">${dayNumber}</button>`;
+  const status=withLabel?`kids @${withLabel}`:"Kids schedule not set";
+  return `<button type="button" class="cmc-daynum${rec.with?` custody-${rec.with}`:""}" data-custody-date="${date}" aria-label="${esc(`${fullLabel}; ${status}`)}" title="${esc(status)}">${dayNumber}</button>`;
 }
 function custodyAgendaTagHtml(date){
   const rec=custodyRecord(date), withLabel=custodyPersonLabel(rec.with);
-  return withLabel?`<button type="button" class="cal-day-custody-tag" data-custody-date="${date}" title="Edit kids schedule"><span class="cal-day-custody-dot" style="background:${custodyColorFor(rec)}"></span>${esc(withLabel)}</button>`:"";
+  return withLabel?`<span class="cal-day-custody-tag" title="kids @${esc(withLabel)}"><span class="cal-day-custody-dot" style="background:${custodyColorFor(rec)}"></span>@${esc(withLabel)}</span>`:"";
 }
-function openCustodyEditor(date){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) date=todayStr();
-  const current=custodyRecord(date);
-  let withPerson=current.with||"";
-  openCalModal((modal,close)=>{
-    const choiceButtons=(field,value)=>`<div class="custody-choice-row">
-      <button type="button" class="custody-choice ${value===""?"active":""}" data-field="${field}" data-value="">None</button>
-      ${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<button type="button" class="custody-choice ${value===id?"active":""}" data-field="${field}" data-value="${id}" style="--choice-color:${p.color}">${esc(p.label)}</button>`).join("")}
-    </div>`;
-    modal.innerHTML=`<h2 class="cal-modal-title">Kids schedule</h2>
-      <div class="cal-modal-sub">${esc(localMoment(date).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"}))}</div>
-      <div class="custody-form">
-        <div class="custody-field"><span class="custody-field-label">Who has the kids?</span><div id="custodyWith">${choiceButtons("with",withPerson)}</div></div>
-        <div class="custody-apply-row">
-          <label class="custody-field"><span class="custody-field-label">Apply to</span><select class="ctrl" id="custodyApply"><option value="day">This day only</option><option value="range">Every day through</option><option value="weekday">Every ${esc(localMoment(date).toLocaleDateString(undefined,{weekday:"long"}))} through</option></select></label>
-          <label class="custody-field"><span class="custody-field-label">Through</span><input class="ctrl" id="custodyThrough" type="date" min="${date}" value="${date}" disabled></label>
-        </div>
-      </div>
-      <div class="cal-modal-actions"><button type="button" class="btn" id="custodyCancel">Cancel</button><button type="button" class="btn add" id="custodySave">Save schedule</button></div>`;
-    function paint(field,value){
-      modal.querySelectorAll(`.custody-choice[data-field="${field}"]`).forEach(btn=>{ const on=btn.dataset.value===value; btn.classList.toggle("active",on); btn.setAttribute("aria-pressed",on?"true":"false"); });
-    }
-    modal.querySelectorAll(".custody-choice").forEach(btn=>btn.addEventListener("click",()=>{ withPerson=btn.dataset.value; paint(btn.dataset.field,btn.dataset.value); }));
-    const apply=modal.querySelector("#custodyApply"), through=modal.querySelector("#custodyThrough");
-    apply.addEventListener("change",()=>{ through.disabled=apply.value==="day"; if(through.disabled) through.value=date; });
-    modal.querySelector("#custodyCancel").addEventListener("click",close);
-    modal.querySelector("#custodySave").addEventListener("click",()=>{
-      const end=apply.value==="day"?date:through.value;
-      if(!end||end<date){ through.focus(); return; }
-      const sourceDow=localMoment(date).getDay();
-      for(let day=date;day<=end;day=addDaysStr(day,1)){
-        if(apply.value==="weekday"&&localMoment(day).getDay()!==sourceDow) continue;
-        if(withPerson) custodyDays[day]={with:withPerson,updated:Date.now()}; else delete custodyDays[day];
-      }
-      saveCustody(); close(); renderCalendarPage();
-    });
+function paintCustodyDay(btn){
+  if(!custodyPaintOpen||!custodyPaintPerson||!btn) return;
+  const date=btn.dataset.custodyDate, person=CUSTODY_PEOPLE[custodyPaintPerson];
+  if(!date||!person||custodyRecord(date).with===custodyPaintPerson) return;
+  custodyDays[date]={with:custodyPaintPerson,updated:Date.now()};
+  btn.classList.remove("custody-troy","custody-tracy");
+  btn.classList.add(`custody-${custodyPaintPerson}`);
+  const fullLabel=localMoment(date).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+  btn.title=`kids @${person.label}`;
+  btn.setAttribute("aria-label",`${fullLabel}; kids @${person.label}`);
+  custodyPaintDirty=true;
+}
+function finishCustodyPaintStroke(){
+  custodyPaintDragging=false;
+  if(custodyPaintDirty){ custodyPaintDirty=false; saveCustody(); }
+}
+/* Painting only exists on the month Calendar, so leaving it — by page, or by Done — always
+   flushes the in-progress stroke and clears the brush. */
+function exitCustodyPaint(){ custodyPaintOpen=false; custodyPaintPerson=""; finishCustodyPaintStroke(); }
+window.addEventListener("pointerup",finishCustodyPaintStroke);
+window.addEventListener("pointercancel",finishCustodyPaintStroke);
+function wireCustodyPainting(container){
+  const buttons=[...container.querySelectorAll(".cmc-daynum[data-custody-date]")];
+  buttons.forEach(btn=>btn.addEventListener("pointerdown",e=>{
+    if(!custodyPaintOpen||!custodyPaintPerson) return;
+    e.preventDefault(); e.stopPropagation(); custodyPaintDragging=true; paintCustodyDay(btn);
+  }));
+  container.addEventListener("pointermove",e=>{
+    if(!custodyPaintDragging) return;
+    e.preventDefault();
+    const hit=document.elementFromPoint(e.clientX,e.clientY);
+    paintCustodyDay(hit&&hit.closest(".cmc-daynum[data-custody-date]"));
   });
-}
-
-function openCustodyPatternEditor(){
-  const year=Number((calState.monthCursor||todayStr()).slice(0,4))||new Date().getFullYear();
-  const start=`${year}-01-01`, end=`${year}-12-31`;
-  openCalModal((modal,close)=>{
-    modal.innerHTML=`<h2 class="cal-modal-title">Fill weekly kids schedule</h2>
-      <div class="cal-modal-sub">This fills each date in the selected range. Existing kids-schedule entries in that range will be replaced.</div>
-      <div class="custody-form">
-        <div class="cal-custody-card" style="--custody-color:${CUSTODY_PEOPLE.troy.color}"><b>Troy</b><span>Tuesday, Thursday, Friday, Saturday</span></div>
-        <div class="cal-custody-card" style="--custody-color:${CUSTODY_PEOPLE.tracy.color}"><b>Tracy</b><span>Monday, Wednesday, Sunday</span></div>
-        <div class="custody-apply-row">
-          <label class="custody-field"><span class="custody-field-label">Start date</span><input class="ctrl" id="custodyPatternStart" type="date" value="${start}"></label>
-          <label class="custody-field"><span class="custody-field-label">End date</span><input class="ctrl" id="custodyPatternEnd" type="date" value="${end}"></label>
-        </div>
-        <div class="cal-modal-sub" style="margin:0">Sunday is labeled Tracy because the kids sleep there Sunday night.</div>
-      </div>
-      <div class="cal-modal-actions"><button type="button" class="btn" id="custodyPatternCancel">Cancel</button><button type="button" class="btn add" id="custodyPatternSave">Fill schedule</button></div>`;
-    modal.querySelector("#custodyPatternCancel").addEventListener("click",close);
-    modal.querySelector("#custodyPatternSave").addEventListener("click",()=>{
-      const from=modal.querySelector("#custodyPatternStart"), through=modal.querySelector("#custodyPatternEnd");
-      if(!from.value||!through.value||through.value<from.value){ through.focus(); return; }
-      const personByDay=["tracy","tracy","troy","tracy","troy","troy","troy"];
-      for(let day=from.value;day<=through.value;day=addDaysStr(day,1)) custodyDays[day]={with:personByDay[localMoment(day).getDay()],updated:Date.now()};
-      saveCustody(); close(); renderCalendarPage();
-    });
-  });
-}
-
-function openMonthCustodyEditor(ymKey){
-  const [year,month]=ymKey.split("-").map(Number), start=ymdOf(year,month-1,1), end=ymdOf(year,month-1,new Date(year,month,0).getDate());
-  let selected="troy";
-  openCalModal((modal,close)=>{
-    modal.innerHTML=`<h2 class="cal-modal-title">Set all of ${esc(monthKeyLabel(ymKey))}</h2>
-      <div class="cal-modal-sub">Choose one person for every day in this month. This replaces existing kids-schedule entries for the month, but does not change school dates or other calendar events.</div>
-      <div class="custody-choice-row" id="custodyMonthChoices">
-        ${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<button type="button" class="custody-choice ${id===selected?"active":""}" data-value="${id}" style="--choice-color:${p.color}">${esc(p.label)}</button>`).join("")}
-        <button type="button" class="custody-choice" data-value="">Clear month</button>
-      </div>
-      <div class="cal-modal-actions"><button type="button" class="btn" id="custodyMonthCancel">Cancel</button><button type="button" class="btn add" id="custodyMonthSave">Apply to month</button></div>`;
-    const buttons=[...modal.querySelectorAll("#custodyMonthChoices .custody-choice")];
-    buttons.forEach(btn=>btn.addEventListener("click",()=>{ selected=btn.dataset.value; buttons.forEach(x=>{const on=x===btn;x.classList.toggle("active",on);x.setAttribute("aria-pressed",on?"true":"false");}); }));
-    modal.querySelector("#custodyMonthCancel").addEventListener("click",close);
-    modal.querySelector("#custodyMonthSave").addEventListener("click",()=>{
-      for(let day=start;day<=end;day=addDaysStr(day,1)){ if(selected) custodyDays[day]={with:selected,updated:Date.now()}; else delete custodyDays[day]; }
-      saveCustody(); close(); renderCalendarPage();
-    });
-  });
-}
-
-function wireCustodyButtons(container){
-  container.querySelectorAll("[data-custody-date]").forEach(btn=>btn.addEventListener("click",e=>{ e.stopPropagation(); openCustodyEditor(btn.dataset.custodyDate); }));
+  buttons.forEach(btn=>btn.addEventListener("click",e=>{
+    if(!custodyPaintOpen) return;
+    e.preventDefault(); e.stopPropagation(); paintCustodyDay(btn); finishCustodyPaintStroke();
+  }));
 }
 
 /* ---------------- calendar entry cards (Agenda + Month-cell-driven Agenda) ---------------- */
@@ -3511,7 +3501,7 @@ function renderAgendaView(container){
       <button class="btn sm" id="calAgNextMonth" aria-label="Next month">Month ›</button>
     </div>
   </div>`;
-  if(!dates.length){ html+=`<div class="empty-state"><div class="big">Nothing in this range.</div>Try Today, another filter, add an event, or set the kids schedule.</div>`; }
+  if(!dates.length){ html+=`<div class="empty-state"><div class="big">Nothing in this range.</div>Try Today, another filter, or add an event.</div>`; }
   else {
     dates.forEach(ymd=>{
       html+=`<div class="cal-day-group"><div class="cal-day-head"><span class="cal-day-head-label">${esc(agendaDayLabel(ymd))}${custodyAgendaTagHtml(ymd)}</span><button class="cmc-add cal-day-add" data-date="${ymd}" aria-label="Add event on ${esc(agendaDayLabel(ymd))}">+ Add</button></div><div class="cal-day-cards" id="cal-day-cards-${ymd}"></div></div>`;
@@ -3528,7 +3518,6 @@ function renderAgendaView(container){
     (byDate[ymd]||[]).forEach(e=>host.appendChild(renderCalEntryCard(e)));
   });
   container.querySelectorAll(".cal-day-add").forEach(btn=>btn.addEventListener("click",()=>addCalendarEvent({startDate:btn.dataset.date})));
-  wireCustodyButtons(container);
 }
 
 /* ---------------- Month view ---------------- */
@@ -3547,14 +3536,18 @@ function renderMonthView(container){
   const today=todayStr();
   const compactMonth=window.matchMedia("(max-width:640px)").matches;
   const weekdayLabels=[0,1,2,3,4,5,6].map(i=>new Date(2023,0,1+i).toLocaleDateString(undefined,{weekday:"short"}));
-  let html=`<div class="cal-month-toolbar">
+  let html=`${custodyPaintOpen?`<div class="custody-paintbar" aria-label="Paint kids schedule">
+    <span class="custody-paintbar-label">Paint days:</span>
+    ${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<button type="button" class="custody-paint-choice${custodyPaintPerson===id?" active":""}" data-person="${id}" aria-pressed="${custodyPaintPerson===id}" style="--choice-color:${p.color}"><span class="custody-key-dot" style="background:${p.color}"></span>${esc(p.label)}</button>`).join("")}
+    <span class="custody-paint-help">Choose a color, then click or drag over dates.</span>
+    <button type="button" class="btn sm custody-paint-done" id="custodyPaintDone">Done</button>
+  </div>`:""}<div class="cal-month-toolbar">
     <button class="btn sm" id="calMoTodayBtn">Today</button>
-    <button class="btn sm" id="calMoSetMonthBtn">Set month</button>
     <button class="btn sm" id="calMoPrevBtn" aria-label="Previous month">‹</button>
     <div class="cal-month-title">${esc(monthKeyLabel(calState.monthCursor))}</div>
     <button class="btn sm" id="calMoNextBtn" aria-label="Next month">›</button>
   </div>
-  <div class="cal-month-grid">
+  <div class="cal-month-grid${custodyPaintOpen?" custody-painting":""}">
     ${weekdayLabels.map(l=>`<div class="cal-weekday-head">${esc(l)}</div>`).join("")}
     ${cells.map(d=>{
       const ymd=ymdOf(d.getFullYear(),d.getMonth(),d.getDate());
@@ -3572,18 +3565,21 @@ function renderMonthView(container){
     }).join("")}
   </div>`;
   container.innerHTML=html;
+  if(custodyPaintOpen){
+    container.querySelectorAll(".custody-paint-choice").forEach(btn=>btn.addEventListener("click",()=>{ custodyPaintPerson=btn.dataset.person; renderCalendarPage(); }));
+    document.getElementById("custodyPaintDone").addEventListener("click",()=>{ exitCustodyPaint(); renderCalendarPage(); });
+  }
   document.getElementById("calMoTodayBtn").addEventListener("click",()=>{ calState.monthCursor=todayStr().slice(0,7); saveCalPrefs(); renderCalendarPage(); });
-  document.getElementById("calMoSetMonthBtn").addEventListener("click",()=>openMonthCustodyEditor(calState.monthCursor));
   document.getElementById("calMoPrevBtn").addEventListener("click",()=>{ calState.monthCursor=shiftMonthKey(calState.monthCursor,-1); saveCalPrefs(); renderCalendarPage(); });
   document.getElementById("calMoNextBtn").addEventListener("click",()=>{ calState.monthCursor=shiftMonthKey(calState.monthCursor,1); saveCalPrefs(); renderCalendarPage(); });
   container.querySelectorAll(".cal-month-cell").forEach(cell=>{
     const ymd=cell.dataset.date;
-    function jump(){ calState.view="agenda"; calState.agendaAnchor=ymd; calState.selectedDay=ymd; saveCalPrefs(); renderCalendarPage(); }
+    function jump(){ if(custodyPaintOpen) return; calState.agendaAnchor=ymd; calState.selectedDay=ymd; saveCalPrefs(); showAgendaPage(); }
     cell.addEventListener("click",e=>{ if(e.target.closest(".cmc-add")) return; jump(); });
     cell.addEventListener("keydown",e=>{ if(e.target!==cell) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); jump(); } });
   });
   container.querySelectorAll(".cmc-add").forEach(btn=>btn.addEventListener("click",e=>{ e.stopPropagation(); addCalendarEvent({startDate:btn.dataset.date}); }));
-  wireCustodyButtons(container);
+  wireCustodyPainting(container);
 }
 
 /* ---------------- filters ---------------- */
@@ -3815,21 +3811,23 @@ function openManageRcsModal(){
 }
 document.getElementById("calManageRcsBtn").addEventListener("click", openManageRcsModal);
 
-/* ---------------- top-level calendar page render + view toggle ---------------- */
+/* ---------------- top-level render for both calendar destinations ---------------- */
 function renderCalendarPage(){
-  document.getElementById("calViewAgendaBtn").classList.toggle("active", calState.view==="agenda");
-  document.getElementById("calViewMonthBtn").classList.toggle("active", calState.view==="month");
-  document.getElementById("calViewAgendaBtn").setAttribute("aria-selected", calState.view==="agenda"?"true":"false");
-  document.getElementById("calViewMonthBtn").setAttribute("aria-selected", calState.view==="month"?"true":"false");
+  const isMonth=currentPage==="calendar";
+  document.getElementById("calPageTitle").textContent=isMonth?"Calendar":"Agenda";
+  const paintBtn=document.getElementById("calCustodyPaintBtn");
+  paintBtn.classList.toggle("hidden",!isMonth); // painting is a month-grid gesture only
+  paintBtn.classList.toggle("active",custodyPaintOpen);
+  paintBtn.setAttribute("aria-pressed",custodyPaintOpen?"true":"false");
   renderCalendarFilters();
   const body=document.getElementById("calBody");
-  if(calState.view==="month") renderMonthView(body); else renderAgendaView(body);
+  if(isMonth) renderMonthView(body); else renderAgendaView(body);
 }
-document.getElementById("calViewAgendaBtn").addEventListener("click",()=>{ calState.view="agenda"; saveCalPrefs(); renderCalendarPage(); });
-document.getElementById("calViewMonthBtn").addEventListener("click",()=>{ calState.view="month"; saveCalPrefs(); renderCalendarPage(); });
 document.getElementById("calAddBtn").addEventListener("click",()=>addCalendarEvent({startDate: calState.selectedDay||todayStr()}));
-document.getElementById("calCustodyBtn").addEventListener("click",()=>openCustodyEditor(calState.selectedDay||todayStr()));
-document.getElementById("calCustodyPatternBtn").addEventListener("click",openCustodyPatternEditor);
+document.getElementById("calCustodyPaintBtn").addEventListener("click",()=>{
+  if(custodyPaintOpen) exitCustodyPaint(); else custodyPaintOpen=true;
+  renderCalendarPage();
+});
 
 /* =====================================================================
    CLOTHING DEAL-MATCH PAGE
@@ -4542,6 +4540,7 @@ renderAuthUI(); render(); initSync(); tick(); setInterval(tick,1000);
 /* Shareable page links work both on initial load and when a hash link is selected in an open tab. */
 function routePageFromHash(){
   if(location.hash==="#calendar"){ if(currentPage!=="calendar") showCalendarPage(); return; }
+  if(location.hash==="#agenda"){ if(currentPage!=="agenda") showAgendaPage(); return; }
   if(location.hash==="#clothing"){ if(currentPage!=="clothing") showClothingPage(); return; }
   if(currentPage!=="home") showHomePage();
 }
