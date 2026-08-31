@@ -789,7 +789,12 @@
 
   <div class="dates-section" id="datesSection">
     <div class="dates-head">
-      <div class="panel-title" style="margin:0">Important dates</div>
+      <div class="panel-title" style="margin:0">
+        <span class="byl-title-wrap">
+          <span class="editable byl-title-text" id="datesTitleText" tabindex="0" role="button" aria-label="Edit section title"></span>
+          <button class="byl-title-reset" id="datesTitleReset" title="Reset title" aria-label="Reset section title">↺</button>
+        </span>
+      </div>
       <div class="dates-head-actions">
         <button class="btn sm" id="addDateBtn">+ Add date</button>
         <button class="btn sm" id="viewAllDatesBtn" aria-expanded="false">View all</button>
@@ -1000,7 +1005,16 @@
 const VERSION = "1.15-beta";
 
 /* ---------------- storage ---------------- */
-const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1", K_CUSTODY="home.custodyDays.v1";
+/* Firebase does not store empty arrays: writing places:[] deletes the key outright. Every
+   collection below was then read back with "only overwrite if present", which correctly stops an
+   OLD client erasing data — but made an absent key indistinguishable from a genuinely emptied list.
+   So deleting the LAST item of anything never propagated: the key vanished, every other device kept
+   its copy, and the next device to save pushed the item straight back. That is why one place could
+   be deleted on four devices and keep returning. PAYLOAD_V marks a writer that always sends every
+   collection, so for those payloads an absent array means empty, not missing. Payloads without it
+   (older clients) keep the original protective behaviour. */
+const PAYLOAD_V=2;
+const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_DATES_TITLE="home.dates-title.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1", K_CUSTODY="home.custodyDays.v1";
 const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1", K_CLOTHING_SETTLEMENTS="home.clothingSettlements.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
@@ -1011,6 +1025,7 @@ function saveDates(){ try{ localStorage.setItem(K_DATES, JSON.stringify(importan
 function saveNotes(){ try{ localStorage.setItem(K_NOTES, JSON.stringify(notes)); }catch(e){} pushCloud(); }
 function saveBYL(){ try{ localStorage.setItem(K_BYL, JSON.stringify(beforeYouLeave)); }catch(e){} pushCloud(); }
 function saveBYLTitle(){ try{ localStorage.setItem(K_BYL_TITLE, JSON.stringify(bylTitle)); }catch(e){} pushCloud(); }
+function saveDatesTitle(){ try{ localStorage.setItem(K_DATES_TITLE, JSON.stringify(datesTitle)); }catch(e){} pushCloud(); }
 /* Persisted tombstones for deleted/excluded school-calendar import events — a shared family
    decision, so this is synced like every other collection above, not device-local. */
 function saveCalExclusions(){ try{ localStorage.setItem(K_CAL_EXCLUSIONS, JSON.stringify(calendarExclusions)); }catch(e){} pushCloud(); }
@@ -1163,21 +1178,28 @@ function applyFamilySnapshot(snap){
       if(!v){ if(hasLocalPlannerData()) pushCloud(true); return; }   // cloud empty → seed from this device, but only if this device actually has something
       const cloudHasCustody = !!(v.custodyDays && typeof v.custodyDays==="object" && !Array.isArray(v.custodyDays));
       remoteApplying=true;
-      if(Array.isArray(v.people)) people=v.people;
-      if(Array.isArray(v.tasks))  tasks=v.tasks.map(migrateTask);
-      if(Array.isArray(v.shop))   shop=v.shop.map(s=>Object.assign(blankShop(),s));
-      if(Array.isArray(v.places)) places=v.places.map(migratePlace);   // only overwrite if present → never erased by an old client
-      if(Array.isArray(v.importantDates)) importantDates=v.importantDates.map(migrateImportantDate); // same rule → older clients never erase this
-      if(Array.isArray(v.notes)) notes=v.notes.map(migrateNote).filter(n=>n.text!=="");       // same rule → older clients never erase this
-      if(Array.isArray(v.beforeYouLeave)) beforeYouLeave=v.beforeYouLeave.map(migrateBYLItem).filter(b=>b.item!=="");  // same rule → older clients never erase this
+      /* `full` = this payload came from a writer that always sends every collection, so a missing
+         array genuinely means "emptied" and the deletion must be applied. `people` is deliberately
+         left out of that: an empty profile list is never a thing anyone means to do, and wrongly
+         clearing it would take the whole planner's structure with it. */
+      const full = Number(v.payloadV)>=2;
+      const listOrEmpty=(raw,map)=>Array.isArray(raw) ? raw.map(map) : (full?[]:null);
+      if(Array.isArray(v.people)) people=v.people;                     // structural — never emptied remotely
+      { const x=listOrEmpty(v.tasks,migrateTask); if(x) tasks=x; }
+      { const x=listOrEmpty(v.shop,s=>Object.assign(blankShop(),s)); if(x) shop=x; }
+      { const x=listOrEmpty(v.places,migratePlace); if(x) places=x; }
+      { const x=listOrEmpty(v.importantDates,migrateImportantDate); if(x) importantDates=x; }
+      { const x=listOrEmpty(v.notes,migrateNote); if(x) notes=x.filter(n=>n.text!==""); }
+      { const x=listOrEmpty(v.beforeYouLeave,migrateBYLItem); if(x) beforeYouLeave=x.filter(b=>b.item!==""); }
       if(typeof v.beforeYouLeaveTitle==="string" && v.beforeYouLeaveTitle.trim()!=="") bylTitle=normalizeBYLTitle(v.beforeYouLeaveTitle);
-      if(Array.isArray(v.calendarExclusions)) calendarExclusions=v.calendarExclusions.filter(x=>typeof x==="string");  // same rule → older clients never erase this
+      if(typeof v.datesTitle==="string" && v.datesTitle.trim()!=="") datesTitle=normalizeDatesTitle(v.datesTitle);
+      { const x=listOrEmpty(v.calendarExclusions,y=>y); if(x) calendarExclusions=x.filter(y=>typeof y==="string"); }
       if(cloudHasCustody) custodyDays=migrateCustodyDays(v.custodyDays);
-      if(Array.isArray(v.clothingPurchases)) clothingPurchases=v.clothingPurchases.map(migrateClothingPurchase);
+      { const x=listOrEmpty(v.clothingPurchases,migrateClothingPurchase); if(x) clothingPurchases=x; }
       if(Array.isArray(v.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(v.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(v.clothingSettings && typeof v.clothingSettings==="object" && !Array.isArray(v.clothingSettings)) clothingSettings=migrateClothingSettings(v.clothingSettings);
-      if(Array.isArray(v.clothingSettlements)) clothingSettlements=v.clothingSettlements.map(migrateClothingSettlement);  // only overwrite if present → older clients never erase this
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CUSTODY,JSON.stringify(custodyDays)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); }catch(e){}
+      { const x=listOrEmpty(v.clothingSettlements,migrateClothingSettlement); if(x) clothingSettlements=x; }
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_DATES_TITLE,JSON.stringify(datesTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CUSTODY,JSON.stringify(custodyDays)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); }catch(e){}
       remoteApplying=false;
       const migratedPayer=applyCheckoutPayerMigration();
       const deposited=ensureMonthlyClothingDeposits();
@@ -1196,7 +1218,7 @@ function pushCloud(force){
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
      protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
-  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,datesTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,payloadV:PAYLOAD_V,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -1353,6 +1375,13 @@ function migrateBYLItem(raw){
   return b;
 }
 
+/* The section title is editable so this strip can be renamed to whatever it ends up being for,
+   without renaming it in code each time. Stored and synced exactly like the checklist title. */
+const DEFAULT_DATES_TITLE="Important dates";
+function normalizeDatesTitle(raw){
+  const t=(typeof raw==="string"?raw:"").trim().slice(0,40);
+  return t===""?DEFAULT_DATES_TITLE:t;
+}
 const DEFAULT_BYL_TITLE="Before You Leave";
 function normalizeBYLTitle(raw){
   const t=(raw==null?"":raw).toString().trim();
@@ -1796,6 +1825,7 @@ let notes = (Array.isArray(notesRaw) ? notesRaw : []).map(migrateNote).filter(n=
 const bylRaw = loadJSON(K_BYL);
 let beforeYouLeave = (Array.isArray(bylRaw) ? bylRaw : []).map(migrateBYLItem).filter(b=>b.item!=="");
 let bylTitle = normalizeBYLTitle(loadJSON(K_BYL_TITLE));
+let datesTitle = normalizeDatesTitle(loadJSON(K_DATES_TITLE));
 let settings = Object.assign({ soundEnabled:true }, loadJSON(K_SETTINGS)||{});
 const calExclusionsRaw = loadJSON(K_CAL_EXCLUSIONS);
 let calendarExclusions = (Array.isArray(calExclusionsRaw) ? calExclusionsRaw : []).filter(x=>typeof x==="string");
@@ -2791,6 +2821,15 @@ function wireBYLTitleText(node){
   node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
 }
 wireBYLTitleText(document.getElementById("bylTitleText"));
+wireDatesTitleText(document.getElementById("datesTitleText"));
+document.getElementById("datesTitleReset").addEventListener("pointerdown",e=>{
+  if(!e.isPrimary || e.button!==0) return;
+  e.preventDefault(); closeActiveEdit(false); e.currentTarget.focus();
+});
+document.getElementById("datesTitleReset").addEventListener("click",()=>{
+  if(datesTitle===DEFAULT_DATES_TITLE) return;
+  datesTitle=DEFAULT_DATES_TITLE; saveDatesTitle(); renderDatesTitle();
+});
 function wireInlineBYLText(node, bylId){
   node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit reminder");
   function open(){
@@ -2893,7 +2932,23 @@ function renderCountdowns(){
 }
 
 /* ---------------- important dates: rendering ---------------- */
+function renderDatesTitle(){
+  const el=document.getElementById("datesTitleText"); if(!el) return;
+  if(isEditingField("datesTitle","single","title")) return;
+  el.textContent=datesTitle;
+}
+function wireDatesTitleText(node){
+  if(!node) return;
+  function open(){
+    if(isEditingField("datesTitle","single","title")) return;
+    startInlineText({ type:"datesTitle", id:"single", field:"title", container:node, value:datesTitle, required:false, ariaLabel:"Section title",
+      getEntity:()=>({}), onCommit:(entity,v)=>{ const norm=normalizeDatesTitle(v); if(norm!==datesTitle){ datesTitle=norm; saveDatesTitle(); } }, onDone:renderDatesTitle });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
 function renderDatesSection(){
+  renderDatesTitle();
   /* The countdown panel is a second view of this same data, so it has to be redrawn whenever the
      dates change. Without this, pinning a date or editing its time left the panel showing whatever
      it rendered on page load, which reads exactly like the countdown feature being broken. */
@@ -2942,12 +2997,15 @@ function pickHomeCards(list, n){
 function renderDatesQuick(){
   const wrap=document.getElementById("datesQuick");
   const list=activeDatesSorted();
-  let show=pickHomeCards(list,5);
+  /* Three, not five. This strip sits above everything and was being filled with routine school
+     entries everyone already knows, crowding out the things actually worth surfacing. The rest are
+     one tap away behind "+ N more". */
+  let show=pickHomeCards(list,3);
   /* While the View All panel is open, IT is the exclusive host for the full editor — never duplicate
      it here too. Only pull the in-progress edit into the quick view when View All is closed. */
   if(!datesAllOpen && dateEditingId && !show.some(d=>d.id===dateEditingId)){
     const ed=importantDates.find(d=>d.id===dateEditingId);
-    if(ed) show=[ed, ...show.filter(d=>d.id!==dateEditingId).slice(0,4)];
+    if(ed) show=[ed, ...show.filter(d=>d.id!==dateEditingId).slice(0,2)];
   }
   wrap.innerHTML="";
   if(!show.length){
