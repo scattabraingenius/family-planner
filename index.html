@@ -465,6 +465,14 @@
   .auth-notice .an-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
   .auth-notice code { font-family:var(--mono); font-size:11.5px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:3px 7px; color:var(--ink); user-select:all; word-break:break-all; }
 
+  .dates-fold { background:none; border:none; color:var(--muted-2); cursor:pointer; font-size:13px; line-height:1; padding:2px 6px 2px 0; transition:transform .18s ease; }
+  .dates-fold:hover { color:var(--ink); }
+  .dates-fold.collapsed { transform:rotate(-90deg); }
+  .dates-section.collapsed .dates-quick, .dates-section.collapsed .dates-all { display:none !important; }
+  .dc-star { color:var(--muted-2); }
+  .dc-star.on { color:var(--star); }
+  .dates-collapsed-note { font-family:var(--mono); font-size:11.5px; color:var(--muted-2); padding:2px 2px 4px; }
+
   .empty-state { text-align:center; padding:40px 16px; color:var(--muted); border:1px dashed var(--line); border-radius:var(--radius); background:var(--card); }
   .empty-state .big { font-size:16px; font-weight:600; color:var(--ink); margin-bottom:5px; }
   /* Grown-up utilities: reachable, but parked at the bottom instead of crowding the top. */
@@ -790,6 +798,7 @@
   <div class="dates-section" id="datesSection">
     <div class="dates-head">
       <div class="panel-title" style="margin:0">
+        <button class="dates-fold" id="datesFold" aria-expanded="true" aria-controls="datesQuick" title="Collapse / expand">▾</button>
         <span class="byl-title-wrap">
           <span class="editable byl-title-text" id="datesTitleText" tabindex="0" role="button" aria-label="Edit section title"></span>
           <button class="byl-title-reset" id="datesTitleReset" title="Reset title" aria-label="Reset section title">↺</button>
@@ -1014,7 +1023,7 @@ const VERSION = "1.15-beta";
    collection, so for those payloads an absent array means empty, not missing. Payloads without it
    (older clients) keep the original protective behaviour. */
 const PAYLOAD_V=2;
-const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_DATES_TITLE="home.dates-title.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1", K_CUSTODY="home.custodyDays.v1";
+const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_DATES_TITLE="home.dates-title.v1", K_DATES_COLLAPSED="home.dates-collapsed.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1", K_CUSTODY="home.custodyDays.v1";
 const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1", K_CLOTHING_SETTLEMENTS="home.clothingSettlements.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
@@ -1683,7 +1692,7 @@ const AUDIENCE_LABELS = {
   "seniors":"Seniors", "ecse":"ECSE", "atps":"ATPS",
 };
 function blankImportantDate(name){ return { id:uid("d"), title:name||"", startDate:"", endDate:"", startTime:"", endTime:"", people:[], location:"", note:"", category:"other",
-  allDay:true, source:"", sourceRevision:"", sourceEventId:"", schoolImpact:"", audience:[], tentative:false, userModified:false, countdownPinned:false,
+  allDay:true, source:"", sourceRevision:"", sourceEventId:"", schoolImpact:"", audience:[], tentative:false, userModified:false, countdownPinned:false, homePinned:false,
   created:Date.now(), updated:Date.now() }; }
 function migrateImportantDate(raw){
   const d=Object.assign(blankImportantDate(), raw||{});
@@ -1698,6 +1707,9 @@ function migrateImportantDate(raw){
   d.tentative = !!d.tentative;
   d.userModified = !!d.userModified;
   d.countdownPinned = !!d.countdownPinned;
+  /* Opt-in, and deliberately not backfilled to true for existing dates: the whole point is that the
+     Home strip stops showing everything, so an unmarked date stays off it until it is marked. */
+  d.homePinned = !!d.homePinned;
   if(typeof d.created!=="number") d.created=Date.now();
   if(typeof d.updated!=="number") d.updated=d.created;
   return d;
@@ -1826,6 +1838,10 @@ const bylRaw = loadJSON(K_BYL);
 let beforeYouLeave = (Array.isArray(bylRaw) ? bylRaw : []).map(migrateBYLItem).filter(b=>b.item!=="");
 let bylTitle = normalizeBYLTitle(loadJSON(K_BYL_TITLE));
 let datesTitle = normalizeDatesTitle(loadJSON(K_DATES_TITLE));
+/* Folded state is a per-device display preference, like the view filters — never synced, so one
+   person collapsing it on their phone does not fold it on everyone else's screen. */
+let datesCollapsed = loadJSON(K_DATES_COLLAPSED)===true;
+function saveDatesCollapsed(){ try{ localStorage.setItem(K_DATES_COLLAPSED, JSON.stringify(datesCollapsed)); }catch(e){} }
 let settings = Object.assign({ soundEnabled:true }, loadJSON(K_SETTINGS)||{});
 const calExclusionsRaw = loadJSON(K_CAL_EXCLUSIONS);
 let calendarExclusions = (Array.isArray(calExclusionsRaw) ? calExclusionsRaw : []).filter(x=>typeof x==="string");
@@ -2822,6 +2838,11 @@ function wireBYLTitleText(node){
 }
 wireBYLTitleText(document.getElementById("bylTitleText"));
 wireDatesTitleText(document.getElementById("datesTitleText"));
+document.getElementById("datesFold").addEventListener("click",()=>{
+  datesCollapsed=!datesCollapsed; saveDatesCollapsed();
+  if(datesCollapsed) datesAllOpen=false;
+  renderDatesSection();
+});
 document.getElementById("datesTitleReset").addEventListener("pointerdown",e=>{
   if(!e.isPrimary || e.button!==0) return;
   e.preventDefault(); closeActiveEdit(false); e.currentTarget.focus();
@@ -2949,6 +2970,18 @@ function wireDatesTitleText(node){
 }
 function renderDatesSection(){
   renderDatesTitle();
+  const sec=document.getElementById("datesSection"), fold=document.getElementById("datesFold");
+  if(sec) sec.classList.toggle("collapsed", datesCollapsed);
+  if(fold){ fold.classList.toggle("collapsed", datesCollapsed); fold.setAttribute("aria-expanded", String(!datesCollapsed)); }
+  if(datesCollapsed){
+    /* Collapsed still reports what it is hiding, so folding it away never silently loses a date. */
+    const n=activeDatesSorted().length;
+    let note=document.getElementById("datesCollapsedNote");
+    if(!note){ note=document.createElement("div"); note.className="dates-collapsed-note"; note.id="datesCollapsedNote"; sec.appendChild(note); }
+    note.textContent = n ? `${n} upcoming — tap to expand` : "Nothing upcoming";
+  } else {
+    const note=document.getElementById("datesCollapsedNote"); if(note) note.remove();
+  }
   /* The countdown panel is a second view of this same data, so it has to be redrawn whenever the
      dates change. Without this, pinning a date or editing its time left the panel showing whatever
      it rendered on page load, which reads exactly like the countdown feature being broken. */
@@ -2996,10 +3029,11 @@ function pickHomeCards(list, n){
 }
 function renderDatesQuick(){
   const wrap=document.getElementById("datesQuick");
-  const list=activeDatesSorted();
-  /* Three, not five. This strip sits above everything and was being filled with routine school
-     entries everyone already knows, crowding out the things actually worth surfacing. The rest are
-     one tap away behind "+ N more". */
+  /* The strip is now an explicit shortlist, not a feed. Only dates marked important appear here, so
+     routine school entries stop claiming the top of the screen just for existing. Everything else
+     is still one tap away under View all, where it can be starred in. */
+  const list=activeDatesSorted().filter(d=>d.homePinned);
+  const totalUpcoming=activeDatesSorted().length;
   let show=pickHomeCards(list,3);
   /* While the View All panel is open, IT is the exclusive host for the full editor — never duplicate
      it here too. Only pull the in-progress edit into the quick view when View All is closed. */
@@ -3010,16 +3044,19 @@ function renderDatesQuick(){
   wrap.innerHTML="";
   if(!show.length){
     const empty=document.createElement("div"); empty.className="dates-empty";
-    empty.innerHTML=`No upcoming dates yet. <button class="btn sm" id="addDateBtnEmpty">+ Add date</button>`;
+    empty.innerHTML = totalUpcoming
+      ? `Nothing marked important yet. <button class="btn sm" id="openAllToStar">View all → tap ★</button> to choose what shows here.`
+      : `No upcoming dates yet. <button class="btn sm" id="addDateBtnEmpty">+ Add date</button>`;
     wrap.appendChild(empty);
-    empty.querySelector("#addDateBtnEmpty").addEventListener("click",addImportantDate);
+    const add=empty.querySelector("#addDateBtnEmpty"); if(add) add.addEventListener("click",addImportantDate);
+    const star=empty.querySelector("#openAllToStar"); if(star) star.addEventListener("click",()=>{ datesAllOpen=true; renderDatesSection(); });
     return;
   }
   show.forEach(d=>{ const useEditor=!datesAllOpen && dateEditingId===d.id; wrap.appendChild(useEditor ? renderDateEditorCard(d) : renderDateCard(d)); });
-  if(list.length>show.length){
+  if(totalUpcoming>show.length){
     const more=document.createElement("div"); more.className="dates-more"; more.tabIndex=0; more.setAttribute("role","button");
-    more.setAttribute("aria-label", `${list.length-show.length} more upcoming dates — view all`);
-    more.textContent=`+ ${list.length-show.length} more`;
+    more.setAttribute("aria-label", `${totalUpcoming-show.length} more upcoming dates — view all`);
+    more.textContent=`+ ${totalUpcoming-show.length} more`;
     const openAll=()=>{ datesAllOpen=true; renderDatesSection(); };
     more.addEventListener("click",openAll);
     more.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openAll(); } });
@@ -3153,15 +3190,13 @@ function renderDateCard(d){
   if(isOngoingLabel(countdown)) el.classList.add("ongoing");
   const countClass = countdown==="Today" ? "today" : (isOngoingLabel(countdown) ? "ongoing" : "");
   const hasTime = !!(d.startTime || d.endTime);
-  const hasPeople = d.people && d.people.length;
   el.innerHTML=`
     <div class="dc-top"><span class="dc-count ${countClass}">${esc(countdown)}</span><span class="dc-cat" id="dc-cat">${esc(cat.label)}</span></div>
     ${(d.schoolImpact||d.tentative)?`<div class="dc-badges">${schoolImpactBadgeHtml(d.schoolImpact)}${d.tentative?'<span class="si-badge tentative">Tentative</span>':""}</div>`:""}
     <div class="dc-title" id="dc-title">${esc(d.title)||"(untitled)"}</div>
     <div class="dc-when"><span id="dc-date">${esc(dateDatePartText(d))}</span>${hasTime?` · <span id="dc-time">${esc(dateTimePartText(d))}</span>`:""}</div>
-    ${hasPeople?`<div class="dc-people" id="dc-people">${peopleChipsHtml(d.people)}</div>`:""}
     ${dateCardMetaHtml(d)}
-    <div class="dc-actions"><button class="iconbtn edit" title="Edit" aria-label="Edit ${esc(d.title)||'date'}">✎</button><button class="iconbtn del" title="Delete" aria-label="Delete ${esc(d.title)||'date'}">✕</button></div>`;
+    <div class="dc-actions"><button class="iconbtn dc-star${d.homePinned?" on":""}" title="${d.homePinned?"Remove from Home":"Mark important — show on Home"}" aria-label="${d.homePinned?"Remove from Home":"Mark important"}" aria-pressed="${!!d.homePinned}">${d.homePinned?"★":"☆"}</button><button class="iconbtn edit" title="Edit" aria-label="Edit ${esc(d.title)||'date'}">✎</button><button class="iconbtn del" title="Delete" aria-label="Delete ${esc(d.title)||'date'}">✕</button></div>`;
   wireDateText(el.querySelector("#dc-title"), d.id, "title", "Edit title", true);
   const dateEl=el.querySelector("#dc-date"); dateEl.classList.add("editable"); dateEl.tabIndex=0; dateEl.setAttribute("role","button"); dateEl.setAttribute("aria-label","Edit date");
   const openDate=()=>openDateRangePopover(dateEl,d.id);
@@ -3170,14 +3205,18 @@ function renderDateCard(d){
   if(timeEl){ timeEl.classList.add("editable"); timeEl.tabIndex=0; timeEl.setAttribute("role","button"); timeEl.setAttribute("aria-label","Edit time");
     const openTime=()=>openDateTimePopover(timeEl,d.id);
     timeEl.addEventListener("click",openTime); timeEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openTime(); } }); }
-  const peopleEl=el.querySelector("#dc-people");
-  if(peopleEl){ peopleEl.classList.add("editable"); peopleEl.tabIndex=0; peopleEl.setAttribute("role","button"); peopleEl.setAttribute("aria-label","Edit who's involved");
-    const openPpl=()=>openDatePeoplePopover(peopleEl,d.id);
-    peopleEl.addEventListener("click",openPpl); peopleEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPpl(); } }); }
+  /* The people chips were removed from the card: three colour-filled name pills on every routine
+     school entry dominated the card's height and shouted louder than the date itself. Who a date is
+     for is still set in the full editor, and still shown in Agenda and Calendar. */
   const catEl=el.querySelector("#dc-cat"); catEl.classList.add("editable"); catEl.tabIndex=0; catEl.setAttribute("role","button"); catEl.setAttribute("aria-label","Edit category");
   const openCat=()=>openDateCategoryPopover(catEl,d.id);
   catEl.addEventListener("click",openCat); catEl.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openCat(); } });
   const locEl=el.querySelector("#dc-loc"); if(locEl) wireDateText(locEl, d.id, "location", "Edit location", false);
+  el.querySelector(".dc-star").addEventListener("click",()=>{
+    const cur=importantDates.find(x=>x.id===d.id); if(!cur) return;
+    cur.homePinned=!cur.homePinned; cur.updated=Date.now();
+    markUserModifiedIfSourced(cur); saveDates(); renderDatesSection(); if(isCalendarSurface()) renderCalendarPage();
+  });
   el.querySelector(".edit").addEventListener("click",()=>{ closeActiveEdit(true); dateEditingId=d.id; renderDatesSection(); if(isCalendarSurface()) renderCalendarPage(); });
   el.querySelector(".del").addEventListener("click",()=>{ deleteImportantDate(d.id); });
   return el;
@@ -3204,6 +3243,7 @@ function buildDateEditorFields(container, d, opts){
       <div class="field full"><label>Who's involved (optional)</label><div class="who-picker" id="de-who"></div></div>
       <div class="field"><label>School impact (optional)</label><select id="de-impact"><option value="">—</option>${Object.entries(SCHOOL_IMPACT_LABELS).map(([k,l])=>`<option value="${k}" ${k===d.schoolImpact?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
       <div class="field"><label class="starbox" style="padding:24px 0 0"><input type="checkbox" id="de-tentative" ${d.tentative?"checked":""}> Tentative</label></div>
+      <div class="field full"><label class="starbox" style="padding:0"><input type="checkbox" id="de-important" ${d.homePinned?"checked":""}> ★ Important — show this in the strip at the top of Home</label></div>
       <div class="field full"><label class="starbox" style="padding:0"><input type="checkbox" id="de-countdown" ${d.countdownPinned?"checked":""}> Show a countdown for this on Home</label></div>
       <div class="field full"><label>Audience (optional)</label><div class="who-picker aud-picker" id="de-audience"></div></div>
       <div class="field full"><label>Note (optional)</label><textarea id="de-note" placeholder="anything to remember">${esc(d.note)}</textarea></div>
@@ -3248,6 +3288,7 @@ function buildDateEditorFields(container, d, opts){
     rec.audience = audSel.slice();
     rec.tentative = container.querySelector("#de-tentative").checked;
     rec.countdownPinned = container.querySelector("#de-countdown").checked;
+    rec.homePinned = container.querySelector("#de-important").checked;
     rec.updated=Date.now();
     markUserModifiedIfSourced(rec);
     saveDates();
