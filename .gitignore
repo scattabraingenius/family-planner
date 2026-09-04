@@ -1,0 +1,14 @@
+# Build output and local scratch — regenerable or machine-specific, never source.
+# Recorded here so `git status` stays a signal instead of noise. The handoff doc has
+# asked for .claude/ and test-artifacts/ to stay untracked since 1.13-beta; this makes
+# that a rule the repository enforces rather than a note someone has to remember.
+
+# Editor/agent settings, specific to one machine.
+.claude/
+
+# Print Center output saved while checking that printing worked. The app regenerates
+# these on demand, so committing them just accumulates stale copies.
+test-artifacts/
+
+# Scratch working directory.
+tmp/
