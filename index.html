@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Home — Family Day Planner</title>
+<meta name="theme-color" content="#10080D">
+<meta name="color-scheme" content="dark">
+<meta name="application-name" content="Family Planner">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Family Planner">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<title>Family Planner</title>
 <style>
   /* ============================================================
      HOME — family day planner   (v1.17-beta)
@@ -5952,6 +5962,15 @@ function routePageFromHash(){
 }
 window.addEventListener("hashchange",routePageFromHash);
 routePageFromHash();
+
+/* The service worker is an optional app-shell enhancement. It is deliberately registered only
+   on origins where service workers are supported, so opening index.html directly from disk keeps
+   the planner's existing local-only behavior and never produces a file:// console error. */
+if("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost" || location.hostname==="127.0.0.1")){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Family Planner service worker registration failed:",err));
+  });
+}
 </script>
 </body>
 </html>
