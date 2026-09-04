@@ -6,9 +6,19 @@
 <title>Home — Family Day Planner</title>
 <style>
   /* ============================================================
-     HOME — family day planner   (v1.14-beta)
-     One shared day list (multi-person tags), Places to Go + Before You Leave
-     + Shopping list + Quick Notes, now in a dark-pink/plum theme.
+     HOME — family day planner   (v1.16-beta)
+     One shared day list (multi-person tags), Goals for Today + Shopping list,
+     in a dark-pink/plum theme. Places to Go, Before You Leave and Quick Notes
+     are retired from Home (kept as data; Places still feeds Calendar/Print).
+     1.16-beta decluttered Home: the "Home" title is gone, the person chip row
+     became ONE dropdown (choosing a child narrows Home to their tasks, goals,
+     dates, countdowns and bank), search is hidden, Places was replaced by
+     "Goals for today" with a live countdown to an editable end-of-day time,
+     and a read-only bank strip mirrors the new Money page.
+     Money (new in 1.16-beta): the kids' bank — balances, a job menu kids tap
+     when a chore is done and a parent approves, weekly allowance, savings
+     goals, and two-way links to Clothing (top up the wallet, pay or collect a
+     clothing bill). One currency shared with Clothing, never points.
      Tasks can be shown independently as Done, scheduled Later, or undated Someday.
      Before You Leave is a straightforward checklist with an editable title.
      A soft completion chime (Web Audio, no external file) plays when an item
@@ -169,7 +179,7 @@
   .nextup.empty { color:#B896A8; justify-content:flex-start; }
 
   /* people bar */
-  .peoplebar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  /* .pfilter chips survive on the Calendar page only; Home's chip row became the header dropdown in 1.16-beta. */
   .pfilter { display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:600; padding:6px 12px 6px 8px; border-radius:99px; background:var(--card); border:1px solid var(--line); cursor:pointer; color:var(--ink); }
   .pfilter .dot { width:14px; height:14px; border-radius:50%; flex:none; }
   .pfilter.active { border-color:var(--ink); box-shadow:0 0 0 1px var(--ink); }
@@ -758,24 +768,213 @@
     .cell-time{ text-align:left; }
     .editor .grid { grid-template-columns:1fr; }
   }
+
+  /* ============================================================
+     1.16-beta — HOME DECLUTTER + MONEY PAGE
+     Home lost its "Home" title, its person chip row, its search box and its
+     Places panel. What replaced them:
+       .brand-*      compact date/clock strip sized to sit beside the nav
+       .who-pick     ONE person dropdown in the header strip (was N chips), the focus control
+       .bankcard     per-kid status card: money + what's left today + approvals
+       .goals/.dayclock  "Goals for today" + a live countdown to the day's end
+       .bankstrip    the row those status cards sit in
+     Everything below is additive and appears after the original rules so it
+     wins on ties without editing them.
+     ============================================================ */
+
+  /* --- header: date + clock, no page title --- */
+  .brand { display:flex; align-items:center; gap:14px; flex-wrap:wrap; row-gap:4px; }
+  .brand-date { display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .brand-day { font-size:26px; font-weight:800; letter-spacing:-.025em; line-height:1.06; }
+  .brand .datestr { font-family:var(--mono); font-size:12.5px; color:var(--muted); margin:0; letter-spacing:.02em; }
+  .brand .clock { font-size:26px; font-weight:700; line-height:1; padding:6px 12px; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+  .brand .clock .sec { font-size:16px; }
+
+  /* --- who's showing --- */
+  /* Sized to sit level with the clock so the header stays one strip. The selected person's colour
+     rides the whole control, which is the cheapest way to make "this page is yours" read at a glance. */
+  .who-pick { --who:var(--signal); position:relative; display:inline-flex; align-items:center; gap:8px;
+              background:var(--card); border:1px solid var(--who); border-radius:99px; padding:0 4px 0 9px; height:41px; }
+  .who-pick .who-dot { width:17px; height:17px; border-radius:50%; background:var(--who); flex:none; box-shadow:0 0 0 2px rgba(0,0,0,.25) inset; }
+  .who-pick select { appearance:none; -webkit-appearance:none; font-family:var(--sans); font-size:17px; font-weight:800;
+                     letter-spacing:-.02em; color:var(--ink); background:transparent; border:0; outline:none;
+                     padding:0 26px 0 0; height:100%; cursor:pointer; max-width:min(46vw,220px); }
+  .who-pick select:focus-visible { outline:2px solid var(--signal); outline-offset:3px; border-radius:8px; }
+  .who-pick::after { content:"▾"; position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--who); font-size:14px; }
+  /* Greeting fills the empty left half of the progress row instead of taking a row of its own. */
+  .head-right { flex:1 1 380px; min-width:0; }
+  .head-meta { width:100%; justify-content:space-between; }
+  .who-hi { flex:1 1 auto; text-align:left; font-size:13.5px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .who-hi b { color:var(--ink); }
+
+  /* --- goals for today + end-of-day countdown --- */
+  .goals { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+  .dayclock { background:linear-gradient(140deg,#3D1B2E 0%,#180C13 70%); border:1px solid #5C2A45; border-radius:12px;
+              padding:11px 13px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
+  .dayclock .dc-left { flex:1; min-width:0; }
+  .dayclock .dc-lab { font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#9C7086; }
+  .dayclock .dc-time { font-family:var(--mono); font-size:27px; font-weight:800; line-height:1.05; color:var(--signal-dim); font-variant-numeric:tabular-nums; }
+  .dayclock.over .dc-time { font-size:19px; color:var(--muted); }
+  .dayclock.soon .dc-time { color:var(--star); }
+  .dayclock .dc-end { font-size:11.5px; color:#DCB8CB; margin-top:3px; }
+  .dayclock .dc-end .editable { color:#F8ECF3; }
+  .dayclock .dc-ring { width:52px; height:52px; flex:none; border-radius:50%; display:grid; place-items:center;
+                       font-family:var(--mono); font-size:12px; font-weight:700; color:#F8ECF3;
+                       background:conic-gradient(var(--signal) calc(var(--pct,0) * 1%), rgba(255,255,255,.10) 0); }
+  .dayclock .dc-ring i { display:grid; place-items:center; width:40px; height:40px; border-radius:50%; background:#180C13; font-style:normal; }
+  .goal-list { display:flex; flex-direction:column; gap:6px; }
+  .goal-row { display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface-2); }
+  .goal-row.done { opacity:.5; } .goal-row.done .goal-text { text-decoration:line-through; color:var(--muted); }
+  .goal-text { flex:1; font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .goal-who { flex:none; }
+  .goal-del { color:var(--muted-2); background:none; border:none; cursor:pointer; font-size:14px; }
+  .goal-del:hover { color:var(--alarm); }
+
+  /* --- home kid status cards (read-only mirror of the Money page) --- */
+  .bankstrip { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-bottom:16px; }
+  .bankcard { --who:var(--signal); display:flex; flex-direction:column; gap:3px; text-align:left; width:100%;
+              background:var(--card); border:1px solid var(--line); border-left:5px solid var(--who);
+              border-radius:12px; padding:11px 13px; box-shadow:var(--shadow); cursor:pointer; color:var(--ink); font:inherit; }
+  .bankcard:hover { border-color:var(--signal-dim); }
+  .bankcard:focus-visible { outline:2px solid var(--signal); outline-offset:2px; }
+  .bankcard.focused { border-color:var(--who); box-shadow:0 0 0 1px var(--who), var(--shadow); }
+  .bankcard .bc-name { display:flex; align-items:baseline; gap:7px; font-size:15px; font-weight:800; letter-spacing:-.01em; }
+  .bankcard .bc-name .dot { width:11px; height:11px; border-radius:50%; background:var(--who); flex:none; align-self:center; }
+  .bankcard .bc-amt { margin-left:auto; font-family:var(--mono); font-size:20px; font-weight:800; letter-spacing:-.02em; }
+  .bankcard .bc-status { font-size:12.5px; color:var(--muted); }
+  .bankcard .bc-approve { font-size:12px; font-weight:700; color:var(--star); }
+  .bankcard.pending { border-color:var(--star); }
+  .bankcard .bc-goal { display:block; margin-top:5px; }
+  .bankcard .bc-goal .bar { display:block; width:100%; height:6px; }
+  .bankcard .bc-goal-lab { display:flex; justify-content:space-between; gap:8px; font-size:10.5px; color:var(--muted-2); margin-top:4px; }
+
+  /* ============================================================
+     MONEY PAGE (#funds)
+     Same shell language as the Clothing page: .fn-* mirrors .cl-*.
+     ============================================================ */
+  .funds-wrap { max-width:1160px; margin:0 auto; padding:20px 20px 80px; }
+  .fn-top { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+  .fn-top-left { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .fn-page-title { font-size:30px; margin:0; letter-spacing:-.03em; font-weight:800; }
+  .fn-top-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .fn-notice { font-size:11.5px; color:var(--muted-2); border:1px dashed var(--line); border-radius:10px; padding:8px 11px; margin-bottom:14px; }
+
+  .fn-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin-bottom:18px; }
+  .fn-acct { --who:var(--signal); background:var(--card); border:1px solid var(--line); border-top:5px solid var(--who);
+             border-radius:14px; padding:14px; box-shadow:var(--shadow); }
+  .fn-acct-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .fn-acct-name { font-size:19px; font-weight:800; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
+  .fn-acct-name .dot { width:14px; height:14px; border-radius:50%; background:var(--who); flex:none; }
+  .fn-balance { font-family:var(--mono); font-size:38px; font-weight:800; letter-spacing:-.03em; margin:6px 0 2px; }
+  .fn-balance.neg { color:var(--alarm); }
+  .fn-sub { font-size:11.5px; color:var(--muted-2); }
+  .fn-goal { margin-top:11px; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); }
+  .fn-goal-top { display:flex; justify-content:space-between; gap:10px; align-items:baseline; font-size:12.5px; }
+  .fn-goal-top b { font-size:13.5px; }
+  .fn-goal .bar { width:100%; margin-top:7px; }
+  .fn-goal-note { font-size:10.5px; color:var(--muted-2); margin-top:5px; }
+  .fn-owe { margin-top:10px; padding:9px 10px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); font-size:12.5px; }
+  .fn-owe.debt { border-color:var(--alarm); }
+  .fn-owe.credit { border-color:#23B877; }
+  .fn-owe b { font-family:var(--mono); }
+  .fn-acct-actions { display:flex; gap:7px; flex-wrap:wrap; margin-top:11px; }
+  .fn-pending-flag { font-size:11.5px; color:var(--star); margin-top:9px; font-weight:600; }
+
+  .fn-section { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); margin-bottom:16px; }
+  .fn-section-head { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:11px; }
+  .fn-section-title { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-2); }
+
+  .fn-jobs { display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:9px; }
+  .fn-job { display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left; background:var(--surface-2);
+            border:1px solid var(--line); border-radius:12px; padding:11px 12px; cursor:pointer; color:var(--ink); font:inherit; }
+  .fn-job:hover { border-color:var(--signal-dim); }
+  .fn-job:focus-visible { outline:2px solid var(--signal); outline-offset:2px; }
+  .fn-job .fj-emoji { font-size:22px; line-height:1.1; }
+  .fn-job .fj-name { font-size:13.5px; font-weight:700; }
+  .fn-job .fj-amt { font-family:var(--mono); font-size:15px; font-weight:800; color:#23B877; }
+  .fn-job.disabled { opacity:.45; cursor:default; }
+
+  .fn-request { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 11px; border:1px solid var(--star);
+                border-radius:10px; background:var(--surface-2); margin-bottom:8px; }
+  .fn-request .fr-main { flex:1; min-width:150px; }
+  .fn-request .fr-title { font-size:14px; font-weight:700; }
+  .fn-request .fr-meta { font-size:11.5px; color:var(--muted-2); }
+  .fn-request .fr-amt { font-family:var(--mono); font-size:17px; font-weight:800; color:var(--star); }
+
+  .fn-filter-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:11px; }
+  .fn-table-wrap { overflow-x:auto; }
+  .fn-table { width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+  .fn-table th { text-align:left; font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+                 color:var(--muted-2); border-bottom:1px solid var(--line); padding:0 8px 7px; font-weight:600; }
+  .fn-table td { padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .fn-table td.money { font-family:var(--mono); font-weight:700; text-align:right; white-space:nowrap; }
+  .fn-table td.money.pos { color:#23B877; }
+  .fn-table td.money.neg { color:var(--alarm); }
+  .fn-tag { display:inline-block; font-size:10.5px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em;
+            border:1px solid var(--line); border-radius:99px; padding:2px 8px; color:var(--muted); }
+  .fn-tag.pending { border-color:var(--star); color:var(--star); }
+  .fn-row-actions { display:flex; gap:6px; justify-content:flex-end; }
+
+  .fn-stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:18px; }
+  .fn-stat { background:var(--card); border:1px solid var(--line); border-radius:11px; padding:11px 12px; box-shadow:var(--shadow); }
+  .fn-stat-value { font-family:var(--mono); font-size:21px; font-weight:800; letter-spacing:-.02em; }
+  .fn-stat-label { font-size:10.5px; color:var(--muted-2); margin-top:2px; }
+
+  @media (max-width:700px){
+    .funds-wrap { padding:14px 12px 60px; }
+    .fn-top-actions { width:100%; }
+    .fn-top-actions .btn { flex:1; }
+    .fn-table { min-width:0; display:block; }
+    .fn-table thead { display:none; }
+    .fn-table tbody, .fn-table tr, .fn-table td { display:block; width:100%; }
+    .fn-table tr { border:1px solid var(--line); border-radius:9px; padding:8px 10px; margin-bottom:8px; background:var(--surface-2); }
+    .fn-table td { border:0; padding:3px 0; }
+    .fn-table td::before { content:attr(data-label); display:inline-block; min-width:86px; color:var(--muted-2); font-family:var(--mono); font-size:9px; text-transform:uppercase; }
+    .fn-table td.money { text-align:left; }
+    .fn-row-actions { justify-content:flex-start; margin-top:5px; }
+  }
+
+  @media (max-width:640px){
+    .brand { width:100%; justify-content:space-between; }
+    .brand-day { font-size:22px; }
+    .brand .clock { font-size:21px; padding:5px 10px; }
+    .brand .clock .sec { font-size:13px; }
+    .brand { row-gap:8px; }
+    .who-pick { height:38px; }
+    .who-pick select { font-size:16px; max-width:44vw; }
+    .who-hi { flex-basis:100%; order:-1; white-space:normal; }
+    .bankstrip { grid-template-columns:1fr; gap:8px; }
+    .bankcard .bc-amt { font-size:19px; }
+    .fn-page-title { font-size:24px; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap" id="homeWrap">
 
+  <!-- Header, 1.16-beta: the "Home" title was pure decoration on a page you are already looking at.
+       Removing it lets the date read as the headline and puts the clock beside it, so the whole
+       strip is one line instead of a title block plus a separate meta column. -->
   <header class="top">
     <div class="brand">
-      <h1>Home</h1>
-      <div><div class="eyebrow">Family day planner</div><div class="datestr" id="datestr"></div></div>
+      <div class="brand-date">
+        <span class="brand-day" id="datestrDay"></span>
+        <span class="datestr" id="datestr"></span>
+      </div>
+      <div class="clock" id="clock">--:--<span class="sec">:--</span></div>
+      <!-- The person selector lives IN the header strip, not in a bar of its own. A whole page row
+           for one control was the clutter this replaced; here it costs no vertical space at all. -->
+      <span class="who-pick" id="whoPick"></span>
     </div>
     <div class="head-right">
       <nav class="mainnav" aria-label="Main">
         <button class="navbtn" id="calendarBtn"><span class="navbtn-icon" aria-hidden="true">📅</span>Calendar</button>
         <button class="navbtn" id="agendaBtn"><span class="navbtn-icon" aria-hidden="true">🗒</span>Agenda</button>
+        <button class="navbtn" id="fundsBtn"><span class="navbtn-icon" aria-hidden="true">💰</span>Money</button>
         <button class="navbtn" id="clothingBtn"><span class="navbtn-icon" aria-hidden="true">👕</span>Clothing</button>
       </nav>
       <div class="head-meta">
-        <div class="clock" id="clock">--:--<span class="sec">:--</span></div>
+        <span class="who-hi" id="whoHi"></span>
         <div class="progress-wrap">
           <div class="progress-top"><span class="eyebrow">Today</span><span class="progress-count" id="progressCount">0 of 0 done</span><span class="overdue-chip" id="overdueChip"></span></div>
           <div class="bar"><span id="progressBar"></span></div>
@@ -792,6 +991,10 @@
   <!-- Sign-in state. Only shown when there is something to act on: signed out, or signed in with an
        account the database rules don't allow. Silent once sync is healthy. -->
   <div class="auth-notice hidden" id="authNotice"></div>
+
+  <!-- Opened by the "Edit family…" choice at the bottom of the header dropdown, so it appears just
+       under the control that summoned it. -->
+  <div class="people-editor hidden" id="peopleEditor"></div>
 
   <div class="nextup empty" id="nextup"></div>
 
@@ -821,15 +1024,18 @@
     </div>
   </div>
 
-  <div class="peoplebar" id="peoplebar"></div>
-  <div class="people-editor hidden" id="peopleEditor"></div>
+  <!-- Bank balances, read-only mirror of the Money page. Tapping a card opens it. -->
+  <div class="bankstrip" id="bankStrip"></div>
 
   <div class="panels">
     <div>
       <div class="toolbar">
         <div class="quickadd"><span class="plus">+</span><input id="quickInput" type="text" placeholder="Add to the day, then Enter…" aria-label="Quick add"></div>
         <button class="btn add" id="addBtn">+ Add</button>
-        <input class="search" id="searchInput" type="text" placeholder="Search…">
+        <!-- Search is hidden, not deleted: the day list is short enough to read, and the box was
+             costing a toolbar slot on phones. currentView() still reads it, so restoring it is
+             one attribute. Same treatment Quick Notes and Before You Leave already got. -->
+        <input class="search hidden" id="searchInput" type="text" placeholder="Search…">
         <select class="ctrl" id="sortBy" aria-label="Sort">
           <option value="time">Sort: Time</option>
           <option value="priority">Sort: Priority</option>
@@ -853,7 +1059,18 @@
         <div class="note-list" id="noteList"></div>
       </div>
 
-      <div class="places">
+      <!-- Goals for today: what replaced Places to go on Home. Places still exist as data and still
+           feed Calendar, Agenda and Print — only the Home panel is hidden, the same way Quick Notes
+           and Before You Leave were retired in 1.13-beta. -->
+      <div class="goals">
+        <div class="panel-title">Goals for today <span class="shop-count" id="goalCount"></span></div>
+        <div class="dayclock" id="dayClock"></div>
+        <div class="add-inline"><span class="plus">+</span><input id="goalInput" type="text" placeholder="One goal for today, then Enter…" aria-label="Add a goal for today"></div>
+        <div class="goal-list" id="goalList"></div>
+        <div class="shop-foot"><span class="shop-count" id="goalStatus"></span><button class="shop-clear" id="goalClear">Clear finished</button></div>
+      </div>
+
+      <div class="places hidden">
         <div class="panel-title">Places to go <span class="shop-count" id="placeCount"></span></div>
         <div class="add-inline"><span class="plus">+</span><input id="placeInput" type="text" placeholder="Add a place, then Enter…" aria-label="Add place"></div>
         <div class="place-list" id="placeList"></div>
@@ -895,6 +1112,55 @@
   </section>
 
   <p class="hint" id="hint"></p>
+</div>
+
+<!-- =====================================================================
+     MONEY PAGE — the kids' bank. Replaces the Chore-Bot subscription the family
+     stopped using once the kids logged out on new phones.
+     Deliberately ONE currency with the Clothing module (real dollars, no points),
+     so this does not become the parallel reward currency the product charter
+     rules out. Money earned here is the money that pays clothing bills.
+     ===================================================================== -->
+<div class="funds-wrap hidden" id="fundsPage">
+  <header class="fn-top">
+    <div class="fn-top-left"><button class="btn sm" id="fnBackBtn">← Back to Home</button><h1 class="fn-page-title">💰 Money</h1></div>
+    <div class="fn-top-actions">
+      <button class="btn add" id="fnNewEntryBtn">+ Record money</button>
+      <button class="btn sm" id="fnJobsBtn">Edit jobs</button>
+      <button class="btn sm" id="fnSettingsBtn">Settings</button>
+    </div>
+  </header>
+  <div class="fn-notice">Parent approval here is a household workflow, not secure sign-in. Anyone with this planner open can view or change money records.</div>
+
+  <div class="fn-grid" id="fnAccounts"></div>
+
+  <section class="fn-section">
+    <div class="fn-section-head"><span class="fn-section-title">Waiting for a parent</span><span class="shop-count" id="fnRequestCount"></span></div>
+    <div id="fnRequestQueue"></div>
+  </section>
+
+  <section class="fn-section">
+    <div class="fn-section-head"><span class="fn-section-title">Jobs you can do</span><span class="shop-count" id="fnJobsHint"></span></div>
+    <div class="fn-filter-row"><select class="ctrl" id="fnJobPerson" aria-label="Who is doing the job"></select></div>
+    <div class="fn-jobs" id="fnJobList"></div>
+  </section>
+
+  <div class="fn-stat-grid" id="fnStatGrid"></div>
+
+  <section class="fn-section">
+    <div class="fn-section-head"><span class="fn-section-title">Money history</span><span class="shop-count" id="fnLedgerCount"></span></div>
+    <div class="fn-filter-row">
+      <select class="ctrl" id="fnPersonFilter" aria-label="Filter history by person"></select>
+      <select class="ctrl" id="fnTypeFilter" aria-label="Filter history by kind">
+        <option value="all">All money</option>
+        <option value="in">Money in</option>
+        <option value="out">Money out</option>
+        <option value="pending">Waiting for approval</option>
+        <option value="clothing">Clothing transfers</option>
+      </select>
+    </div>
+    <div class="fn-table-wrap"><table class="fn-table"><thead><tr><th>Date</th><th>Who</th><th>What</th><th>Kind</th><th>Amount</th><th>Balance after</th><th></th></tr></thead><tbody id="fnLedgerBody"></tbody></table></div>
+  </section>
 </div>
 
 <div class="clothing-wrap hidden" id="clothingPage">
@@ -1011,7 +1277,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.15-beta";
+const VERSION = "1.16-beta";
 
 /* ---------------- storage ---------------- */
 /* Firebase does not store empty arrays: writing places:[] deletes the key outright. Every
@@ -1025,6 +1291,7 @@ const VERSION = "1.15-beta";
 const PAYLOAD_V=2;
 const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_DATES_TITLE="home.dates-title.v1", K_DATES_COLLAPSED="home.dates-collapsed.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1", K_CUSTODY="home.custodyDays.v1";
 const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1", K_CLOTHING_SETTLEMENTS="home.clothingSettlements.v1";
+const K_FUNDS_LEDGER="home.fundsLedger.v1", K_FUNDS_SETTINGS="home.fundsSettings.v1", K_GOALS="home.goals.v1", K_DAY_PLAN="home.dayPlan.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
@@ -1050,6 +1317,20 @@ function saveClothing(){
   }catch(e){}
   pushCloud();
 }
+/* Kids' money. Ledger and settings are one financial unit for the same reason clothing's are:
+   an approval flips a ledger row's status while a settings change can create the next allowance
+   row, so they must never be half-written. One debounced cloud push covers both. */
+function saveFunds(){
+  try{
+    localStorage.setItem(K_FUNDS_LEDGER,JSON.stringify(fundsLedger));
+    localStorage.setItem(K_FUNDS_SETTINGS,JSON.stringify(fundsSettings));
+  }catch(e){}
+  pushCloud();
+}
+/* Goals and the end-of-day clock are shared household facts, not device preferences — a goal set on
+   Dad's laptop has to show up on the kids' phones, and the day-end time is one family rule. */
+function saveGoals(){ try{ localStorage.setItem(K_GOALS, JSON.stringify(goals)); }catch(e){} pushCloud(); }
+function saveDayPlan(){ try{ localStorage.setItem(K_DAY_PLAN, JSON.stringify(dayPlan)); }catch(e){} pushCloud(); }
 
 /* Device-local preferences — deliberately never synced through Firebase, never included in the
    cloud payload, and never touched by import, so each device/browser keeps its own. */
@@ -1180,7 +1461,7 @@ function onCloudError(err){
 function hasLocalPlannerData(){
   return !!(tasks.length || shop.length || places.length || importantDates.length || notes.length ||
             beforeYouLeave.length || calendarExclusions.length || Object.keys(custodyDays).length || clothingPurchases.length ||
-            clothingWalletLedger.length || clothingSettlements.length);
+            clothingWalletLedger.length || clothingSettlements.length || fundsLedger.length || goals.length);
 }
 function applyFamilySnapshot(snap){
       const v=snap.val();
@@ -1208,11 +1489,22 @@ function applyFamilySnapshot(snap){
       if(Array.isArray(v.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(v.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(v.clothingSettings && typeof v.clothingSettings==="object" && !Array.isArray(v.clothingSettings)) clothingSettings=migrateClothingSettings(v.clothingSettings);
       { const x=listOrEmpty(v.clothingSettlements,migrateClothingSettlement); if(x) clothingSettlements=x; }
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_DATES_TITLE,JSON.stringify(datesTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CUSTODY,JSON.stringify(custodyDays)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); }catch(e){}
+      /* Money: same shape and same protective rule as the clothing pair above — the ledger is a
+         list (so `full` payloads may legitimately empty it), the settings object is only replaced
+         when the cloud actually carries one. */
+      { const x=listOrEmpty(v.fundsLedger,migrateFundEntry); if(x) fundsLedger=dedupeFundEntries(x); }
+      if(v.fundsSettings && typeof v.fundsSettings==="object" && !Array.isArray(v.fundsSettings)) fundsSettings=migrateFundsSettings(v.fundsSettings);
+      { const x=listOrEmpty(v.goals,migrateGoal); if(x) goals=x.filter(g=>g.text!==""); }
+      if(v.dayPlan && typeof v.dayPlan==="object" && !Array.isArray(v.dayPlan)) dayPlan=normalizeDayPlan(v.dayPlan);
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_DATES_TITLE,JSON.stringify(datesTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CUSTODY,JSON.stringify(custodyDays)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); localStorage.setItem(K_FUNDS_LEDGER,JSON.stringify(fundsLedger)); localStorage.setItem(K_FUNDS_SETTINGS,JSON.stringify(fundsSettings)); localStorage.setItem(K_GOALS,JSON.stringify(goals)); localStorage.setItem(K_DAY_PLAN,JSON.stringify(dayPlan)); }catch(e){}
       remoteApplying=false;
       const migratedPayer=applyCheckoutPayerMigration();
       const deposited=ensureMonthlyClothingDeposits();
       if(migratedPayer||deposited) saveClothing();
+      /* Allowance rows are created by whichever device opens the app first on/after the allowance
+         day. Deterministic ids (allowance:<person>:<date>) make that idempotent, so two devices
+         racing produce one row, not two. */
+      if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
       /* A cloud record created before Kids Schedule has no custodyDays key. Preserve this device's
          existing local schedule and seed that new field instead of silently leaving it local-only. */
       if(!cloudHasCustody && Object.keys(custodyDays).length) saveCustody();
@@ -1227,7 +1519,7 @@ function pushCloud(force){
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
      protects future fields added the same way, but v1.4 tabs must still be closed/refreshed — see report. */
-  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,datesTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,payloadV:PAYLOAD_V,updated:Date.now()}); }catch(e){} }, 250);
+  pushTimer=setTimeout(()=>{ try{ db.update({people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,datesTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,fundsLedger,fundsSettings,goals,dayPlan,payloadV:PAYLOAD_V,updated:Date.now()}); }catch(e){} }, 250);
 }
 function updateSyncBadge(){
   const el=document.getElementById("syncBadge"); if(!el) return;
@@ -1665,6 +1957,311 @@ function deleteErroneousClothingPurchase(id,note){
 }
 function clothingPurchaseTotals(p){ const actual=effectiveParentContribution(p), childBase=Math.max(0,p.pricePaid-actual); return {parent:actual+p.parentTaxContribution+p.parentShippingContribution,child:childBase+p.childTaxContribution+p.childShippingContribution,total:p.pricePaid+p.tax+p.shipping}; }
 
+/* =====================================================================
+   KIDS' MONEY — the bank behind the Money page.
+
+   Why this exists: the household paid for Chore-Bot for years, the kids logged
+   out on new phones, and the balances stopped being tracked at all. This is the
+   replacement, in the planner the family already opens.
+
+   The product charter rules out "chores with a points/rewards currency" because
+   a second currency would compete with Clothing. This is NOT that: there is one
+   currency here, real dollars, and it is the SAME money the Clothing module
+   spends. Doing a job earns dollars; those dollars pay the clothing bill. The
+   two modules share a boundary rather than duplicating one.
+
+   Shape:
+     fundsLedger    append-mostly rows, signed cents. balance = sum of approved.
+     fundsSettings  per-child config (allowance, savings goal) + the job menu.
+   Nothing is derived and stored twice — the balance is always recomputed.
+   ===================================================================== */
+const FUNDS_VERSION="1.0";
+
+/* Row kinds. `dir` is what the UI offers; the stored amount is always signed, so a reader that has
+   never seen this table still sums the ledger correctly. */
+const FUND_KINDS={
+  opening:            {label:"Starting balance",  dir:"in"},
+  allowance:          {label:"Allowance",         dir:"in"},
+  job:                {label:"Job done",          dir:"in"},
+  gift:               {label:"Gift",              dir:"in"},
+  deposit:            {label:"Cash added",        dir:"in"},
+  "clothing-refund":  {label:"Clothing payback",  dir:"in"},
+  spend:              {label:"Spent",             dir:"out"},
+  "clothing-wallet":  {label:"To clothing wallet",dir:"out"},
+  "clothing-bill":    {label:"Clothing bill paid",dir:"out"},
+  adjustment:         {label:"Correction",        dir:"any"},
+};
+const FUND_KIND_CLOTHING=new Set(["clothing-refund","clothing-wallet","clothing-bill"]);
+/* Kinds that exist only as one half of a linked clothing transaction. They are created and removed
+   through the transfer helpers below, never through the plain "Record money" editor, because a
+   lone half would silently disagree with the Clothing page. */
+function fundKindLabel(k){ return (FUND_KINDS[k]||{}).label || k; }
+
+const DEFAULT_FUND_JOBS=[
+  {id:"job-dishes",  emoji:"🍽️", name:"Dishes / kitchen",  amountCents:200, active:true},
+  {id:"job-trash",   emoji:"🗑️", name:"Trash + recycling", amountCents:100, active:true},
+  {id:"job-laundry", emoji:"🧺", name:"Laundry load",      amountCents:200, active:true},
+  {id:"job-room",    emoji:"🛏️", name:"Room properly clean",amountCents:300, active:true},
+  {id:"job-vacuum",  emoji:"🧹", name:"Vacuum a floor",    amountCents:250, active:true},
+  {id:"job-bath",    emoji:"🧼", name:"Bathroom",          amountCents:300, active:true},
+  {id:"job-dog",     emoji:"🐾", name:"Feed / walk pet",   amountCents:100, active:true},
+  {id:"job-extra",   emoji:"⭐️", name:"Extra help (ask first)",amountCents:500, active:true},
+];
+const WEEKDAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+/* Who gets an account. Same rule as clothing participants — everyone who isn't named as an adult
+   role — with the same explicit per-person override so the parent can correct it either way. */
+function isFundsParticipant(person){
+  if(!person||person.fundsParticipant===false) return false;
+  if(person.fundsParticipant===true) return true;
+  return !CLOTHING_ADULT_ROLE_NAMES.has(String(person.name||"").trim().toLowerCase());
+}
+function blankFundsPerson(personId){
+  const person=people.find(p=>p.id===personId);
+  return {enabled:isFundsParticipant(person), weeklyAllowanceCents:0, allowanceDay:0, goalLabel:"", goalCents:0};
+}
+function migrateFundsPerson(raw,personId){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const c=Object.assign(blankFundsPerson(personId),src);
+  c.enabled=c.enabled!==false;
+  c.weeklyAllowanceCents=nonNegativeInt(c.weeklyAllowanceCents,0);
+  c.allowanceDay=clampInt(c.allowanceDay,0,6);
+  c.goalLabel=String(c.goalLabel||"").slice(0,60);
+  c.goalCents=nonNegativeInt(c.goalCents,0);
+  return c;
+}
+function migrateFundJob(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  return { id:String(src.id||uid("job")), emoji:String(src.emoji||"⭐").slice(0,4),
+           name:String(src.name||"Job").slice(0,48), amountCents:nonNegativeInt(src.amountCents,0),
+           active:src.active!==false };
+}
+function blankFundsSettings(){ return {version:FUNDS_VERSION, people:{}, jobs:DEFAULT_FUND_JOBS.map(migrateFundJob), jobsSeeded:true}; }
+function migrateFundsSettings(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const s=Object.assign(blankFundsSettings(),src);
+  s.version=FUNDS_VERSION;
+  const rawPeople=(src.people&&typeof src.people==="object"&&!Array.isArray(src.people))?src.people:{};
+  s.people={}; Object.keys(rawPeople).forEach(id=>{ s.people[id]=migrateFundsPerson(rawPeople[id],id); });
+  /* An empty job menu is a real choice (a family can delete every job), so only seed the defaults
+     for a settings object that has never been written — tracked by jobsSeeded, not by length. */
+  if(Array.isArray(src.jobs)) s.jobs=src.jobs.map(migrateFundJob);
+  else if(!src.jobsSeeded) s.jobs=DEFAULT_FUND_JOBS.map(migrateFundJob);
+  s.jobsSeeded=true;
+  return s;
+}
+function fundsPersonSettings(personId){
+  if(!fundsSettings.people[personId]) fundsSettings.people[personId]=blankFundsPerson(personId);
+  return fundsSettings.people[personId];
+}
+function ensureFundsPersonSettings(){ let changed=false; people.forEach(p=>{ if(!fundsSettings.people[p.id]){ fundsSettings.people[p.id]=blankFundsPerson(p.id); changed=true; } }); return changed; }
+
+function blankFundEntry(){ const now=Date.now(); return {id:uid("fn"),personId:"",date:todayStr(),kind:"job",amount:0,note:"",jobId:"",linkId:"",periodKey:"",status:"approved",created:now,updated:now}; }
+function migrateFundEntry(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const e=Object.assign(blankFundEntry(),src);
+  if(typeof e.id!=="string"||!e.id) e.id=uid("fn");
+  e.personId=String(e.personId||"");
+  if(!FUND_KINDS[e.kind]) e.kind="adjustment";
+  e.amount=finiteInt(e.amount,0);
+  e.note=String(e.note||"").slice(0,140);
+  e.jobId=String(e.jobId||""); e.linkId=String(e.linkId||""); e.periodKey=String(e.periodKey||"");
+  if(!["approved","pending"].includes(e.status)) e.status="approved";
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date||"")) e.date=todayStr();
+  e.created=Number.isFinite(e.created)?e.created:Date.now();
+  e.updated=Number.isFinite(e.updated)?e.updated:e.created;
+  return e;
+}
+/* Two devices can each create the same allowance row while offline. Deterministic ids make that a
+   duplicate rather than a double payment, and periodKey is a second guard for rows whose id was
+   rewritten by an old import. Newest `updated` wins, matching dedupeClothingLedger. */
+function dedupeFundEntries(entries){
+  const byId=new Map(), periodSeen=new Set();
+  entries.forEach(e=>{
+    if(!e||!e.id) return;
+    if(e.periodKey){ if(periodSeen.has(e.periodKey)) return; periodSeen.add(e.periodKey); }
+    if(!byId.has(e.id)||byId.get(e.id).updated<e.updated) byId.set(e.id,e);
+  });
+  return [...byId.values()];
+}
+function fundEntry(id){ return fundsLedger.find(e=>e.id===id); }
+function addFundEntry(fields){
+  const e=migrateFundEntry(Object.assign(blankFundEntry(),fields||{}));
+  if(!e.personId) return null;
+  if(fundEntry(e.id)) return null;
+  fundsLedger.push(e); return e;
+}
+function fundsAccounts(){ return people.filter(p=>isFundsParticipant(p) && fundsPersonSettings(p.id).enabled); }
+function fundsBalance(personId){ return fundsLedger.filter(e=>e.personId===personId&&e.status==="approved").reduce((s,e)=>s+finiteInt(e.amount,0),0); }
+function fundsPendingTotal(personId){ return fundsLedger.filter(e=>e.personId===personId&&e.status==="pending").reduce((s,e)=>s+Math.abs(finiteInt(e.amount,0)),0); }
+function fundsPendingRequests(){
+  const ids=new Set(fundsAccounts().map(p=>p.id));
+  return fundsLedger.filter(e=>e.status==="pending"&&ids.has(e.personId))
+    .sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.created||0)-(b.created||0));
+}
+function fundsEarnedSince(personId, sinceYmd){
+  return fundsLedger.filter(e=>e.personId===personId&&e.status==="approved"&&e.amount>0&&(e.date||"")>=sinceYmd)
+    .reduce((s,e)=>s+e.amount,0);
+}
+function fundsPersonName(e){ const cur=people.find(p=>p.id===e.personId); return cur?cur.name:"Former family member"; }
+function fundsSortedLedger(){
+  return fundsLedger.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.created||0)-(a.created||0));
+}
+/* Running balance for the history table, computed oldest-first then read back by id. Only approved
+   rows move it, so a pending request shows a dash rather than a balance it hasn't caused yet. */
+function fundsRunningBalances(){
+  const running={}, out={};
+  fundsLedger.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.created||0)-(b.created||0))
+    .forEach(e=>{ if(e.status!=="approved") return; running[e.personId]=(running[e.personId]||0)+finiteInt(e.amount,0); out[e.id]=running[e.personId]; });
+  return out;
+}
+
+/* Weekly allowance. Deposited by whichever device opens the app on or after the allowance weekday;
+   the id encodes the person and that week's payday date, so opening it on four devices creates one
+   row. Never backfills missed weeks — money that was not tracked was not paid. */
+function lastWeekdayOnOrBefore(dow){
+  const d=new Date(); d.setDate(d.getDate()-((d.getDay()-clampInt(dow,0,6)+7)%7));
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+}
+function ensureWeeklyAllowances(){
+  let changed=false;
+  people.forEach(person=>{
+    const cfg=fundsPersonSettings(person.id);
+    if(!isFundsParticipant(person)||!cfg.enabled||cfg.weeklyAllowanceCents<=0) return;
+    const date=lastWeekdayOnOrBefore(cfg.allowanceDay), periodKey=`allowance:${person.id}:${date}`;
+    if(fundsLedger.some(e=>e.periodKey===periodKey)) return;
+    addFundEntry({id:periodKey,personId:person.id,date,kind:"allowance",amount:cfg.weeklyAllowanceCents,periodKey,
+                  note:`Allowance for the week of ${fmtDate(date)}`,status:"approved"});
+    changed=true;
+  });
+  return changed;
+}
+
+/* ---------------- job requests (the Chore-Bot loop) ----------------
+   A child taps a job, which files a request. A parent approves it, which is the moment the money
+   becomes real. Requests carry the amount as it was when the job was done, so re-pricing a job
+   later never silently changes what an already-finished job pays. */
+function requestJobPayout(personId, jobId){
+  const job=fundsSettings.jobs.find(j=>j.id===jobId);
+  if(!job||!job.active) return {ok:false,error:"That job is not available."};
+  if(!fundsAccounts().some(p=>p.id===personId)) return {ok:false,error:"Pick whose job this is first."};
+  addFundEntry({personId,date:todayStr(),kind:"job",amount:job.amountCents,jobId:job.id,
+                note:`${job.emoji} ${job.name}`,status:"pending"});
+  saveFunds(); return {ok:true};
+}
+function approveFundRequest(id){
+  const e=fundEntry(id); if(!e||e.status!=="pending") return false;
+  e.status="approved"; e.updated=Date.now(); saveFunds(); return true;
+}
+function declineFundRequest(id){
+  const e=fundEntry(id); if(!e||e.status!=="pending") return false;
+  fundsLedger=fundsLedger.filter(x=>x.id!==id); saveFunds(); return true;
+}
+/* Undo. Linked clothing rows are refused here on purpose: deleting one half would leave the
+   Clothing page disagreeing with the bank, and there is no honest way to guess which side is right. */
+function removeFundEntry(id){
+  const e=fundEntry(id); if(!e) return {ok:false,error:"That entry is gone."};
+  if(e.linkId) return {ok:false,error:"This is half of a clothing transfer. Reverse it with a new transfer instead."};
+  fundsLedger=fundsLedger.filter(x=>x.id!==id); saveFunds(); return {ok:true};
+}
+
+/* ---------------- the Clothing bridge ----------------
+   The Clothing module keeps two deliberately separate quantities:
+     clothingWalletLedger  = how much SUBSIDY BUDGET is left (parent's money to spend on them)
+     clothingSettlement    = real cash owed between child and parent (+ = child owes parent)
+   The bank therefore talks to each one on its own terms rather than through one generic "transfer".
+   Every bridge writes both halves under one linkId and saves both modules together.
+
+   There is no wallet -> bank direction. Wallet money is the parent's clothing subsidy; converting it
+   to spendable cash would defeat the point of a clothing-only budget. */
+function bankToClothingWallet(personId, cents, note){
+  const amount=nonNegativeInt(cents,0);
+  if(!personId||amount<=0) return {ok:false,error:"Enter an amount above $0."};
+  if(amount>fundsBalance(personId)) return {ok:false,error:`Only ${money(fundsBalance(personId))} is in the bank.`};
+  const linkId=uid("lnk"), name=getPerson(personId).name, today=todayStr();
+  addFundEntry({personId,date:today,kind:"clothing-wallet",amount:-amount,linkId,status:"approved",
+                note:note||"Added own money to clothing wallet"});
+  addClothingLedgerEntry({id:`bank-transfer:${linkId}`,personId,date:today,type:"bank-transfer",amount,
+                          description:`${name} added ${money(amount)} of their own money`,parentNote:note||""});
+  saveFunds(); saveClothing(); return {ok:true};
+}
+function bankPaysClothingBill(personId, cents, note){
+  const amount=nonNegativeInt(cents,0), owed=clothingSettlementBalance(personId);
+  if(owed<=0) return {ok:false,error:"Nothing is owed on clothing right now."};
+  if(amount<=0) return {ok:false,error:"Enter an amount above $0."};
+  if(amount>owed) return {ok:false,error:`Only ${money(owed)} is owed.`};
+  if(amount>fundsBalance(personId)) return {ok:false,error:`Only ${money(fundsBalance(personId))} is in the bank.`};
+  const linkId=uid("lnk"), today=todayStr();
+  addFundEntry({personId,date:today,kind:"clothing-bill",amount:-amount,linkId,status:"approved",
+                note:note||"Paid clothing bill from the bank"});
+  addClothingSettlement({id:`bank-settle:${linkId}`,personId,date:today,amount,direction:"child-to-parent",
+                         note:note||"Paid from bank"});
+  saveFunds(); saveClothing(); return {ok:true};
+}
+function clothingRefundToBank(personId, cents, note){
+  const amount=nonNegativeInt(cents,0), credit=-clothingSettlementBalance(personId);
+  if(credit<=0) return {ok:false,error:"Nothing is owed back right now."};
+  if(amount<=0||amount>credit) return {ok:false,error:`Enter an amount up to ${money(credit)}.`};
+  const linkId=uid("lnk"), today=todayStr();
+  addFundEntry({personId,date:today,kind:"clothing-refund",amount,linkId,status:"approved",
+                note:note||"Clothing money paid back into the bank"});
+  addClothingSettlement({id:`bank-refund:${linkId}`,personId,date:today,amount,direction:"parent-to-child",
+                         note:note||"Paid into bank"});
+  saveFunds(); saveClothing(); return {ok:true};
+}
+
+/* =====================================================================
+   GOALS FOR TODAY + THE END-OF-DAY CLOCK
+   A goal is deliberately NOT a task status. It is the one or two things you
+   want out of today, it is written and cleared inside the same day, and it must
+   never dilute the task progress bar or Up Next. Rows older than 14 days are
+   pruned on load so this stays a scratch surface, not an archive.
+   ===================================================================== */
+const DEFAULT_DAY_END="20:30";
+function blankGoal(text){ return {id:uid("g"),text:text||"",done:false,date:todayStr(),people:[],created:Date.now(),updated:Date.now()}; }
+function migrateGoal(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const g=Object.assign(blankGoal(),src);
+  if(typeof g.id!=="string"||!g.id) g.id=uid("g");
+  g.text=String(g.text||"").trim().slice(0,120);
+  g.done=!!g.done;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(g.date||"")) g.date=todayStr();
+  g.people=normPeople(g.people);
+  g.created=Number.isFinite(g.created)?g.created:Date.now();
+  g.updated=Number.isFinite(g.updated)?g.updated:g.created;
+  return g;
+}
+function pruneOldGoals(){
+  const cutoff=addDaysStr(todayStr(),-14), before=goals.length;
+  goals=goals.filter(g=>(g.date||"")>=cutoff);
+  return goals.length!==before;
+}
+function goalPersonVisible(g){
+  if(activePerson==="all") return true;
+  const ids=normPeople(g.people);
+  if(!ids.length||ids.includes("family")) return true;   // unassigned goals belong to the whole house
+  return ids.includes(activePerson);
+}
+function todaysGoals(){ const ts=todayStr(); return goals.filter(g=>g.date===ts).sort((a,b)=>((a.done?1:0)-(b.done?1:0))||(a.created-b.created)); }
+function visibleGoals(){ return todaysGoals().filter(goalPersonVisible); }
+
+function normalizeDayPlan(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const t=/^\d{2}:\d{2}$/.test(src.dayEndTime||"")?src.dayEndTime:DEFAULT_DAY_END;
+  return {dayEndTime:t, updated:Number.isFinite(src.updated)?src.updated:Date.now()};
+}
+/* Milliseconds until today's end time. Past it, the value goes negative and the panel switches to a
+   "day's over" reading rather than rolling to tomorrow — tomorrow's countdown starts at midnight. */
+function dayEndDelta(){
+  const m=localMoment(todayStr(), dayPlan.dayEndTime);
+  return m ? m.getTime()-Date.now() : 0;
+}
+function fmtCountdownClock(ms){
+  const total=Math.max(0,Math.floor(ms/1000));
+  const h=Math.floor(total/3600), m=Math.floor(total/60)%60, s=total%60;
+  return h ? `${h}:${pad2(m)}:${pad2(s)}` : `${m}:${pad2(s)}`;
+}
+
 /* ---------------- important dates ---------------- */
 /* Stored separately from tasks — never appear in the task list, never affect progress/overdue/Up Next.
    Structure is deliberately calendar-shaped (startDate/endDate/startTime/endTime) so a future full
@@ -1858,6 +2455,16 @@ let clothingSettlements=(Array.isArray(clothingSettlementsRaw)?clothingSettlemen
    the same call in the Firebase receive handler covers data arriving from another device. */
 if(applyCheckoutPayerMigration()) saveClothing();
 
+/* Money, goals and the day clock. Loaded after clothing because the bridge helpers read clothing
+   state, and after people because account defaults are derived from names. */
+let fundsSettings = migrateFundsSettings(loadJSON(K_FUNDS_SETTINGS)||{});
+const fundsLedgerRaw = loadJSON(K_FUNDS_LEDGER);
+let fundsLedger = dedupeFundEntries((Array.isArray(fundsLedgerRaw)?fundsLedgerRaw:[]).map(migrateFundEntry));
+const goalsRaw = loadJSON(K_GOALS);
+let goals = (Array.isArray(goalsRaw)?goalsRaw:[]).map(migrateGoal).filter(g=>g.text!=="");
+let dayPlan = normalizeDayPlan(loadJSON(K_DAY_PLAN)||{});
+if(pruneOldGoals()) saveGoals();
+
 /* ---------------- state ---------------- */
 let editingId=null, placeEditingId=null, dateEditingId=null, overdueSet=new Set();
 /* Restore this browser/device's last-selected family filter; fall back to Everyone ("all") if the
@@ -1870,7 +2477,7 @@ let pendingRemoteRender=false;
 /* "calendar" (month grid) and "agenda" are separate destinations that share one page shell,
    one data model and one filter bar — only the body renderer differs. */
 let currentPage="home"; // always opens on Home; never persisted, matching today's load behavior
-const PAGE_HASHES=["#calendar","#agenda","#clothing"];
+const PAGE_HASHES=["#calendar","#agenda","#clothing","#funds"];
 function isCalendarSurface(){ return currentPage==="calendar"||currentPage==="agenda"; }
 function defaultCalState(){ return {
   monthCursor: todayStr().slice(0,7), // "YYYY-MM"
@@ -1887,6 +2494,7 @@ function showHomePage(){
   document.getElementById("homeWrap").classList.remove("hidden");
   document.getElementById("calendarPage").classList.add("hidden");
   document.getElementById("clothingPage").classList.add("hidden");
+  document.getElementById("fundsPage").classList.add("hidden");
   render(); // Calendar-triggered edits only refresh Calendar's own DOM while it's the active page;
             // refresh Home here so it's never stale when the user switches back to it.
   if(PAGE_HASHES.includes(location.hash)) history.replaceState(null,"",location.pathname+location.search);
@@ -1900,6 +2508,7 @@ function showCalendarSurface(page,hash){
   if(page!=="calendar") exitCustodyPaint();
   document.getElementById("homeWrap").classList.add("hidden");
   document.getElementById("clothingPage").classList.add("hidden");
+  document.getElementById("fundsPage").classList.add("hidden");
   document.getElementById("calendarPage").classList.remove("hidden");
   renderCalendarPage();
   if(location.hash!==hash) history.replaceState(null,"",hash);
@@ -1908,15 +2517,23 @@ function showCalendarPage(){ showCalendarSurface("calendar","#calendar"); }
 function showAgendaPage(){ showCalendarSurface("agenda","#agenda"); }
 function showClothingPage(){
   currentPage="clothing"; closeActiveEdit(true); exitCustodyPaint();
-  document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("clothingPage").classList.remove("hidden");
+  document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("fundsPage").classList.add("hidden"); document.getElementById("clothingPage").classList.remove("hidden");
   renderClothingPage();
   if(location.hash!=="#clothing") history.replaceState(null,"","#clothing");
+}
+function showFundsPage(){
+  currentPage="funds"; closeActiveEdit(true); exitCustodyPaint();
+  document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("clothingPage").classList.add("hidden"); document.getElementById("fundsPage").classList.remove("hidden");
+  renderFundsPage();
+  if(location.hash!=="#funds") history.replaceState(null,"","#funds");
 }
 document.getElementById("calendarBtn").addEventListener("click", showCalendarPage);
 document.getElementById("agendaBtn").addEventListener("click", showAgendaPage);
 document.getElementById("calBackBtn").addEventListener("click", showHomePage);
 document.getElementById("clothingBtn").addEventListener("click", showClothingPage);
 document.getElementById("clBackBtn").addEventListener("click", showHomePage);
+document.getElementById("fundsBtn").addEventListener("click", showFundsPage);
+document.getElementById("fnBackBtn").addEventListener("click", showHomePage);
 
 /* Generic modal shell for Calendar-triggered full editors (date/task/place) and the School Import
    workflow — same overlay/focus-trap/Escape/restore-focus pattern as the existing Print Center
@@ -2170,6 +2787,16 @@ function pastDatesSorted(){
 
 /* ---------------- next up ---------------- */
 function personVisible(t){ if(activePerson==="all") return true; if(isFamilyTask(t)) return true; return taskPeopleIds(t).includes(activePerson); }
+/* Same rule for anything that carries a people[] list but isn't a task: unassigned means household,
+   so it stays visible for everyone. Used by Home's glanceable surfaces (countdowns, the dates strip)
+   so choosing a child narrows the page to them. "View all" deliberately stays complete — nothing
+   should ever become unreachable just because a filter is set. */
+function datePersonVisible(d){
+  if(activePerson==="all") return true;
+  const ids=normPeople(d&&d.people);
+  if(!ids.length||ids.includes("family")) return true;
+  return ids.includes(activePerson);
+}
 /* Up Next = soonest FUTURE timed task today. Missed (past-time) tasks are flagged in their row, not here. */
 function computeNextUp(){
   const nm=nowMin();
@@ -2245,6 +2872,8 @@ function currentView(){
 function render(){
   normalizeLater();
   renderPeopleBar();
+  renderBankStrip();
+  renderGoals();
   renderNotes();
   renderShop();
   renderPlaces();
@@ -2283,6 +2912,7 @@ function render(){
      funnels through render(), so this one line is the entire integration point Calendar needs. */
   if(isCalendarSurface()) renderCalendarPage();
   if(currentPage==="clothing") renderClothingPage();
+  if(currentPage==="funds") renderFundsPage();
 }
 
 function renderProgress(){
@@ -2293,15 +2923,97 @@ function renderProgress(){
   const oc=document.getElementById("overdueChip"); if(oc) oc.textContent = over ? `⚠ ${over} overdue` : "";
 }
 
+/* One line of encouragement, sized for a phone. When a child is selected this is the only place on
+   Home that addresses them by name, which is the whole point of the dropdown: the page becomes
+   theirs. Reads live state every render, so it is never stale. */
+function whoHighlightHtml(){
+  const goalsLeft=visibleGoals().filter(g=>!g.done).length;
+  if(activePerson==="all"){
+    const left=tasks.filter(t=>isActive(t)&&isToday(t)).length;
+    const bits=[`<b>${left}</b> thing${left===1?"":"s"} left today`];
+    if(goalsLeft) bits.push(`<b>${goalsLeft}</b> goal${goalsLeft===1?"":"s"} to go`);
+    const waiting=fundsPendingRequests().length;
+    if(waiting) bits.push(`<b>${waiting}</b> job${waiting===1?"":"s"} to approve`);
+    return bits.join(" · ");
+  }
+  const p=getPerson(activePerson);
+  const left=tasks.filter(t=>isActive(t)&&isToday(t)&&personVisible(t)).length;
+  const bits=[left?`<b>${left}</b> left today`:`nothing left today 🎉`];
+  if(goalsLeft) bits.push(`<b>${goalsLeft}</b> goal${goalsLeft===1?"":"s"}`);
+  if(isFundsParticipant(p)&&fundsPersonSettings(p.id).enabled) bits.push(`<b>${money(fundsBalance(p.id))}</b> in the bank`);
+  return `Hi ${esc(p.name)} — ` + bits.join(" · ");
+}
+/* A dropdown in the header strip, not a row of chips and not a bar of its own. Four chips plus an
+   Edit button was the widest block on Home and grew with the family; this is one control that costs
+   no vertical space, sits level with the clock, and takes the selected person's colour. "Edit
+   family…" is the last option rather than a separate button, so the control stays one thing.
+   The choice is remembered per device by saveActiveProfile(). */
 function renderPeopleBar(){
-  const bar=document.getElementById("peoplebar");
-  const chip=(id,name,color,all,count)=>`<button class="pfilter ${all?'all':''} ${activePerson===id?'active':''}" data-p="${id}">${all?'':`<span class="dot" style="background:${color}"></span>`}${esc(name)}${(!all&&count)?` (${count})`:''}</button>`;
-  let html=chip("all","Everyone","",true,0);
-  people.forEach(p=>html+=chip(p.id,p.name,p.color,false,personCount(p.id)));
-  html+=`<button class="btn sm pb-edit" id="pbEdit">Edit family</button>`;
-  bar.innerHTML=html;
-  bar.querySelectorAll(".pfilter").forEach(b=>b.addEventListener("click",()=>{ activePerson=b.dataset.p; saveActiveProfile(); render(); }));
-  document.getElementById("pbEdit").addEventListener("click",togglePeopleEditor);
+  const pick=document.getElementById("whoPick"); if(!pick) return;
+  const sel=getPerson(activePerson);
+  pick.style.setProperty("--who", activePerson==="all" ? "var(--signal)" : sel.color);
+  const opt=(id,label,count)=>`<option value="${esc(id)}" ${activePerson===id?"selected":""}>${esc(label)}${count?` (${count})`:""}</option>`;
+  pick.innerHTML=`<span class="who-dot" aria-hidden="true"></span><select id="whoSelect" aria-label="Whose day is showing">${
+      opt("all","Everyone",0)+people.map(p=>opt(p.id,p.name,personCount(p.id))).join("")
+    }<option value="__edit">Edit family…</option></select>`;
+  pick.querySelector("#whoSelect").addEventListener("change",e=>{
+    /* "Edit family…" is an action, not a selection — snap the value back before opening the editor
+       so the header never claims the family list is the person being viewed. */
+    if(e.target.value==="__edit"){ e.target.value=activePerson; togglePeopleEditor(); return; }
+    activePerson=e.target.value; saveActiveProfile(); render();
+  });
+  const hi=document.getElementById("whoHi"); if(hi) hi.innerHTML=whoHighlightHtml();
+}
+
+/* Per-kid status cards on Home — the parent's at-a-glance board.
+   Balances alone answered "how much money", which is not the question a parent opens Home with.
+   Each card now carries the whole kid: what's left today, goals, anything waiting for approval, and
+   how their savings goal is going. Tapping one focuses Home on that kid; tapping it again goes back
+   to Everyone, so checking on all three is three taps and no dropdown.
+
+   Money is still read-only here. Every way to CHANGE money lives on the Money page, so Home can
+   never become a second editor that disagrees with it.
+
+   Shows a card for every child, not just every account: a kid whose bank account is switched off
+   still has tasks and goals worth seeing, they just have no balance to show. */
+function personTodayCount(pid){ return tasks.filter(t=>isActive(t)&&isToday(t)&&(isFamilyTask(t)||taskPeopleIds(t).includes(pid))).length; }
+function personGoalCount(pid){
+  const ts=todayStr();
+  return goals.filter(g=>{
+    if(g.date!==ts||g.done) return false;
+    const ids=normPeople(g.people);
+    return !ids.length||ids.includes("family")||ids.includes(pid);
+  }).length;
+}
+function renderBankStrip(){
+  const el=document.getElementById("bankStrip"); if(!el) return;
+  const list=people.filter(isFundsParticipant).filter(p=>activePerson==="all"||p.id===activePerson);
+  if(!list.length){ el.innerHTML=""; el.classList.add("hidden"); return; }
+  el.classList.remove("hidden");
+  el.innerHTML=list.map(p=>{
+    const cfg=fundsPersonSettings(p.id), hasAccount=cfg.enabled;
+    const bal=fundsBalance(p.id), pend=fundsPendingTotal(p.id);
+    const left=personTodayCount(p.id), goalsLeft=personGoalCount(p.id);
+    const status = left
+      ? `${left} left today · ${goalsLeft} goal${goalsLeft===1?"":"s"}`
+      : (goalsLeft ? `Tasks done · ${goalsLeft} goal${goalsLeft===1?"":"s"} to go` : "All done today 🎉");
+    const pct=cfg.goalCents>0?Math.max(0,Math.min(100,bal/cfg.goalCents*100)):0;
+    const goal=(hasAccount&&cfg.goalCents>0)?`<span class="bc-goal"><span class="bar"><span style="width:${pct}%"></span></span>
+        <span class="bc-goal-lab"><span>${esc(cfg.goalLabel||"Saving for")}</span><span>${Math.round(pct)}%</span></span></span>`:"";
+    const focused=activePerson===p.id;
+    return `<button class="bankcard ${pend>0?"pending":""} ${focused?"focused":""}" style="--who:${p.color}" data-id="${p.id}"
+        aria-pressed="${focused}" aria-label="${focused?`Show everyone again`:`Show only ${esc(p.name)}`}">
+      <span class="bc-name"><span class="dot" aria-hidden="true"></span>${esc(p.name)}${hasAccount?`<span class="bc-amt">${money(bal)}</span>`:""}</span>
+      <span class="bc-status">${esc(status)}</span>
+      ${pend>0?`<span class="bc-approve">⏳ ${money(pend)} to approve</span>`:""}
+      ${goal}</button>`;
+  }).join("");
+  /* Tap to focus, tap again to go back — the same control both ways, so a parent checking on three
+     kids never has to find the dropdown to get out again. */
+  el.querySelectorAll(".bankcard").forEach(b=>b.addEventListener("click",()=>{
+    activePerson = (activePerson===b.dataset.id) ? "all" : b.dataset.id;
+    saveActiveProfile(); render();
+  }));
 }
 
 function togglePeopleEditor(){ closeActiveEdit(true); const pe=document.getElementById("peopleEditor"); pe.classList.toggle("hidden"); if(!pe.classList.contains("hidden")) renderPeopleEditor(); }
@@ -2886,8 +3598,108 @@ document.getElementById("bylTitleReset").addEventListener("click",()=>{
    Reads pinned Important Dates rather than storing its own list, so a countdown date still appears
    in Calendar, print, and the date cards — there is no second place to maintain. A date drops out of
    this panel on its own once it has passed, so nothing needs cleaning up after the fact. */
+/* ---------------- goals for today + end-of-day clock ---------------- */
+/* The clock shell is built once and then patched by tick(), for the same reason the date countdowns
+   are: rebuilding it every second would destroy the end-time input the moment anyone touched it. */
+function renderDayClock(){
+  const el=document.getElementById("dayClock"); if(!el) return;
+  if(el.dataset.built!=="1"){
+    el.innerHTML=`<div class="dc-left">
+        <div class="dc-lab" id="dcLab">Time left today</div>
+        <div class="dc-time" id="dcTime">--:--</div>
+        <div class="dc-end">Day ends at <input type="time" class="editable" id="dayEndInput" aria-label="Time the day ends"></div>
+      </div>
+      <div class="dc-ring" id="dcRing"><i id="dcRingText">–</i></div>`;
+    const inp=el.querySelector("#dayEndInput");
+    /* Committed on change, not on every keystroke: a native time input fires change once the value
+       is complete, so a half-typed "1" never becomes the family's day-end rule. */
+    inp.addEventListener("change",()=>{
+      if(!/^\d{2}:\d{2}$/.test(inp.value)){ inp.value=dayPlan.dayEndTime; return; }
+      dayPlan.dayEndTime=inp.value; dayPlan.updated=Date.now(); saveDayPlan(); updateDayClockTick();
+    });
+    el.dataset.built="1";
+  }
+  const inp=el.querySelector("#dayEndInput");
+  if(inp && document.activeElement!==inp && inp.value!==dayPlan.dayEndTime) inp.value=dayPlan.dayEndTime;
+  updateDayClockTick();
+}
+function updateDayClockTick(){
+  const el=document.getElementById("dayClock"); if(!el||el.dataset.built!=="1") return;
+  const ms=dayEndDelta(), over=ms<=0, soon=!over&&ms<=60*60*1000;
+  el.classList.toggle("over",over); el.classList.toggle("soon",soon);
+  el.querySelector("#dcLab").textContent = over ? "Today is done" : (soon ? "Last hour of the day" : "Time left today");
+  el.querySelector("#dcTime").textContent = over ? `${fmtCountdownClock(-ms)} past` : fmtCountdownClock(ms);
+  /* Ring = share of the day (midnight to the day-end time) still ahead. Needs no extra setting and
+     matches what the number above it says, which is the only thing it has to agree with. */
+  const endMin=timeToMin(dayPlan.dayEndTime)||0, leftMin=Math.max(0,Math.round(ms/60000));
+  const pct=endMin>0?Math.max(0,Math.min(100,leftMin/endMin*100)):0;
+  const ring=el.querySelector("#dcRing"); ring.style.setProperty("--pct",pct.toFixed(1));
+  el.querySelector("#dcRingText").textContent = over ? "0h" : `${Math.max(0,Math.floor(leftMin/60))}h`;
+}
+function wireInlineGoalText(node, goalId){
+  node.classList.add("editable"); node.tabIndex=0; node.setAttribute("role","button"); node.setAttribute("aria-label","Edit goal");
+  function open(){
+    if(isEditingField("goal",goalId,"text")) return;
+    const g=goals.find(x=>x.id===goalId); if(!g) return;
+    startInlineText({ type:"goal", id:goalId, field:"text", container:node, value:g.text, required:true, ariaLabel:"Goal",
+      getEntity:()=>goals.find(x=>x.id===goalId),
+      onCommit:(entity,v)=>{ entity.text=v; entity.updated=Date.now(); saveGoals(); }, onDone:renderGoals });
+  }
+  node.addEventListener("click",open);
+  node.addEventListener("keydown",e=>{ if(e.target!==node) return; if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+}
+function renderGoalRow(g){
+  const row=document.createElement("div"); row.className="goal-row"+(g.done?" done":""); row.dataset.id=g.id;
+  /* Only show a person chip when a goal actually belongs to someone — an unassigned goal is a
+     household goal, and an empty "-" pill on every row is noise on a phone. */
+  const who=(activePerson==="all"&&normPeople(g.people).length)?peopleChipsHtml(g.people):"";
+  row.innerHTML=`<input type="checkbox" class="cbx" ${g.done?"checked":""} aria-label="Goal reached">`+
+    `<span class="goal-text" id="gr-text">${esc(g.text)}</span>`+
+    (who?`<span class="goal-who">${who}</span>`:"")+
+    `<button class="goal-del" title="Remove">✕</button>`;
+  row.querySelector(".cbx").addEventListener("change",e=>{
+    const cur=goals.find(x=>x.id===g.id); if(!cur) return;
+    const wasDone=cur.done; cur.done=e.target.checked; cur.updated=Date.now(); saveGoals();
+    if(e.target.checked&&!wasDone) playCompletionSound();
+    renderGoals();
+  });
+  wireInlineGoalText(row.querySelector("#gr-text"), g.id);
+  row.querySelector(".goal-del").addEventListener("click",()=>{ if(confirm("Remove this goal?")){ goals=goals.filter(x=>x.id!==g.id); saveGoals(); renderGoals(); } });
+  return row;
+}
+function renderGoals(){
+  renderDayClock();
+  const el=document.getElementById("goalList"); if(!el) return;
+  const list=visibleGoals(), left=list.filter(g=>!g.done).length, done=list.length-left;
+  el.innerHTML="";
+  if(!list.length){
+    const who=activePerson==="all"?"today":`for ${esc(getPerson(activePerson).name)} today`;
+    el.innerHTML=`<div class="dates-empty">No goals ${who} yet. What is the one thing worth finishing?</div>`;
+  }
+  list.forEach(g=>el.appendChild(renderGoalRow(g)));
+  document.getElementById("goalCount").textContent=list.length?`${left} to go`:"";
+  document.getElementById("goalStatus").textContent=`${left} to go · ${done} reached`;
+  const clear=document.getElementById("goalClear"); clear.disabled=!done; clear.classList.toggle("hidden",!done);
+  /* Placeholder names whoever is selected, so a kid's phone reads as an invitation rather than a form. */
+  const input=document.getElementById("goalInput");
+  input.placeholder = activePerson==="all" ? "One goal for today, then Enter…" : `One goal for ${getPerson(activePerson).name} today, then Enter…`;
+}
+/* A goal added while a child is selected is assigned to that child — the same "what you see is what
+   you are adding to" rule the person filter implies everywhere else on Home. */
+document.getElementById("goalInput").addEventListener("keydown",e=>{
+  if(e.key!=="Enter") return;
+  const v=e.target.value.trim(); if(!v) return;
+  const g=blankGoal(v); if(activePerson!=="all") g.people=[activePerson];
+  goals.push(g); e.target.value=""; saveGoals(); renderGoals();
+});
+document.getElementById("goalClear").addEventListener("click",()=>{
+  const ids=new Set(visibleGoals().filter(g=>g.done).map(g=>g.id));
+  if(!ids.size) return;
+  goals=goals.filter(g=>!ids.has(g.id)); saveGoals(); renderGoals();
+});
+
 function pinnedCountdownDates(){
-  return importantDates.filter(d=>d.countdownPinned&&d.startDate&&!isPastDate(d))
+  return importantDates.filter(d=>d.countdownPinned&&d.startDate&&!isPastDate(d)&&datePersonVisible(d))
     .sort((a,b)=>(a.startDate||"").localeCompare(b.startDate||"")||(a.startTime||"").localeCompare(b.startTime||""));
 }
 /* Live countdown split. Counts to the real moment (the date's start time, or midnight when it is an
@@ -3032,8 +3844,8 @@ function renderDatesQuick(){
   /* The strip is now an explicit shortlist, not a feed. Only dates marked important appear here, so
      routine school entries stop claiming the top of the screen just for existing. Everything else
      is still one tap away under View all, where it can be starred in. */
-  const list=activeDatesSorted().filter(d=>d.homePinned);
-  const totalUpcoming=activeDatesSorted().length;
+  const list=activeDatesSorted().filter(d=>d.homePinned&&datePersonVisible(d));
+  const totalUpcoming=activeDatesSorted().filter(datePersonVisible).length;
   let show=pickHomeCards(list,3);
   /* While the View All panel is open, IT is the exclusive host for the full editor — never duplicate
      it here too. Only pull the in-progress edit into the quick view when View All is closed. */
@@ -4188,6 +5000,329 @@ function openClothingSettingsModal(){
 }
 document.getElementById("clHelpBtn").addEventListener("click",()=>openClothingHelpModal(0)); document.getElementById("clNewPurchaseBtn").addEventListener("click",()=>openClothingPurchaseModal()); document.getElementById("clCalculatorBtn").addEventListener("click",()=>openClothingPurchaseModal(null,{calculator:true})); document.getElementById("clSettingsBtn").addEventListener("click",openClothingSettingsModal);
 
+/* =====================================================================
+   MONEY PAGE RENDERING
+   Reuses the Clothing page's modal shell (openClModal / closeClModal) rather
+   than growing a second one: identical overlay, focus trap, Escape and
+   restore-focus behaviour, and editingActive() already knows about it.
+   ===================================================================== */
+function fundsPersonOptions(selected, allLabel){
+  const head=allLabel?`<option value="all" ${selected==="all"?"selected":""}>${esc(allLabel)}</option>`:"";
+  return head+fundsAccounts().map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.name)}</option>`).join("");
+}
+function fundKindOptions(selected){
+  /* Clothing kinds are omitted: they only exist as one half of a linked transfer and are created by
+     the bridge helpers, never typed in by hand. */
+  return Object.entries(FUND_KINDS).filter(([k])=>!FUND_KIND_CLOTHING.has(k))
+    .map(([k,v])=>`<option value="${k}" ${k===selected?"selected":""}>${esc(v.label)}</option>`).join("");
+}
+function fundsClothingOweHtml(personId){
+  const net=clothingSettlementBalance(personId), unclassified=clothingUnclassifiedCount(personId);
+  const gap=unclassified?`<div class="fn-goal-note">${unclassified} clothing purchase${unclassified===1?"":"s"} has no checkout payer yet — not counted here.</div>`:"";
+  if(net>0) return `<div class="fn-owe debt">Owes Dad <b>${money(net)}</b> for clothing.${gap}</div>`;
+  if(net<0) return `<div class="fn-owe credit">Dad owes <b>${money(-net)}</b> back for clothing.${gap}</div>`;
+  return `<div class="fn-owe">Clothing is settled up.${gap}</div>`;
+}
+function renderFundsAccounts(){
+  const el=document.getElementById("fnAccounts"), list=fundsAccounts();
+  if(!list.length){
+    el.innerHTML=`<div class="empty-state"><div class="big">No accounts yet.</div>Open Settings to give a child a bank account.</div>`;
+    return;
+  }
+  const weekStart=addDaysStr(todayStr(),-6);
+  el.innerHTML=list.map(p=>{
+    const cfg=fundsPersonSettings(p.id), bal=fundsBalance(p.id), pend=fundsPendingTotal(p.id), week=fundsEarnedSince(p.id,weekStart);
+    const pct=cfg.goalCents>0?Math.max(0,Math.min(100,bal/cfg.goalCents*100)):0;
+    const short=Math.max(0,cfg.goalCents-bal);
+    const goal=cfg.goalCents>0
+      ? `<div class="fn-goal"><div class="fn-goal-top"><b>${esc(cfg.goalLabel||"Saving for")}</b><span>${money(bal)} of ${money(cfg.goalCents)}</span></div>
+           <div class="bar"><span style="width:${pct}%"></span></div>
+           <div class="fn-goal-note">${short>0?`${money(short)} to go — ${Math.round(pct)}% there`:"Goal reached! 🎉"}</div></div>`
+      : `<div class="fn-goal"><div class="fn-goal-top"><b>No savings goal yet</b></div><div class="fn-goal-note">Set one in Settings — a target makes the balance mean something.</div></div>`;
+    const allowance=cfg.weeklyAllowanceCents>0?`${money(cfg.weeklyAllowanceCents)} every ${WEEKDAY_NAMES[cfg.allowanceDay]}`:"No allowance set";
+    return `<article class="fn-acct" style="--who:${p.color}">
+      <div class="fn-acct-top"><span class="fn-acct-name"><span class="dot" aria-hidden="true"></span>${esc(p.name)}</span></div>
+      <div class="fn-balance ${bal<0?"neg":""}">${money(bal)}</div>
+      <div class="fn-sub">${esc(allowance)} · ${week>0?`+${money(week)} earned this week`:"nothing earned this week"}</div>
+      ${pend>0?`<div class="fn-pending-flag">⏳ ${money(pend)} waiting for a parent to approve</div>`:""}
+      ${goal}
+      ${fundsClothingOweHtml(p.id)}
+      <div class="fn-acct-actions">
+        <button class="btn sm fn-add" data-id="${p.id}">+ Money</button>
+        <button class="btn sm fn-spend" data-id="${p.id}">– Spent</button>
+        <button class="btn sm fn-to-wallet" data-id="${p.id}">→ Clothing wallet</button>
+        <button class="btn sm fn-pay" data-id="${p.id}">Pay clothing bill</button>
+      </div></article>`;
+  }).join("");
+  el.querySelectorAll(".fn-add").forEach(b=>b.addEventListener("click",()=>openFundEntryModal({personId:b.dataset.id,kind:"deposit"})));
+  el.querySelectorAll(".fn-spend").forEach(b=>b.addEventListener("click",()=>openFundEntryModal({personId:b.dataset.id,kind:"spend"})));
+  el.querySelectorAll(".fn-to-wallet").forEach(b=>b.addEventListener("click",()=>openClothingTransferModal(b.dataset.id)));
+  el.querySelectorAll(".fn-pay").forEach(b=>b.addEventListener("click",()=>openClothingBillModal(b.dataset.id)));
+}
+function renderFundsRequests(){
+  const queue=fundsPendingRequests(), el=document.getElementById("fnRequestQueue");
+  document.getElementById("fnRequestCount").textContent=queue.length?`${queue.length} waiting`:"";
+  if(!queue.length){ el.innerHTML=`<div class="dates-empty">Nothing waiting. Jobs the kids mark done show up here for approval.</div>`; return; }
+  el.innerHTML=queue.map(e=>`<div class="fn-request" data-id="${e.id}">
+      <div class="fr-main"><div class="fr-title">${esc(fundsPersonName(e))} — ${esc(e.note||fundKindLabel(e.kind))}</div>
+        <div class="fr-meta">Marked done ${esc(fmtDate(e.date))}</div></div>
+      <span class="fr-amt">${money(e.amount)}</span>
+      <button class="btn add fn-approve" data-id="${e.id}">Approve</button>
+      <button class="btn sm fn-decline" data-id="${e.id}">Decline</button>
+    </div>`).join("");
+  el.querySelectorAll(".fn-approve").forEach(b=>b.addEventListener("click",()=>{ if(approveFundRequest(b.dataset.id)){ playCompletionSound(); render(); } }));
+  el.querySelectorAll(".fn-decline").forEach(b=>b.addEventListener("click",()=>{
+    const e=fundEntry(b.dataset.id); if(!e) return;
+    if(confirm(`Decline “${e.note||fundKindLabel(e.kind)}” for ${fundsPersonName(e)}? Nothing is paid.`)){ declineFundRequest(b.dataset.id); render(); }
+  }));
+}
+function renderFundsJobs(){
+  const sel=document.getElementById("fnJobPerson"), prev=sel.value;
+  const accounts=fundsAccounts();
+  sel.innerHTML=fundsPersonOptions(prev||"", null);
+  if(accounts.length && ![...sel.options].some(o=>o.value===prev)) sel.value=accounts[0].id;
+  const active=fundsSettings.jobs.filter(j=>j.active), el=document.getElementById("fnJobList");
+  document.getElementById("fnJobsHint").textContent=accounts.length?"Tap one when it's done":"Add an account first";
+  if(!active.length){ el.innerHTML=`<div class="dates-empty">No jobs yet. Use “Edit jobs” to add what earns money here.</div>`; return; }
+  el.innerHTML=active.map(j=>`<button class="fn-job ${accounts.length?"":"disabled"}" data-id="${j.id}" ${accounts.length?"":"disabled"}>
+      <span class="fj-emoji" aria-hidden="true">${esc(j.emoji)}</span>
+      <span class="fj-name">${esc(j.name)}</span>
+      <span class="fj-amt">${money(j.amountCents)}</span></button>`).join("");
+  el.querySelectorAll(".fn-job").forEach(b=>b.addEventListener("click",()=>{
+    const personId=document.getElementById("fnJobPerson").value;
+    const r=requestJobPayout(personId,b.dataset.id);
+    if(!r.ok){ alert(r.error); return; }
+    playCompletionSound(); render();
+  }));
+}
+function filteredFundsLedger(){
+  const person=document.getElementById("fnPersonFilter").value, kind=document.getElementById("fnTypeFilter").value;
+  return fundsSortedLedger().filter(e=>{
+    if(person!=="all" && e.personId!==person) return false;
+    if(kind==="in") return e.status==="approved"&&e.amount>0;
+    if(kind==="out") return e.status==="approved"&&e.amount<0;
+    if(kind==="pending") return e.status==="pending";
+    if(kind==="clothing") return FUND_KIND_CLOTHING.has(e.kind);
+    return true;
+  });
+}
+function renderFundsLedger(){
+  const list=filteredFundsLedger(), running=fundsRunningBalances(), body=document.getElementById("fnLedgerBody");
+  document.getElementById("fnLedgerCount").textContent=`${list.length} entr${list.length===1?"y":"ies"}`;
+  if(!list.length){ body.innerHTML=`<tr><td colspan="7">Nothing recorded yet.</td></tr>`; return; }
+  body.innerHTML=list.map(e=>{
+    const cls=e.status!=="approved"?"":(e.amount>0?"pos":(e.amount<0?"neg":""));
+    const after=e.status==="approved"?money(running[e.id]||0):"—";
+    return `<tr data-id="${e.id}">
+      <td data-label="Date">${esc(fmtDate(e.date))}</td>
+      <td data-label="Who">${esc(fundsPersonName(e))}</td>
+      <td data-label="What">${esc(e.note||fundKindLabel(e.kind))}</td>
+      <td data-label="Kind"><span class="fn-tag ${e.status==="pending"?"pending":""}">${esc(e.status==="pending"?"Waiting":fundKindLabel(e.kind))}</span></td>
+      <td data-label="Amount" class="money ${cls}">${e.amount>0?"+":""}${money(e.amount)}</td>
+      <td data-label="Balance after" class="money">${after}</td>
+      <td data-label=""><div class="fn-row-actions">${
+        e.status==="pending"
+          ? `<button class="btn sm fn-row-approve" data-id="${e.id}">Approve</button><button class="btn sm fn-row-decline" data-id="${e.id}">Decline</button>`
+          : (e.linkId?`<span class="fn-tag">Linked</span>`:`<button class="btn sm fn-row-undo" data-id="${e.id}">Undo</button>`)
+      }</div></td></tr>`;
+  }).join("");
+  body.querySelectorAll(".fn-row-approve").forEach(b=>b.addEventListener("click",()=>{ if(approveFundRequest(b.dataset.id)){ playCompletionSound(); render(); } }));
+  body.querySelectorAll(".fn-row-decline").forEach(b=>b.addEventListener("click",()=>{ if(confirm("Decline this request? Nothing is paid.")){ declineFundRequest(b.dataset.id); render(); } }));
+  body.querySelectorAll(".fn-row-undo").forEach(b=>b.addEventListener("click",()=>{
+    const e=fundEntry(b.dataset.id); if(!e) return;
+    if(!confirm(`Remove “${e.note||fundKindLabel(e.kind)}” (${money(e.amount)}) from ${fundsPersonName(e)}'s history?`)) return;
+    const r=removeFundEntry(b.dataset.id); if(!r.ok){ alert(r.error); return; } render();
+  }));
+}
+function renderFundsPage(){
+  if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
+  renderFundsAccounts();
+  renderFundsRequests();
+  renderFundsJobs();
+  const accounts=fundsAccounts(), ids=new Set(accounts.map(p=>p.id));
+  const rows=fundsLedger.filter(e=>ids.has(e.personId)&&e.status==="approved");
+  const monthStart=todayStr().slice(0,7)+"-01", weekStart=addDaysStr(todayStr(),-6);
+  const total=accounts.reduce((s,p)=>s+fundsBalance(p.id),0);
+  const earnedMonth=rows.filter(e=>e.amount>0&&e.date>=monthStart).reduce((s,e)=>s+e.amount,0);
+  const spentMonth=rows.filter(e=>e.amount<0&&e.date>=monthStart).reduce((s,e)=>s-e.amount,0);
+  const jobsWeek=rows.filter(e=>e.kind==="job"&&e.date>=weekStart).length;
+  const toClothing=rows.filter(e=>FUND_KIND_CLOTHING.has(e.kind)&&e.amount<0).reduce((s,e)=>s-e.amount,0);
+  const waiting=fundsPendingRequests().reduce((s,e)=>s+Math.abs(e.amount),0);
+  const owedTotal=accounts.reduce((s,p)=>s+Math.max(0,clothingSettlementBalance(p.id)),0);
+  const stats=[[money(total),"In the bank"],[money(earnedMonth),"Earned this month"],[money(spentMonth),"Spent this month"],
+               [String(jobsWeek),"Jobs done this week"],[money(waiting),"Waiting to approve"],[money(toClothing),"Sent to clothing"],
+               [money(owedTotal),"Owed for clothing"]];
+  document.getElementById("fnStatGrid").innerHTML=stats.map(([v,l])=>`<div class="fn-stat"><div class="fn-stat-value">${esc(v)}</div><div class="fn-stat-label">${esc(l)}</div></div>`).join("");
+  const pf=document.getElementById("fnPersonFilter"), old=pf.value||"all";
+  pf.innerHTML=fundsPersonOptions(old,"Everyone");
+  pf.value=[...pf.options].some(o=>o.value===old)?old:"all";
+  renderFundsLedger();
+}
+
+/* ---------------- Money modals ---------------- */
+function openFundEntryModal(seed){
+  const s=seed||{}, accounts=fundsAccounts();
+  if(!accounts.length){ alert("Give someone a bank account in Settings first."); return; }
+  const personId=s.personId||accounts[0].id, kind=FUND_KINDS[s.kind]&&!FUND_KIND_CLOTHING.has(s.kind)?s.kind:"deposit";
+  openClModal(modal=>{
+    modal.innerHTML=`<h2>Record money</h2>
+      <div class="cl-modal-sub">Money in and money out, recorded straight away. Clothing transfers have their own buttons so both sides always agree.</div>
+      <div class="cl-form-grid">
+        <div class="cl-field"><label>Who</label><select id="feWho">${fundsPersonOptions(personId,null)}</select></div>
+        <div class="cl-field"><label>Kind</label><select id="feKind">${fundKindOptions(kind)}</select></div>
+        <div class="cl-field"><label>Amount</label><input id="feAmount" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="cl-field"><label>Date</label><input id="feDate" type="date" value="${esc(todayStr())}"></div>
+        <div class="cl-field full"><label>What was it for</label><input id="feNote" type="text" placeholder="Birthday money from Grandma, snacks at the game…"></div>
+      </div>
+      <div class="cl-warning" id="feHint"></div>
+      <div class="cl-error hidden" id="feError"></div>
+      <div class="cl-modal-actions"><button class="btn" id="feCancel">Cancel</button><button class="btn add" id="feSave">Record it</button></div>`;
+    const kindSel=modal.querySelector("#feKind"), hint=modal.querySelector("#feHint");
+    const paintHint=()=>{
+      const dir=(FUND_KINDS[kindSel.value]||{}).dir;
+      hint.textContent = dir==="out" ? "This comes OUT of the balance."
+        : dir==="in" ? "This goes INTO the balance."
+        : "A correction can go either way — use a negative amount to take money off.";
+      modal.querySelector("#feAmount").min = dir==="any" ? "" : "0";
+    };
+    kindSel.addEventListener("change",paintHint); paintHint();
+    modal.querySelector("#feCancel").addEventListener("click",closeClModal);
+    modal.querySelector("#feSave").addEventListener("click",()=>{
+      const err=modal.querySelector("#feError"), fail=m=>{ err.textContent=m; err.classList.remove("hidden"); };
+      const who=modal.querySelector("#feWho").value, k=kindSel.value;
+      const raw=Number(modal.querySelector("#feAmount").value);
+      const date=modal.querySelector("#feDate").value||todayStr();
+      const note=modal.querySelector("#feNote").value.trim();
+      if(!who) return fail("Pick who this is for.");
+      if(!Number.isFinite(raw)||raw===0) return fail("Enter an amount that isn't zero.");
+      const dir=(FUND_KINDS[k]||{}).dir;
+      if(dir!=="any" && raw<0) return fail("Enter a positive amount — the kind already decides the direction.");
+      const cents=Math.round(Math.abs(raw)*100)*(dir==="out"?-1:(dir==="any"?Math.sign(raw):1));
+      if(cents<0 && Math.abs(cents)>fundsBalance(who) && !confirm(`That takes ${getPerson(who).name} below zero. Record it anyway?`)) return;
+      addFundEntry({personId:who,date,kind:k,amount:cents,note:note||fundKindLabel(k),status:"approved"});
+      saveFunds(); closeClModal(); render();
+    });
+  });
+}
+function openClothingTransferModal(personId){
+  const bal=fundsBalance(personId), name=getPerson(personId).name, cfg=clothingPersonSettings(personId);
+  openClModal(modal=>{
+    modal.innerHTML=`<h2>${esc(name)} → clothing wallet</h2>
+      <div class="cl-modal-sub">Moves ${esc(name)}'s own money into their clothing wallet, so they can buy something Dad's monthly deposit doesn't cover. Bank balance: <b>${money(bal)}</b>. Wallet now: <b>${money(clothingBalance(personId))}</b>.</div>
+      <div class="cl-form-grid">
+        <div class="cl-field"><label>Amount to move</label><input id="ftAmount" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="cl-field full"><label>Note (optional)</label><input id="ftNote" type="text" placeholder="Saving up for the winter coat"></div>
+      </div>
+      <div class="cl-warning">This is one-way. Wallet money is for clothing only, so it cannot be moved back into the bank. The wallet maximum is ${money(cfg.walletMaximumCents)} — topping it up can make next month's parent deposit smaller.</div>
+      <div class="cl-error hidden" id="ftError"></div>
+      <div class="cl-modal-actions"><button class="btn" id="ftCancel">Cancel</button><button class="btn add" id="ftSave">Move the money</button></div>`;
+    modal.querySelector("#ftCancel").addEventListener("click",closeClModal);
+    modal.querySelector("#ftSave").addEventListener("click",()=>{
+      const err=modal.querySelector("#ftError");
+      const cents=parseMoneyToCents(modal.querySelector("#ftAmount").value);
+      const r=bankToClothingWallet(personId,cents,modal.querySelector("#ftNote").value.trim());
+      if(!r.ok){ err.textContent=r.error; err.classList.remove("hidden"); return; }
+      closeClModal(); render();
+    });
+  });
+}
+function openClothingBillModal(personId){
+  const name=getPerson(personId).name, net=clothingSettlementBalance(personId), bal=fundsBalance(personId);
+  openClModal(modal=>{
+    if(net===0){
+      modal.innerHTML=`<h2>${esc(name)} · clothing bill</h2><div class="cl-modal-sub">Nothing is owed either way right now.</div>
+        <div class="cl-modal-actions"><button class="btn" id="fbClose">Close</button></div>`;
+      modal.querySelector("#fbClose").addEventListener("click",closeClModal); return;
+    }
+    const owing=net>0, amount=Math.abs(net);
+    modal.innerHTML=`<h2>${esc(name)} · clothing bill</h2>
+      <div class="cl-modal-sub">${owing
+        ? `${esc(name)} owes Dad <b>${money(amount)}</b> for clothing they paid for at the register. Bank balance: <b>${money(bal)}</b>.`
+        : `Dad owes ${esc(name)} <b>${money(amount)}</b> back for clothing. Paying it here puts the money in their bank.`}</div>
+      <div class="cl-form-grid">
+        <div class="cl-field"><label>Amount</label><input id="fbAmount" type="number" min="0" step="0.01" value="${(Math.min(amount, owing?Math.max(0,bal):amount)/100).toFixed(2)}"></div>
+        <div class="cl-field full"><label>Note (optional)</label><input id="fbNote" type="text" placeholder="Paid ${owing?"to Dad":"into the bank"}"></div>
+      </div>
+      <div class="cl-warning">This writes to both the bank and the Clothing page's settlement record, so the two can never drift apart.</div>
+      <div class="cl-error hidden" id="fbError"></div>
+      <div class="cl-modal-actions"><button class="btn" id="fbCancel">Cancel</button><button class="btn add" id="fbSave">${owing?"Pay it":"Put it in the bank"}</button></div>`;
+    modal.querySelector("#fbCancel").addEventListener("click",closeClModal);
+    modal.querySelector("#fbSave").addEventListener("click",()=>{
+      const err=modal.querySelector("#fbError");
+      const cents=parseMoneyToCents(modal.querySelector("#fbAmount").value), note=modal.querySelector("#fbNote").value.trim();
+      const r=owing?bankPaysClothingBill(personId,cents,note):clothingRefundToBank(personId,cents,note);
+      if(!r.ok){ err.textContent=r.error; err.classList.remove("hidden"); return; }
+      closeClModal(); render();
+    });
+  });
+}
+function openFundsJobsModal(){
+  openClModal(modal=>{
+    const paint=()=>{
+      modal.innerHTML=`<h2>Jobs that earn money</h2>
+        <div class="cl-modal-sub">What a job pays is captured when a kid marks it done, so changing a price here never rewrites an already-approved job.</div>
+        <div id="fjRows">${fundsSettings.jobs.map((j,i)=>`<div class="cl-form-grid" data-job-row="${i}" style="border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+            <div class="cl-field"><label>Icon</label><input class="fj-emoji-in" type="text" maxlength="4" value="${esc(j.emoji)}"></div>
+            <div class="cl-field"><label>Job</label><input class="fj-name-in" type="text" value="${esc(j.name)}"></div>
+            <div class="cl-field"><label>Pays</label><input class="fj-amt-in" type="number" min="0" step="0.01" value="${(j.amountCents/100).toFixed(2)}"></div>
+            <div class="cl-field"><label>&nbsp;</label><label class="cl-check"><input class="fj-active-in" type="checkbox" ${j.active?"checked":""}> Offered</label></div>
+            <div class="cl-field"><label>&nbsp;</label><button class="btn sm fj-del" data-i="${i}">Delete</button></div>
+          </div>`).join("")||`<div class="dates-empty">No jobs yet.</div>`}</div>
+        <div class="cl-modal-actions"><button class="btn sm" id="fjAdd">+ Add a job</button><button class="btn" id="fjCancel">Close</button><button class="btn add" id="fjSave">Save jobs</button></div>`;
+      modal.querySelectorAll(".fj-del").forEach(b=>b.addEventListener("click",()=>{
+        const i=Number(b.dataset.i);
+        if(!confirm(`Delete “${fundsSettings.jobs[i].name}”? Money already earned from it is kept.`)) return;
+        fundsSettings.jobs.splice(i,1); saveFunds(); paint();
+      }));
+      modal.querySelector("#fjAdd").addEventListener("click",()=>{ readJobRows(); fundsSettings.jobs.push(migrateFundJob({emoji:"⭐",name:"New job",amountCents:100,active:true})); saveFunds(); paint(); });
+      modal.querySelector("#fjCancel").addEventListener("click",()=>{ closeClModal(); render(); });
+      modal.querySelector("#fjSave").addEventListener("click",()=>{ readJobRows(); saveFunds(); closeClModal(); render(); });
+    };
+    const readJobRows=()=>{
+      modal.querySelectorAll("#fjRows [data-job-row]").forEach(row=>{
+        const j=fundsSettings.jobs[Number(row.dataset.jobRow)]; if(!j) return;
+        j.emoji=(row.querySelector(".fj-emoji-in").value||"⭐").slice(0,4);
+        j.name=(row.querySelector(".fj-name-in").value||"Job").slice(0,48);
+        j.amountCents=parseMoneyToCents(row.querySelector(".fj-amt-in").value);
+        j.active=row.querySelector(".fj-active-in").checked;
+      });
+    };
+    paint();
+  });
+}
+function openFundsSettingsModal(){
+  openClModal(modal=>{
+    modal.innerHTML=`<h2>Money settings</h2>
+      <div class="cl-modal-sub">Allowance is deposited automatically on its weekday, once per week, by whichever device opens the planner first. Missed weeks are never backfilled.</div>
+      <div id="fsPeople">${people.map(p=>{ const c=fundsPersonSettings(p.id); return `<div class="cl-section" data-person="${p.id}" style="box-shadow:none">
+        <div class="cl-section-head"><b>${esc(p.name)}</b><label class="cl-check"><input class="fs-enabled" type="checkbox" ${c.enabled?"checked":""}> Has a bank account</label></div>
+        <div class="cl-form-grid">
+          <div class="cl-field"><label>Weekly allowance</label><input class="fs-allowance" type="number" min="0" step="0.01" value="${(c.weeklyAllowanceCents/100).toFixed(2)}"></div>
+          <div class="cl-field"><label>Paid on</label><select class="fs-day">${WEEKDAY_NAMES.map((d,i)=>`<option value="${i}" ${i===c.allowanceDay?"selected":""}>${d}</option>`).join("")}</select></div>
+          <div class="cl-field"><label>Saving up for</label><input class="fs-goal-label" type="text" value="${esc(c.goalLabel)}" placeholder="Nintendo Switch game"></div>
+          <div class="cl-field"><label>Goal amount</label><input class="fs-goal-amt" type="number" min="0" step="0.01" value="${(c.goalCents/100).toFixed(2)}"></div>
+        </div></div>`; }).join("")}</div>
+      <div class="cl-modal-actions"><button class="btn" id="fsCancel">Cancel</button><button class="btn add" id="fsSave">Save settings</button></div>`;
+    modal.querySelector("#fsCancel").addEventListener("click",closeClModal);
+    modal.querySelector("#fsSave").addEventListener("click",()=>{
+      modal.querySelectorAll("#fsPeople [data-person]").forEach(box=>{
+        const c=fundsPersonSettings(box.dataset.person);
+        c.enabled=box.querySelector(".fs-enabled").checked;
+        c.weeklyAllowanceCents=parseMoneyToCents(box.querySelector(".fs-allowance").value);
+        c.allowanceDay=clampInt(box.querySelector(".fs-day").value,0,6);
+        c.goalLabel=box.querySelector(".fs-goal-label").value.trim().slice(0,60);
+        c.goalCents=parseMoneyToCents(box.querySelector(".fs-goal-amt").value);
+      });
+      ensureWeeklyAllowances(); saveFunds(); closeClModal(); render();
+    });
+  });
+}
+
+document.getElementById("fnNewEntryBtn").addEventListener("click",()=>openFundEntryModal({}));
+document.getElementById("fnJobsBtn").addEventListener("click",openFundsJobsModal);
+document.getElementById("fnSettingsBtn").addEventListener("click",openFundsSettingsModal);
+["fnPersonFilter","fnTypeFilter"].forEach(id=>document.getElementById(id).addEventListener("change",renderFundsLedger));
+
 /* ---------------- quick add / add ---------------- */
 document.getElementById("quickInput").addEventListener("keydown",e=>{ if(e.key!=="Enter") return; const v=e.target.value.trim(); if(!v) return; const t=blankTask(v); if(activePerson!=="all") t.people=[activePerson]; tasks.unshift(t); e.target.value=""; saveTasks(); render(); });
 document.getElementById("addBtn").addEventListener("click",()=>{
@@ -4228,7 +5363,7 @@ document.getElementById("printBtn").addEventListener("pointerdown",e=>{
 });
 document.getElementById("printBtn").addEventListener("click",openPrintCenter);
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,fundsLedger,fundsSettings,goals,dayPlan};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -4262,8 +5397,12 @@ document.getElementById("importFile").addEventListener("change",e=>{
       if(Array.isArray(d.clothingWalletLedger)) clothingWalletLedger=dedupeClothingLedger(d.clothingWalletLedger.map(migrateClothingLedgerEntry));
       if(d.clothingSettings&&typeof d.clothingSettings==="object"&&!Array.isArray(d.clothingSettings)) clothingSettings=migrateClothingSettings(d.clothingSettings);
       if(Array.isArray(d.clothingSettlements)) clothingSettlements=d.clothingSettlements.map(migrateClothingSettlement);
+      if(Array.isArray(d.fundsLedger)) fundsLedger=dedupeFundEntries(d.fundsLedger.map(migrateFundEntry));
+      if(d.fundsSettings&&typeof d.fundsSettings==="object"&&!Array.isArray(d.fundsSettings)) fundsSettings=migrateFundsSettings(d.fundsSettings);
+      if(Array.isArray(d.goals)) goals=d.goals.map(migrateGoal).filter(g=>g.text!=="");
+      if(d.dayPlan&&typeof d.dayPlan==="object"&&!Array.isArray(d.dayPlan)) dayPlan=normalizeDayPlan(d.dayPlan);
     }
-    editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveCustody(); saveClothing(); render();
+    editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); ensureFundsPersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveCustody(); saveClothing(); saveFunds(); saveGoals(); saveDayPlan(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
 });
@@ -4617,6 +5756,7 @@ function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=
   /* Countdowns patch text in place and never rebuild DOM, so they run even while an editor is open —
      the clock should not freeze just because someone is typing elsewhere on the page. */
   updateCountdownTicks();
+  updateDayClockTick();   // patches text only, same reason as updateCountdownTicks above
   /* editingActive() covers the full task editor, place editor, date editor, AND any inline text/popover —
      nothing the 1s tick does may ever rebuild DOM out from under an open editor. */
   if(!editingActive()){
@@ -4630,17 +5770,23 @@ function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=
 }
 
 /* ---------------- init ---------------- */
-document.getElementById("datestr").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+/* Split in two so the weekday can carry the headline weight the removed "Home" title used to,
+   with the full date underneath in the same mono voice as the clock beside it. */
+{ const now=new Date();
+  document.getElementById("datestrDay").textContent=now.toLocaleDateString(undefined,{weekday:"long"});
+  document.getElementById("datestr").textContent=now.toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"}); }
 { const vp=loadJSON(K_PREFS); if(vp){ document.getElementById("showDone").checked=typeof vp.showDone==="boolean"?vp.showDone:(typeof vp.hideDone==="boolean"?!vp.hideDone:false); document.getElementById("showLater").checked=!!vp.showLater; document.getElementById("showSomeday").checked=!!vp.showSomeday; } }
 updateSoundToggleLabel();
 const clothingInitChanged=ensureClothingPersonSettings()|ensureMonthlyClothingDeposits();
 if(clothingInitChanged) saveClothing();
+if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
 renderAuthUI(); render(); initSync(); tick(); setInterval(tick,1000);
 /* Shareable page links work both on initial load and when a hash link is selected in an open tab. */
 function routePageFromHash(){
   if(location.hash==="#calendar"){ if(currentPage!=="calendar") showCalendarPage(); return; }
   if(location.hash==="#agenda"){ if(currentPage!=="agenda") showAgendaPage(); return; }
   if(location.hash==="#clothing"){ if(currentPage!=="clothing") showClothingPage(); return; }
+  if(location.hash==="#funds"){ if(currentPage!=="funds") showFundsPage(); return; }
   if(currentPage!=="home") showHomePage();
 }
 window.addEventListener("hashchange",routePageFromHash);

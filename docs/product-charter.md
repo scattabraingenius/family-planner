@@ -77,6 +77,9 @@ this charter.
   because others have it is exactly the Quick Notes mistake.
 - **Chores with points/rewards currency.** Clothing already teaches responsibility through money
   with real stakes. A second parallel reward currency would compete with it and dilute both.
+  *(2026-09-04: Money ships with jobs that pay in REAL DOLLARS — the same dollars Clothing spends,
+  not a second currency. That is the line this non-goal draws, and Money stays on the right side of
+  it only as long as there is exactly one currency in the app.)*
 - **Freeform note-taking.** Already tried and failed once. Do not rebuild it under a new name.
 - **Document/file storage, expense splitting, general household budgeting.** Clothing is a scoped
   teaching tool, not an accounting system. Do not let it grow into one.
@@ -90,7 +93,7 @@ responsibility. It does not mean every household fact.
 
 ## Page map
 
-Current pages that work and stay: **Home** · **Calendar** · **Clothing**
+Current pages that work and stay: **Home** · **Calendar** · **Money** · **Clothing**
 
 Eventual target, adopted as direction rather than an immediate refactor:
 
@@ -100,6 +103,7 @@ Eventual target, adopted as direction rather than an immediate refactor:
 | Calendar | Full planning surface — agenda and month, school calendar |
 | Lists | Shopping, Places, and any future list that passes the feature test |
 | Clothing | Wallets, purchases, verification queue, per-child status |
+| Money | Balances, job payouts and approvals, allowance, savings goals, clothing transfers |
 | Family | Profiles, colors, school info, per-child settings |
 | Utilities | Print Center, import/export, sync status, policy settings |
 
@@ -144,5 +148,15 @@ Structure and constraints come first; visual polish second.
 
 ## Change log
 
+- 2026-09-04 — Home declutter + Money module. Home lost its page title, its person chip row (now one
+  dropdown that refocuses the whole page on the selected child), its search box and its Places panel;
+  it gained "Goals for today" with an end-of-day countdown and a read-only bank strip. Money was
+  added as the household's replacement for the abandoned Chore-Bot subscription. It passes the
+  feature test: recurring problem (nobody has tracked the kids' balances since they logged out of
+  Chore-Bot), used by all four people, builds child responsibility, and without it the clothing
+  settlement balance has no funding source. It is a dedicated page, not a Home panel, per the layout
+  rule. Open item: Firebase Database Rules have still never been reviewed, and Money adds four new
+  top-level keys (fundsLedger, fundsSettings, goals, dayPlan) — if the rules whitelist keys rather
+  than allowing the whole family node, they must be updated before sync will accept them.
 - 2026-08-08 — Initial charter. Written after hiding Quick Notes and Before You Leave, and after
   comparing against Ohana Wall, Hearth, and Home Assistant dashboard practice.
