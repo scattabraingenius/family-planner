@@ -1,11 +1,11 @@
-# Family Planner 1.16-beta — Handoff to C
+# Family Planner 1.17-beta — Handoff to C
 
 ## Current state
 
-- Repository: `D:\OneDrive\Claudex\family-planner`
+- Repository: `D:\dev\family-planner`  (moved off OneDrive 2026-09-04 — see Open items)
 - Branch: `main`
 - Current HEAD: `3788deeb6239fa7597a6ab00fd486b76ed1ac46a`
-- Application version: `1.16-beta`
+- Application version: `1.17-beta`
 - Clothing policy version: `1.1`
 - Funds version: `1.0`
 - Production site: <https://scattabraingenius.github.io/family-planner/>
@@ -23,6 +23,34 @@ list as uncommitted.
 - `be10291` — Sync deletions, trim the dates strip, make its title editable
 - `7bf44e5` — Split Calendar and Agenda into separate destinations
 - `3b8270f` — Sync kids schedule across existing family data
+
+## Navigation (1.17-beta)
+
+One sticky **app bar** lives outside every page wrapper, so it is the same element on Home,
+Calendar, Agenda, Money and Clothing. It replaced four separate page headers and three
+"Back to Home" buttons — previously Money to Clothing meant going home first.
+
+The bar carries: date, clock, the person selector, the five destinations, and sync state.
+Interior pages keep a shared `.pagehead` (title + that page's own actions) and no back button.
+
+- **Routing is table-driven.** `PAGES[]` declares each destination's wrapper, hash, render
+  function and optional badge; `showPage(id)` is the only way to change page. Adding a page
+  is one row, not four scattered edits.
+- **Badges** on Money and Clothing show pending parent approvals. They are deliberately
+  **not** narrowed by the person selector — a parent must see outstanding work regardless of
+  who is being viewed. The approval queues themselves follow the same rule.
+- **The person selector is app-wide.** It scopes what BELONGS to a person — their Home, their
+  bank account, history and stats, their clothing wallet and purchases — through
+  `scopeTo(list)`, which returns `null` when Everyone is selected or when the selected person
+  has nothing in that module (Dad has no clothing wallet). Calendar's duplicate person chips
+  were removed; `calState.person` now simply mirrors `activePerson`.
+- **On phones** the bar wraps to three rows with icon-over-label buttons, then condenses to
+  just the nav row (~59px, down from ~143px) once the page scrolls past 60px, with a
+  hysteresis gap so it cannot flicker. Desktop is a flat 60px and never condenses.
+- `history.replaceState`, not `pushState`: tapping through the bar must not stack up
+  back-button history.
+- `renderAppNav()` rebuilds only when its content signature changes, so a render triggered by
+  a cloud update never yanks focus out of a nav button.
 
 ## Home (1.16-beta)
 
@@ -178,6 +206,10 @@ Do not test financial mutations against live Firebase data.
   seconds or shortening the date format would recover it.
 - Open charter questions remain: confirm the operator/reader split, and decide whether the
   Today column becomes a true time-gutter timeline.
+- **The repository moved out of OneDrive on 2026-09-04.** OneDrive was syncing the Git object
+  store and dehydrating objects into cloud placeholders; three became unreadable and a push
+  failed. The old copy carries a `_MOVED-DO-NOT-EDIT.md` marker and can be deleted. Never put
+  this repository back inside a folder another sync client manages.
 
 ## Constraints for the next minor changes
 

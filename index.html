@@ -6,7 +6,15 @@
 <title>Home — Family Day Planner</title>
 <style>
   /* ============================================================
-     HOME — family day planner   (v1.16-beta)
+     HOME — family day planner   (v1.17-beta)
+     1.17-beta replaced four separate page headers and three "Back to Home"
+     buttons with ONE sticky app bar that lives outside every page wrapper, so
+     every destination is one tap from anywhere (Money -> Clothing no longer
+     detours through Home). The bar carries the date, clock, the app-wide person
+     selector, the five destinations with pending-approval badges, and sync
+     state. On phones it drops to icon-over-label buttons and condenses to just
+     the nav row once you scroll. The person selector now scopes Home, Calendar,
+     Money and Clothing alike; Calendar's duplicate person chips were removed.
      One shared day list (multi-person tags), Goals for Today + Shopping list,
      in a dark-pink/plum theme. Places to Go, Before You Leave and Quick Notes
      are retired from Home (kept as data; Places still feeds Calendar/Print).
@@ -947,54 +955,163 @@
     .bankcard .bc-amt { font-size:19px; }
     .fn-page-title { font-size:24px; }
   }
+
+  /* ============================================================
+     APP BAR (1.17-beta) — one sticky bar on every page.
+     Replaces four separate page headers and three "Back to Home"
+     buttons. Sits outside the page wrappers, so it is the same
+     element everywhere and never re-renders on navigation.
+     ============================================================ */
+  .appbar { position:sticky; top:0; z-index:60; background:rgba(16,8,13,.92);
+            backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+            border-bottom:1px solid var(--line); box-shadow:0 6px 24px rgba(0,0,0,.35); }
+  @supports not (backdrop-filter:blur(2px)) { .appbar { background:var(--paper); } }
+  .ab-inner { max-width:1280px; margin:0 auto; padding:9px 20px; display:flex; align-items:center; gap:12px; }
+
+  .ab-brand { display:flex; flex-direction:column; gap:0; min-width:0; flex:none; }
+  .ab-day { font-size:16px; font-weight:800; letter-spacing:-.02em; line-height:1.15; }
+  .ab-date { font-family:var(--mono); font-size:10.5px; color:var(--muted-2); letter-spacing:.02em; }
+  .ab-clock { font-family:var(--mono); font-size:17px; font-weight:700; line-height:1; flex:none;
+              padding:7px 10px; border:1px solid var(--line); border-radius:10px; background:var(--card); }
+  .ab-clock .sec { color:var(--signal); font-size:12px; }
+
+  /* Nav pushed right; account pinned to the far edge. */
+  .ab-nav { display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:nowrap; }
+  .ab-nav .navbtn { position:relative; display:inline-flex; align-items:center; gap:7px; font-size:14px;
+                    font-weight:700; padding:9px 14px; border-radius:11px; min-height:0; box-shadow:none; }
+  .ab-nav .navbtn[aria-current="page"] { background:var(--signal); border-color:var(--signal); color:#2A0716; }
+  .ab-nav .navbtn[aria-current="page"] .navbtn-icon { filter:none; }
+  .nav-badge { display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 5px;
+               border-radius:99px; background:var(--star); color:#2A1A00; font-family:var(--mono);
+               font-size:11px; font-weight:800; line-height:1; }
+  .ab-nav .navbtn[aria-current="page"] .nav-badge { background:#2A0716; color:var(--star); }
+
+  .ab-account { display:flex; align-items:center; gap:7px; flex:none; }
+  .ab-account .auth-who { font-size:11px; color:var(--muted-2); max-width:150px; overflow:hidden;
+                          text-overflow:ellipsis; white-space:nowrap; }
+  .auth-notice { max-width:1280px; margin:14px auto 0; }
+
+  /* Interior pages share one header: title left, that page's actions right. */
+  .pagehead { display:flex; align-items:center; justify-content:space-between; gap:14px;
+              flex-wrap:wrap; margin-bottom:14px; }
+  .pagehead-title { font-size:26px; margin:0; letter-spacing:-.03em; font-weight:800;
+                    display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+  .pagehead-scope { font-size:12px; font-weight:700; font-family:var(--mono); color:var(--paper);
+                    background:var(--signal-dim); border-radius:99px; padding:3px 10px; letter-spacing:.02em; }
+  .pagehead-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* Home's own "how is today going" strip, which used to live in the header. */
+  .todaystrip { display:flex; align-items:center; justify-content:space-between; gap:16px;
+                flex-wrap:wrap; margin-bottom:14px; }
+  .todaystrip .who-hi { flex:1 1 auto; font-size:14px; }
+  .todaystrip .progress-wrap { flex:none; }
+
+  @media (max-width:1080px){
+    .ab-nav .navbtn { padding:9px 11px; font-size:13px; gap:6px; }
+    .ab-account .auth-who { display:none; }
+  }
+  @media (max-width:900px){
+    .ab-clock { display:none; }   /* the phone already shows a clock */
+  }
+  @media (max-width:820px){
+    /* Bar becomes two rows: identity above, a full-width scrollable nav below. Every
+       destination stays reachable with one thumb without a hamburger menu to open. */
+    .ab-inner { flex-wrap:wrap; gap:9px; padding:8px 12px; }
+    .ab-brand { flex:1 1 auto; }
+    .ab-account { margin-left:auto; }
+    .who-pick { order:3; }
+    .ab-nav { order:4; flex-basis:100%; margin-left:0; overflow-x:auto; scrollbar-width:none;
+              -webkit-overflow-scrolling:touch; padding-bottom:1px; }
+    .ab-nav::-webkit-scrollbar { display:none; }
+    .ab-nav .navbtn { flex:1 0 auto; justify-content:center; }
+  }
+  @media (max-width:640px){
+    /* Date goes on one line so the bar's first row has room for the person picker beside it. */
+    .ab-inner { padding:7px 12px; gap:7px; }
+    .ab-brand { flex-direction:row; align-items:baseline; gap:6px; }
+    .ab-day { font-size:15px; }
+    .ab-date { font-size:10px; }
+    .pagehead-title { font-size:21px; }
+    .todaystrip .progress-wrap { flex:1 1 100%; }
+  }
+  /* Scrolled state, phones only: the bar drops to just its nav row (~56px instead of ~143px) so a
+     permanently-visible nav does not cost a fifth of the screen. Scrolling back to the top restores
+     the date, clock and person picker. Desktop has the room and never condenses. */
+  @media (max-width:820px){
+    .appbar.condensed .ab-brand,
+    .appbar.condensed .ab-clock,
+    .appbar.condensed .who-pick,
+    .appbar.condensed .ab-account { display:none; }
+    .appbar.condensed .ab-inner { padding-top:5px; padding-bottom:5px; }
+    .appbar.condensed .ab-nav { flex-basis:auto; width:100%; }
+  }
+  @media (max-width:560px){
+    /* Icon over label. Five destinations still fit across a phone, and a nine-year-old should not
+       have to decode a calendar icon against a notepad icon to find Agenda. */
+    .ab-nav { gap:5px; }
+    .ab-nav .navbtn { flex:1 1 0; min-width:0; flex-direction:column; align-items:center; gap:2px;
+                      padding:6px 2px; border-radius:10px; }
+    .ab-nav .navbtn .navbtn-icon { font-size:17px; line-height:1.1; }
+    .ab-nav .navbtn .navbtn-label { font-size:9.5px; font-weight:700; letter-spacing:.01em; }
+    /* Badge rides the icon's corner instead of widening the button. */
+    .ab-nav .navbtn { position:relative; }
+    .ab-nav .nav-badge { position:absolute; top:3px; right:calc(50% - 20px); min-width:15px; height:15px; font-size:9.5px; }
+  }
 </style>
 </head>
 <body>
+
+<!-- =====================================================================
+     APP BAR — 1.17-beta
+     One bar, rendered once, living OUTSIDE every page wrapper so it is
+     literally the same element on Home, Calendar, Agenda, Money and Clothing.
+     Before this, each page had its own header and a "Back to Home" button, so
+     getting from Money to Clothing meant going home first. Now every
+     destination is one tap from anywhere.
+
+     It is sticky: on a phone the nav stays reachable without scrolling back up.
+
+     The person selector sits here too, which makes it app-wide rather than a
+     Home control -- pick a child and Home, Money and Clothing all narrow to
+     them. The badges on Money and Clothing are deliberately NOT scoped that
+     way: a parent has to see that something needs approving no matter who is
+     currently selected.
+     ===================================================================== -->
+<header class="appbar" id="appBar">
+  <div class="ab-inner">
+    <div class="ab-brand">
+      <span class="ab-day" id="datestrDay"></span>
+      <span class="ab-date" id="datestr"></span>
+    </div>
+    <div class="clock ab-clock" id="clock">--:--<span class="sec">:--</span></div>
+    <span class="who-pick" id="whoPick"></span>
+    <nav class="ab-nav" id="appNav" aria-label="Main"></nav>
+    <div class="ab-account">
+      <span class="sync-badge" id="syncBadge"></span>
+      <span class="auth-who" id="authWho"></span>
+      <button class="btn sm" id="authBtn" hidden></button>
+    </div>
+  </div>
+</header>
+
+<!-- Sign-in state. Outside the page wrappers with the bar, so a signed-out
+     warning is visible from whichever page you happen to be on. -->
+<div class="auth-notice hidden" id="authNotice"></div>
+
 <div class="wrap" id="homeWrap">
 
-  <!-- Header, 1.16-beta: the "Home" title was pure decoration on a page you are already looking at.
-       Removing it lets the date read as the headline and puts the clock beside it, so the whole
-       strip is one line instead of a title block plus a separate meta column. -->
-  <header class="top">
-    <div class="brand">
-      <div class="brand-date">
-        <span class="brand-day" id="datestrDay"></span>
-        <span class="datestr" id="datestr"></span>
-      </div>
-      <div class="clock" id="clock">--:--<span class="sec">:--</span></div>
-      <!-- The person selector lives IN the header strip, not in a bar of its own. A whole page row
-           for one control was the clutter this replaced; here it costs no vertical space at all. -->
-      <span class="who-pick" id="whoPick"></span>
-    </div>
-    <div class="head-right">
-      <nav class="mainnav" aria-label="Main">
-        <button class="navbtn" id="calendarBtn"><span class="navbtn-icon" aria-hidden="true">📅</span>Calendar</button>
-        <button class="navbtn" id="agendaBtn"><span class="navbtn-icon" aria-hidden="true">🗒</span>Agenda</button>
-        <button class="navbtn" id="fundsBtn"><span class="navbtn-icon" aria-hidden="true">💰</span>Money</button>
-        <button class="navbtn" id="clothingBtn"><span class="navbtn-icon" aria-hidden="true">👕</span>Clothing</button>
-      </nav>
-      <div class="head-meta">
-        <span class="who-hi" id="whoHi"></span>
-        <div class="progress-wrap">
-          <div class="progress-top"><span class="eyebrow">Today</span><span class="progress-count" id="progressCount">0 of 0 done</span><span class="overdue-chip" id="overdueChip"></span></div>
-          <div class="bar"><span id="progressBar"></span></div>
-        </div>
-      </div>
-      <div class="account">
-        <span class="sync-badge" id="syncBadge"></span>
-        <span class="auth-who" id="authWho"></span>
-        <button class="btn sm" id="authBtn" hidden></button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Sign-in state. Only shown when there is something to act on: signed out, or signed in with an
-       account the database rules don't allow. Silent once sync is healthy. -->
-  <div class="auth-notice hidden" id="authNotice"></div>
-
-  <!-- Opened by the "Edit family…" choice at the bottom of the header dropdown, so it appears just
-       under the control that summoned it. -->
+  <!-- Opened by the "Edit family..." choice at the bottom of the app bar's dropdown. -->
   <div class="people-editor hidden" id="peopleEditor"></div>
+
+  <!-- Today's read-out. Lives on Home rather than in the bar: it answers "how is today going",
+       which is Home's question, and keeping it out of the bar is what lets the bar stay one line. -->
+  <div class="todaystrip">
+    <span class="who-hi" id="whoHi"></span>
+    <div class="progress-wrap">
+      <div class="progress-top"><span class="eyebrow">Today</span><span class="progress-count" id="progressCount">0 of 0 done</span><span class="overdue-chip" id="overdueChip"></span></div>
+      <div class="bar"><span id="progressBar"></span></div>
+    </div>
+  </div>
 
   <div class="nextup empty" id="nextup"></div>
 
@@ -1122,9 +1239,9 @@
      rules out. Money earned here is the money that pays clothing bills.
      ===================================================================== -->
 <div class="funds-wrap hidden" id="fundsPage">
-  <header class="fn-top">
-    <div class="fn-top-left"><button class="btn sm" id="fnBackBtn">← Back to Home</button><h1 class="fn-page-title">💰 Money</h1></div>
-    <div class="fn-top-actions">
+  <header class="pagehead">
+    <h1 class="pagehead-title"><span aria-hidden="true">💰</span> Money<span class="pagehead-scope" id="fnScope"></span></h1>
+    <div class="pagehead-actions">
       <button class="btn add" id="fnNewEntryBtn">+ Record money</button>
       <button class="btn sm" id="fnJobsBtn">Edit jobs</button>
       <button class="btn sm" id="fnSettingsBtn">Settings</button>
@@ -1164,9 +1281,9 @@
 </div>
 
 <div class="clothing-wrap hidden" id="clothingPage">
-  <header class="cl-top">
-    <div class="cl-top-left"><button class="btn sm" id="clBackBtn">← Back to Home</button><h1 class="cl-page-title">Clothing</h1></div>
-    <div class="cl-top-actions">
+  <header class="pagehead">
+    <h1 class="pagehead-title"><span aria-hidden="true">👕</span> Clothing<span class="pagehead-scope" id="clScope"></span></h1>
+    <div class="pagehead-actions">
       <button class="btn sm" id="clHelpBtn">Kid guides</button>
       <button class="btn sm" id="clCalculatorBtn">Deal calculator</button>
       <button class="btn add" id="clNewPurchaseBtn">+ New purchase</button>
@@ -1191,12 +1308,9 @@
 <div class="cl-modal-backdrop hidden" id="clModalBackdrop"><div class="cl-modal" id="clModal" role="dialog" aria-modal="true" tabindex="-1"></div></div>
 
 <div class="calendar-wrap hidden" id="calendarPage">
-  <header class="cal-top">
-    <div class="cal-top-left">
-      <button class="btn sm" id="calBackBtn">← Back to Home</button>
-      <h1 class="cal-page-title" id="calPageTitle">Calendar</h1>
-    </div>
-    <div class="cal-top-actions">
+  <header class="pagehead">
+    <h1 class="pagehead-title" id="calPageTitle">Calendar</h1>
+    <div class="pagehead-actions">
       <button class="btn add" id="calAddBtn">+ Add event</button>
       <button class="btn custody-paint-btn" id="calCustodyPaintBtn" aria-pressed="false">🖌 Paint kids schedule</button>
     </div>
@@ -1277,7 +1391,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.16-beta";
+const VERSION = "1.17-beta";
 
 /* ---------------- storage ---------------- */
 /* Firebase does not store empty arrays: writing places:[] deletes the key outright. Every
@@ -2489,51 +2603,70 @@ function defaultCalState(){ return {
 let calState = (()=>{ const d=defaultCalState(); const raw=loadJSON(K_CAL_PREFS)||{}; const merged=Object.assign(d,raw); merged.filters=Object.assign(d.filters, raw.filters||{}); delete merged.view; /* legacy Agenda/Month toggle */ return merged; })();
 let custodyPaintOpen=false, custodyPaintPerson="", custodyPaintDragging=false, custodyPaintDirty=false;
 
-function showHomePage(){
-  currentPage="home"; closeActiveEdit(true); exitCustodyPaint();
-  document.getElementById("homeWrap").classList.remove("hidden");
-  document.getElementById("calendarPage").classList.add("hidden");
-  document.getElementById("clothingPage").classList.add("hidden");
-  document.getElementById("fundsPage").classList.add("hidden");
-  render(); // Calendar-triggered edits only refresh Calendar's own DOM while it's the active page;
-            // refresh Home here so it's never stale when the user switches back to it.
-  if(PAGE_HASHES.includes(location.hash)) history.replaceState(null,"",location.pathname+location.search);
+/* One router for every destination. Each page declares its wrapper, hash and render function, so
+   adding a page is a row here rather than four more edits scattered through the file. The app bar
+   lives outside all of these wrappers and is never hidden, which is what makes Money -> Clothing a
+   single tap instead of a trip through Home. */
+const PAGES=[
+  {id:"home",     label:"Today",    icon:"🏠", wrap:"homeWrap",     hash:"",          render:()=>render()},
+  {id:"calendar", label:"Calendar", icon:"📅", wrap:"calendarPage", hash:"#calendar", render:renderCalendarPage},
+  {id:"agenda",   label:"Agenda",   icon:"🗒️", wrap:"calendarPage", hash:"#agenda",   render:renderCalendarPage},
+  {id:"funds",    label:"Money",    icon:"💰", wrap:"fundsPage",    hash:"#funds",    render:renderFundsPage,    badge:()=>fundsPendingRequests().length},
+  {id:"clothing", label:"Clothing", icon:"👕", wrap:"clothingPage", hash:"#clothing", render:renderClothingPage, badge:()=>pendingClothingReviews().length},
+];
+function pageDef(id){ return PAGES.find(p=>p.id===id)||PAGES[0]; }
+/* Condense the bar once the page has scrolled. Passive listener + rAF so it never competes with
+   scrolling itself, and a hysteresis gap (condense at 60, expand at 20) so a bar sitting exactly on
+   the threshold cannot flicker open and shut. */
+let barCondensed=false, barTicking=false;
+function syncAppBarCondensed(){
+  barTicking=false;
+  const y=window.scrollY||document.documentElement.scrollTop||0;
+  const want = barCondensed ? y>20 : y>60;
+  if(want===barCondensed) return;
+  barCondensed=want;
+  const bar=document.getElementById("appBar"); if(bar) bar.classList.toggle("condensed",want);
 }
-/* Reflects current page in the URL (replaceState — no extra back-button history entries) so
-   "index.html#calendar" and "index.html#agenda" are real, shareable/bookmarkable deep links
-   straight into each destination. Reload-persistence of the last-viewed page is a separate,
-   not-yet-requested feature. */
-function showCalendarSurface(page,hash){
-  currentPage=page; closeActiveEdit(true);
-  if(page!=="calendar") exitCustodyPaint();
-  document.getElementById("homeWrap").classList.add("hidden");
-  document.getElementById("clothingPage").classList.add("hidden");
-  document.getElementById("fundsPage").classList.add("hidden");
-  document.getElementById("calendarPage").classList.remove("hidden");
-  renderCalendarPage();
-  if(location.hash!==hash) history.replaceState(null,"",hash);
+window.addEventListener("scroll",()=>{ if(!barTicking){ barTicking=true; requestAnimationFrame(syncAppBarCondensed); } },{passive:true});
+function showPage(id){
+  const def=pageDef(id);
+  closeActiveEdit(true);
+  if(def.id!=="calendar") exitCustodyPaint();
+  new Set(PAGES.map(p=>p.wrap)).forEach(w=>{ const el=document.getElementById(w); if(el) el.classList.toggle("hidden", w!==def.wrap); });
+  currentPage=def.id;
+  renderAppNav();
+  def.render();
+  /* replaceState, not pushState: tapping through the bar must not stack up back-button history. */
+  if(def.hash){ if(location.hash!==def.hash) history.replaceState(null,"",def.hash); }
+  else if(PAGE_HASHES.includes(location.hash)) history.replaceState(null,"",location.pathname+location.search);
+  try{ window.scrollTo(0,0); }catch(e){}
+  syncAppBarCondensed();   // the jump to top must expand the bar with it
 }
-function showCalendarPage(){ showCalendarSurface("calendar","#calendar"); }
-function showAgendaPage(){ showCalendarSurface("agenda","#agenda"); }
-function showClothingPage(){
-  currentPage="clothing"; closeActiveEdit(true); exitCustodyPaint();
-  document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("fundsPage").classList.add("hidden"); document.getElementById("clothingPage").classList.remove("hidden");
-  renderClothingPage();
-  if(location.hash!=="#clothing") history.replaceState(null,"","#clothing");
+function showHomePage(){ showPage("home"); }
+function showCalendarPage(){ showPage("calendar"); }
+function showAgendaPage(){ showPage("agenda"); }
+function showClothingPage(){ showPage("clothing"); }
+function showFundsPage(){ showPage("funds"); }
+
+/* Badges are deliberately NOT narrowed by the person selector: a parent has to see that something
+   needs approving no matter who is currently being viewed.
+   Rebuilt only when its content actually changes, so a render() triggered by a cloud update never
+   yanks focus out of a nav button someone is tabbing through. */
+let appNavSignature="";
+function renderAppNav(){
+  const nav=document.getElementById("appNav"); if(!nav) return;
+  const parts=PAGES.map(p=>({p, n:p.badge?p.badge():0, cur:currentPage===p.id}));
+  const sig=parts.map(x=>`${x.p.id}:${x.n}:${x.cur?1:0}`).join("|");
+  if(sig===appNavSignature) return;
+  appNavSignature=sig;
+  nav.innerHTML=parts.map(({p,n,cur})=>
+    `<button class="navbtn" data-page="${p.id}" ${cur?'aria-current="page"':""}>`+
+      `<span class="navbtn-icon" aria-hidden="true">${p.icon}</span>`+
+      `<span class="navbtn-label">${esc(p.label)}</span>`+
+      (n?`<span class="nav-badge" title="${n} waiting for a parent">${n>99?"99+":n}</span>`:"")+
+    `</button>`).join("");
+  nav.querySelectorAll(".navbtn").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.page)));
 }
-function showFundsPage(){
-  currentPage="funds"; closeActiveEdit(true); exitCustodyPaint();
-  document.getElementById("homeWrap").classList.add("hidden"); document.getElementById("calendarPage").classList.add("hidden"); document.getElementById("clothingPage").classList.add("hidden"); document.getElementById("fundsPage").classList.remove("hidden");
-  renderFundsPage();
-  if(location.hash!=="#funds") history.replaceState(null,"","#funds");
-}
-document.getElementById("calendarBtn").addEventListener("click", showCalendarPage);
-document.getElementById("agendaBtn").addEventListener("click", showAgendaPage);
-document.getElementById("calBackBtn").addEventListener("click", showHomePage);
-document.getElementById("clothingBtn").addEventListener("click", showClothingPage);
-document.getElementById("clBackBtn").addEventListener("click", showHomePage);
-document.getElementById("fundsBtn").addEventListener("click", showFundsPage);
-document.getElementById("fnBackBtn").addEventListener("click", showHomePage);
 
 /* Generic modal shell for Calendar-triggered full editors (date/task/place) and the School Import
    workflow — same overlay/focus-trap/Escape/restore-focus pattern as the existing Print Center
@@ -2910,6 +3043,7 @@ function render(){
   document.getElementById("hint").textContent=`${tasks.length} items • ${done} done • ${over} overdue • ${laterCount} later • ${places.filter(p=>!p.visited).length} places • ${shop.filter(s=>!s.got).length} to buy • Home v${VERSION}`;
   /* Keep Calendar current after ANY mutation, from either page — every mutation in this app already
      funnels through render(), so this one line is the entire integration point Calendar needs. */
+  renderAppNav();
   if(isCalendarSurface()) renderCalendarPage();
   if(currentPage==="clothing") renderClothingPage();
   if(currentPage==="funds") renderFundsPage();
@@ -2960,7 +3094,10 @@ function renderPeopleBar(){
     /* "Edit family…" is an action, not a selection — snap the value back before opening the editor
        so the header never claims the family list is the person being viewed. */
     if(e.target.value==="__edit"){ e.target.value=activePerson; togglePeopleEditor(); return; }
-    activePerson=e.target.value; saveActiveProfile(); render();
+    activePerson=e.target.value; saveActiveProfile();
+    /* render() repaints Home and, through its tail, whichever interior page is open — so one call
+       keeps the whole app pointed at the newly chosen person. */
+    render();
   });
   const hi=document.getElementById("whoHi"); if(hi) hi.innerHTML=whoHighlightHtml();
 }
@@ -4500,7 +4637,6 @@ function renderCalendarFilters(){
     <div class="custody-legend"><span>Kids:</span>${Object.entries(CUSTODY_PEOPLE).map(([id,p])=>`<span class="custody-key"><span class="custody-key-dot" style="background:${p.color}"></span>${esc(p.label)}</span>`).join("")}</div>
     <details class="cal-filter-details" ${window.matchMedia("(min-width:641px)").matches?"open":""}><summary>Calendar filters</summary>
       <div class="cal-filter-options">
-        <div class="cal-filter-group cal-person-filter" id="calPersonFilter"></div>
         <label class="toggle"><input type="checkbox" id="calFDates" ${f.dates?"checked":""}> Dates</label>
         <label class="toggle"><input type="checkbox" id="calFTasks" ${f.tasks?"checked":""}> Tasks</label>
         <label class="toggle"><input type="checkbox" id="calFPlaces" ${f.places?"checked":""}> Places</label>
@@ -4513,10 +4649,6 @@ function renderCalendarFilters(){
         </details>
       </div>
     </details>`;
-  const pf=el.querySelector("#calPersonFilter");
-  const chip=(id,name,color,all)=>`<button type="button" class="pfilter ${all?"all":""} ${calState.person===id?"active":""}" data-p="${id}">${all?"":`<span class="dot" style="background:${color}"></span>`}${esc(name)}</button>`;
-  pf.innerHTML=chip("all","Everyone","",true)+people.map(p=>chip(p.id,p.name,p.color,false)).join("");
-  pf.querySelectorAll(".pfilter").forEach(b=>b.addEventListener("click",()=>{ calState.person=b.dataset.p; saveCalPrefs(); renderCalendarPage(); }));
   const bind=(id,key)=>document.getElementById(id).addEventListener("change",e=>{ calState.filters[key]=e.target.checked; saveCalPrefs(); renderCalendarPage(); });
   bind("calFDates","dates"); bind("calFTasks","tasks"); bind("calFPlaces","places"); bind("calFSchool","school");
   bind("calFAllSchool","allSchoolEvents"); bind("calFDone","showCompletedTasks"); bind("calFVisited","showVisitedPlaces");
@@ -4724,6 +4856,9 @@ document.getElementById("calManageRcsBtn").addEventListener("click", openManageR
 
 /* ---------------- top-level render for both calendar destinations ---------------- */
 function renderCalendarPage(){
+  /* Calendar used to carry its own row of person chips, which meant two controls for one idea once
+     the selector moved into the app bar. The bar wins; calState.person just follows it. */
+  if(calState.person!==activePerson){ calState.person=activePerson; saveCalPrefs(); }
   const isMonth=currentPage==="calendar";
   document.getElementById("calPageTitle").textContent=isMonth?"Calendar":"Agenda";
   const paintBtn=document.getElementById("calCustodyPaintBtn");
@@ -4798,7 +4933,10 @@ function clothingParticipants(){ return people.filter(isClothingParticipant); }
 function activeClothingPeople(){ return clothingParticipants().filter(p=>clothingPersonSettings(p.id).enabled); }
 function renderClothingPage(){
   if(ensureMonthlyClothingDeposits()) saveClothing();
-  const enabled=activeClothingPeople(), wallet=document.getElementById("clWalletGrid");
+  const allEnabled=activeClothingPeople(), clScoped=scopeTo(allEnabled);
+  const enabled=clScoped?allEnabled.filter(p=>p.id===clScoped):allEnabled;
+  paintScopeChip("clScope", clScoped);
+  const wallet=document.getElementById("clWalletGrid");
   wallet.innerHTML=enabled.length?enabled.map(p=>{ const cfg=clothingPersonSettings(p.id),bal=clothingBalance(p.id),pct=cfg.walletMaximumCents?Math.max(0,Math.min(100,bal/cfg.walletMaximumCents*100)):0; return `<article class="cl-wallet" style="--person-color:${p.color}">
     <div class="cl-wallet-top"><span class="cl-wallet-name">${esc(p.name)}</span><span class="cl-mode">${esc(CLOTHING_MODES[cfg.mode])}</span></div><div class="cl-balance">${money(bal)}</div>
     <div class="cl-wallet-meta">of ${money(cfg.walletMaximumCents)} maximum · ${money(cfg.monthlyDepositCents)}/month</div><div class="bar" style="width:100%;margin-top:8px"><span style="width:${pct}%"></span></div>
@@ -4820,7 +4958,7 @@ function renderClothingPage(){
   const fullRetail=completed.filter(p=>p.discount===0).length, soon=completed.filter(p=>p.returnDeadline&&p.returnDeadline>=todayStr()&&p.returnDeadline<=addDaysStr(todayStr(),7)).length;
   const stats=[[money(retail),"Verified retail"],[money(spent),"Actually spent"],[money(saved),"Verified savings"],[bpsLabel(avg),"Average discount"],[money(parent),"Parent total"],[money(child),"Child total"],[best?bpsLabel(best.discount):"—","Best % deal"],[dollars?money(Math.max(0,dollars.verifiedRetailPrice-dollars.pricePaid)):"—","Most saved"],[String(fullRetail),"Full-retail items"],[String(soon),"Returns due ≤7d"]];
   document.getElementById("clStatGrid").innerHTML=stats.map(([v,l])=>`<div class="cl-stat"><div class="cl-stat-value">${esc(v)}</div><div class="cl-stat-label">${esc(l)}</div></div>`).join("");
-  const pf=document.getElementById("clPersonFilter"), old=pf.value||"all"; pf.innerHTML=`<option value="all">All children</option>`+clothingParticipants().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join(""); pf.value=[...pf.options].some(o=>o.value===old)?old:"all";
+  const pf=document.getElementById("clPersonFilter"), old=pf.value||"all", want=clScoped||old; pf.innerHTML=`<option value="all">All children</option>`+clothingParticipants().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join(""); pf.value=[...pf.options].some(o=>o.value===want)?want:"all";
   renderClothingPurchases(); renderClothingVerificationQueue();
 }
 function filteredClothingPurchases(){ const person=document.getElementById("clPersonFilter").value, status=document.getElementById("clStatusFilter").value, participantIds=new Set(clothingParticipants().map(p=>p.id)); return clothingPurchases.filter(p=>{
@@ -5006,6 +5144,21 @@ document.getElementById("clHelpBtn").addEventListener("click",()=>openClothingHe
    than growing a second one: identical overlay, focus trap, Escape and
    restore-focus behaviour, and editingActive() already knows about it.
    ===================================================================== */
+/* The app bar's person selector is app-wide. The rule it follows everywhere: it scopes what
+   BELONGS to a person -- their account, their wallet, their history -- and never hides work that
+   needs a parent, so approval queues and the nav badges stay global.
+   Returns the id to scope to, or null when the whole list should show (Everyone selected, or the
+   selected person has nothing in this module -- e.g. Dad has no clothing wallet). */
+function scopeTo(list){
+  if(activePerson==="all") return null;
+  return list.some(x=>x.id===activePerson) ? activePerson : null;
+}
+function paintScopeChip(elId, personId){
+  const el=document.getElementById(elId); if(!el) return;
+  el.textContent = personId ? getPerson(personId).name : "";
+  el.style.display = personId ? "" : "none";
+  if(personId) el.style.background = getPerson(personId).color;
+}
 function fundsPersonOptions(selected, allLabel){
   const head=allLabel?`<option value="all" ${selected==="all"?"selected":""}>${esc(allLabel)}</option>`:"";
   return head+fundsAccounts().map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.name)}</option>`).join("");
@@ -5024,7 +5177,9 @@ function fundsClothingOweHtml(personId){
   return `<div class="fn-owe">Clothing is settled up.${gap}</div>`;
 }
 function renderFundsAccounts(){
-  const el=document.getElementById("fnAccounts"), list=fundsAccounts();
+  const el=document.getElementById("fnAccounts"), all=fundsAccounts();
+  const scoped=scopeTo(all), list=scoped?all.filter(p=>p.id===scoped):all;
+  paintScopeChip("fnScope", scoped);
   if(!list.length){
     el.innerHTML=`<div class="empty-state"><div class="big">No accounts yet.</div>Open Settings to give a child a bank account.</div>`;
     return;
@@ -5078,9 +5233,12 @@ function renderFundsRequests(){
 }
 function renderFundsJobs(){
   const sel=document.getElementById("fnJobPerson"), prev=sel.value;
-  const accounts=fundsAccounts();
-  sel.innerHTML=fundsPersonOptions(prev||"", null);
-  if(accounts.length && ![...sel.options].some(o=>o.value===prev)) sel.value=accounts[0].id;
+  const accounts=fundsAccounts(), scoped=scopeTo(accounts);
+  sel.innerHTML=fundsPersonOptions(scoped||prev||"", null);
+  /* With a child selected in the bar, the job buttons are theirs -- one less thing for a kid to
+     get wrong on a phone. On Everyone it keeps whatever was last chosen. */
+  if(scoped) sel.value=scoped;
+  else if(accounts.length && ![...sel.options].some(o=>o.value===prev)) sel.value=accounts[0].id;
   const active=fundsSettings.jobs.filter(j=>j.active), el=document.getElementById("fnJobList");
   document.getElementById("fnJobsHint").textContent=accounts.length?"Tap one when it's done":"Add an account first";
   if(!active.length){ el.innerHTML=`<div class="dates-empty">No jobs yet. Use “Edit jobs” to add what earns money here.</div>`; return; }
@@ -5139,7 +5297,9 @@ function renderFundsPage(){
   renderFundsAccounts();
   renderFundsRequests();
   renderFundsJobs();
-  const accounts=fundsAccounts(), ids=new Set(accounts.map(p=>p.id));
+  const allAccounts=fundsAccounts(), statScope=scopeTo(allAccounts);
+  const accounts=statScope?allAccounts.filter(p=>p.id===statScope):allAccounts;
+  const ids=new Set(accounts.map(p=>p.id));
   const rows=fundsLedger.filter(e=>ids.has(e.personId)&&e.status==="approved");
   const monthStart=todayStr().slice(0,7)+"-01", weekStart=addDaysStr(todayStr(),-6);
   const total=accounts.reduce((s,p)=>s+fundsBalance(p.id),0);
@@ -5147,15 +5307,18 @@ function renderFundsPage(){
   const spentMonth=rows.filter(e=>e.amount<0&&e.date>=monthStart).reduce((s,e)=>s-e.amount,0);
   const jobsWeek=rows.filter(e=>e.kind==="job"&&e.date>=weekStart).length;
   const toClothing=rows.filter(e=>FUND_KIND_CLOTHING.has(e.kind)&&e.amount<0).reduce((s,e)=>s-e.amount,0);
-  const waiting=fundsPendingRequests().reduce((s,e)=>s+Math.abs(e.amount),0);
+  /* Scoped like every other stat here so the grid agrees with the cards above it. The queue and
+     the nav badge stay global — those are the parent's work list, not a per-person figure. */
+  const waiting=fundsPendingRequests().filter(e=>ids.has(e.personId)).reduce((s,e)=>s+Math.abs(e.amount),0);
   const owedTotal=accounts.reduce((s,p)=>s+Math.max(0,clothingSettlementBalance(p.id)),0);
   const stats=[[money(total),"In the bank"],[money(earnedMonth),"Earned this month"],[money(spentMonth),"Spent this month"],
                [String(jobsWeek),"Jobs done this week"],[money(waiting),"Waiting to approve"],[money(toClothing),"Sent to clothing"],
                [money(owedTotal),"Owed for clothing"]];
   document.getElementById("fnStatGrid").innerHTML=stats.map(([v,l])=>`<div class="fn-stat"><div class="fn-stat-value">${esc(v)}</div><div class="fn-stat-label">${esc(l)}</div></div>`).join("");
   const pf=document.getElementById("fnPersonFilter"), old=pf.value||"all";
-  pf.innerHTML=fundsPersonOptions(old,"Everyone");
-  pf.value=[...pf.options].some(o=>o.value===old)?old:"all";
+  const scopedId=scopeTo(accounts), want=scopedId||old;
+  pf.innerHTML=fundsPersonOptions(want,"Everyone");
+  pf.value=[...pf.options].some(o=>o.value===want)?want:"all";
   renderFundsLedger();
 }
 
@@ -5780,14 +5943,12 @@ updateSoundToggleLabel();
 const clothingInitChanged=ensureClothingPersonSettings()|ensureMonthlyClothingDeposits();
 if(clothingInitChanged) saveClothing();
 if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
-renderAuthUI(); render(); initSync(); tick(); setInterval(tick,1000);
+renderAppNav(); renderAuthUI(); render(); initSync(); tick(); setInterval(tick,1000);
 /* Shareable page links work both on initial load and when a hash link is selected in an open tab. */
 function routePageFromHash(){
-  if(location.hash==="#calendar"){ if(currentPage!=="calendar") showCalendarPage(); return; }
-  if(location.hash==="#agenda"){ if(currentPage!=="agenda") showAgendaPage(); return; }
-  if(location.hash==="#clothing"){ if(currentPage!=="clothing") showClothingPage(); return; }
-  if(location.hash==="#funds"){ if(currentPage!=="funds") showFundsPage(); return; }
-  if(currentPage!=="home") showHomePage();
+  const target=PAGES.find(p=>p.hash && p.hash===location.hash);
+  const id=target?target.id:"home";
+  if(currentPage!==id) showPage(id);
 }
 window.addEventListener("hashchange",routePageFromHash);
 routePageFromHash();
