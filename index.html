@@ -1059,7 +1059,11 @@
     /* Icon over label. Five destinations still fit across a phone, and a nine-year-old should not
        have to decode a calendar icon against a notepad icon to find Agenda. */
     .ab-nav { gap:5px; }
-    .ab-nav .navbtn { flex:1 1 0; min-width:0; flex-direction:column; align-items:center; gap:2px;
+    /* flex-basis is a floor, not a target: with 5 buttons they grow to fill the row edge-to-edge
+       (today's look, unchanged); add a 6th or 7th and they shrink toward 58px instead of past it,
+       at which point the row scrolls sideways (overflow-x:auto is already set at the 820px
+       breakpoint above) rather than squeezing icons and labels into an unreadable sliver. */
+    .ab-nav .navbtn { flex:1 1 58px; min-width:58px; flex-direction:column; align-items:center; gap:2px;
                       padding:6px 2px; border-radius:10px; }
     .ab-nav .navbtn .navbtn-icon { font-size:17px; line-height:1.1; }
     .ab-nav .navbtn .navbtn-label { font-size:9.5px; font-weight:700; letter-spacing:.01em; }
