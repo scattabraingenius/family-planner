@@ -4,7 +4,7 @@
 
 - Repository: `D:\dev\family-planner`  (moved off OneDrive 2026-09-04 — see Open items)
 - Branch: `main`
-- Current HEAD: `3788deeb6239fa7597a6ab00fd486b76ed1ac46a`
+- Current HEAD: `ec7be39f16d6ba4ad93ac8c28eac419ad74232ab`
 - Application version: `1.17-beta`
 - Clothing policy version: `1.1`
 - Funds version: `1.0`
@@ -16,6 +16,14 @@ paragraph: `.claude/`, `test-artifacts/`, and `tmp/` are ignored. Everything els
 working tree is tracked, including the clothing cheat sheets that this document used to
 list as uncommitted.
 
+**This repository has two collaborators, not one.** The owner works with both a Claude
+session (this document calls it C) and a separate Codex/ChatGPT session against the exact
+same local clone. Both write commits under the same local git identity
+(`sockopopinski <sockopopinski@gmail.com>`), so `git log --format=%an` cannot tell them
+apart — read each commit's actual diff and message before assuming who wrote what. Do not
+treat an unfamiliar commit as suspicious or as something to reconcile; check whether it does
+what its message says, note it, and move on.
+
 ## Recent commits
 
 - `3788dee` — Declutter Home and add the kids' Money page
@@ -23,6 +31,33 @@ list as uncommitted.
 - `be10291` — Sync deletions, trim the dates strip, make its title editable
 - `7bf44e5` — Split Calendar and Agenda into separate destinations
 - `3b8270f` — Sync kids schedule across existing family data
+
+## PWA install support (delivered by Codex, 2026-09-04)
+
+`92fae20`. Family Planner is now installable — Android Chrome offers a real Install prompt
+instead of Create shortcut, and it launches standalone (no address bar) once installed.
+
+Added: `manifest.webmanifest`, `service-worker.js`, `icons/` (favicon, apple-touch-icon,
+192/512/maskable-512 PNGs), and in `index.html` — the manifest link, theme-color and
+apple-mobile-web-app meta tags, and a gated service-worker registration.
+
+Deliberately conservative, and worth preserving on any future touch to these files:
+
+- **Firebase, Google Sign-In, and every cross-origin request bypass the cache entirely** —
+  the service worker checks `url.origin !== self.location.origin` and returns immediately.
+  Auth and live sync must never be served stale.
+- **Navigation requests are network-first**, falling back to the cached shell only when the
+  fetch fails (offline). A normal deploy is never masked by a stale cache.
+- **Service-worker registration is gated** to `https:`, `localhost`, or `127.0.0.1` — opening
+  `index.html` straight from disk (`file://`) skips registration entirely rather than
+  throwing a console error, preserving the app's original local-only behavior.
+- **All manifest paths are relative** (`./`), because GitHub Pages serves this app from
+  `/family-planner/`, not from the domain root.
+
+Verified independently (not just re-reporting Codex's own account): manifest and
+service-worker both return HTTP 200 from the live site with correct content, the service
+worker is registered and controlling the page, `#calendar` still deep-links correctly, and
+there are no console errors.
 
 ## Navigation (1.17-beta)
 
