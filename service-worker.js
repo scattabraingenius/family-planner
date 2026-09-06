@@ -1,4 +1,4 @@
-const CACHE_NAME = "family-planner-shell-v1";
+const CACHE_NAME = "mm-home-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
