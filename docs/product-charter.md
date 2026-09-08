@@ -28,7 +28,8 @@ be that well-defined before it ships. Nothing gets built to a lower bar.
 
 Consequences if the above holds:
 
-- No authentication, accounts, or per-user sessions. There is no "current user" concept to build.
+- Google sign-in gates cloud access. Home Crew separately remembers a device-local player;
+  that convenience is not authenticated player identity or a parent role.
 - Mobile read layouts are a first-class surface, not a courtesy. Half the audience only ever sees
   the app at ~390px.
 - Parent-only controls stay a household convention, not enforced access control (see Non-goals).
@@ -80,13 +81,31 @@ this charter.
   *(2026-09-04: Money ships with jobs that pay in REAL DOLLARS — the same dollars Clothing spends,
   not a second currency. That is the line this non-goal draws, and Money stays on the right side of
   it only as long as there is exactly one currency in the app.)*
+
+  **[decided] Narrow exception, 2026-09-08 — game scores in Everything Has a Home.** Jason
+  authorised a points-only cleanup game ("The Home Crew") in the Money page. It keeps a score per
+  person: put away something another player left out and you gain a point, the person who left it
+  loses one. The exception is deliberately narrow, and these are the terms that keep it from
+  becoming the thing this non-goal refuses:
+
+  - **Game points are not a currency.** They cannot be spent, converted, transferred, or held. No
+    balance, allowance, job payout, clothing wallet, or settlement is readable or writable from the
+    game, and no code path connects the two. Dollars remain the only currency in the app.
+  - **Points are not a reward.** Nothing is promised for having them. Whether they ever acquire a
+    value is a separate decision to be made after the pilot, and it would require its own charter
+    entry, deterministic one-time award ids, and the existing signed-cents ledger.
+  - **The score is derived, never stored.** It is recomputed from the confirmed, non-reversed
+    cleanup events every time it is read, so there is no total anyone could treat as an asset.
+  - **It is a pilot.** If it produces blaming, staged messes, or discouraged kids, review the
+    deduction rule with Jason. Dropping deductions is a recommendation, not yet an agreed change.
 - **Freeform note-taking.** Already tried and failed once. Do not rebuild it under a new name.
 - **Document/file storage, expense splitting, general household budgeting.** Clothing is a scoped
   teaching tool, not an accounting system. Do not let it grow into one.
 - **Smart home / device control.**
 - **Anything requiring real privacy or secrecy.** The app is publicly hosted on GitHub Pages with a
-  client-side Firebase connection and no authentication. Parent controls are a household workflow,
-  not security. Do not store anything in it that would matter if a stranger read it.
+  client-side Firebase connection and Google sign-in. Live database rules have not been reviewed
+  in this repository. Parent controls are a household workflow, not enforced roles; the player
+  chooser does not establish identity or access rights.
 
 "Put everything in one system" means everything belonging to *this* job — coordination and
 responsibility. It does not mean every household fact.
@@ -148,6 +167,15 @@ Structure and constraints come first; visual polish second.
 
 ## Change log
 
+- 2026-09-08 — **Everything Has a Home**, a points-only cleanup game, added as a section at the top
+  of the Money page. It passes the feature test: the recurring problem is abandoned dishes, trash,
+  toys and clothes and the cleanup falling to one person; all four family members use it, Dad
+  included; it builds child responsibility and cuts parental mental load; without it the household
+  keeps arguing about the same mess with no shared record. It is a section rather than a page
+  because logging has to be two taps from something already open, and the parent review belongs
+  beside the other approvals Money already carries. It required the narrow, documented exception to
+  the no-points refusal above. Two new synced top-level keys (`homeGameEvents`, `homeGameSettings`)
+  — the Firebase Database Rules open item below applies to them exactly as it does to Money's four.
 - 2026-09-04 — Home declutter + Money module. Home lost its page title, its person chip row (now one
   dropdown that refocuses the whole page on the selected child), its search box and its Places panel;
   it gained "Goals for today" with an end-of-day countdown and a read-only bank strip. Money was

@@ -1,13 +1,16 @@
-# Family Planner 1.17-beta — Handoff to C
+# Family Planner 1.18-beta — Handoff to C
 
 ## Current state
 
-- Repository: `D:\dev\family-planner`  (moved off OneDrive 2026-09-04 — see Open items)
+- Repository: `D:\Integrated Life Solutions\Apps\MM..HOME`  (canonical; moved off OneDrive
+  2026-09-04, then out of `D:\dev\family-planner` — see Open items. Older `D:\dev` paths in this
+  document's history are historical.)
 - Branch: `main`
-- Current HEAD: `ec7be39f16d6ba4ad93ac8c28eac419ad74232ab`
-- Application version: `1.17-beta`
+- Base commit before this Home Crew release: `6908c50a5b6ea420dbada8bec1b44dd505d10ea2`
+- Application version: `1.18-beta`
 - Clothing policy version: `1.1`
 - Funds version: `1.0`
+- Home Crew game version: `1.0`
 - Production site: <https://scattabraingenius.github.io/family-planner/>
 - Home deep links: `#calendar` · `#agenda` · `#funds` · `#clothing`
 
@@ -161,6 +164,63 @@ One currency, real dollars, shared with Clothing — never points. The product c
 out a parallel reward currency, and Money stays on the right side of that line only as long
 as there is exactly one currency in the app.
 
+## Everything Has a Home — the Home Crew game (new in 1.18-beta)
+
+A points-only cleanup game, living as a section at the TOP of the Money page. Put away something
+another player left out and you gain a point; the person who left it loses one. Dad plays.
+
+**It is points only, and it is fenced off from the money on purpose.** Nothing in it reads or writes
+`fundsLedger`, a balance, an allowance, a job payout, the clothing wallet or a settlement. Game
+points cannot be spent or converted. The narrow, dated exception to the charter's "no parallel
+reward currency" refusal is written into `docs/product-charter.md`; read it before extending this.
+Any future payout would be a separate decision needing deterministic one-time award ids and the
+existing signed-cents ledger.
+
+- **One record per claim, and the score is derived from it.** `homeGameEvents` rows carry a stable
+  id, helper id, owner id (`""` = unknown), category, round, date, created/updated, status
+  (`pending` / `confirmed` / `declined`), reviewer, decision time, and a reversal flag. Scores are
+  recomputed from confirmed, non-reversed events on every read. **There is no stored total.** That
+  is what makes approving the same claim twice, or the same claim arriving from two phones,
+  incapable of moving a score twice — and it is why confirming can never apply the +1 without the
+  −1, because both halves are one reading of one status.
+- **Two taps.** Category, then whose it was, and it sends. No submit button. The player is never
+  offered as the owner of their own claim. "Not sure" files the claim with no owner: the helper is
+  credited and nobody is deducted.
+- **Duplicate guard.** The same helper, owner and category already pending is refused with a
+  message rather than filed — that pattern is a double tap or a second phone, not two rescues.
+- **Everything is reversible.** Confirm, decline, take back a confirmed claim (both scores restore
+  together), put a reversal back, reopen a declined claim. Nothing is ever deleted; a reversal is a
+  state on the event.
+- **Rounds.** One week, starting Sunday, keyed by that Sunday's date. A new week is a fresh
+  leaderboard; old events keep their own round key and stay in history. Ties share a rank.
+- **The remembered player is device-local.** `home.homeGamePlayer.v1` stores a stable profile id
+  the same way `home.activeProfile.v1` stores the active family filter — never synced, so each
+  kid's phone opens straight onto them with the chooser hidden. "Switch player" sits at the bottom.
+  A saved id that no longer matches a real player falls back to the chooser. A browser that blocks
+  storage still plays and says the choice will not be kept.
+  **It is deliberately NOT the app-wide person selector**, and it is not authentication: whoever
+  holds the phone can change it, so it proves nothing and grants nothing.
+- **Claims MERGE on sync; they are the only collection here that does.** Every other list is edited
+  by a parent on one device at a time, but four people log cleanups on four phones, often offline.
+  `mergeHomeGameEvents()` unions by id, comparing causal revision, then update time, then
+  canonical content for deterministic simultaneous-edit ties. Game events use a Firebase child
+  transaction that merges against server data on retries; they are excluded from whole-planner
+  updates. Game actions write only the two game collections. Older imports merge rather than
+  replacing newer decisions. Conflicting simultaneous decisions converge to one result; they do
+  not represent an authenticated parent audit trail.
+- **The Money nav badge now counts both** job payouts and cleanup claims waiting for a parent. Like
+  every other badge it is never narrowed by the person selector.
+- **Parent review sits outside the player/chooser switch**, so a parent who has never picked a
+  player can still confirm the claims the badge is counting.
+- **Icons are inline SVG defined in `HG_ICONS` in `index.html`.** The design preview used Lucide
+  supplied by the Codex conversation host; production must never depend on that. There is no CDN
+  request, no third-party asset, and they work offline and in the installed PWA. `service-worker.js`
+  and `manifest.webmanifest` were not touched.
+- **Animation is a short CSS pop plus ten sparks**, skipped entirely under
+  `prefers-reduced-motion: reduce`. It says *your claim was sent*, which is deliberately not the
+  same thing as *you were given a point* — the point only exists once a parent confirms it, and the
+  leaderboard is what shows that. Nothing is communicated by motion alone.
+
 ## Clothing feature summary
 
 The Clothing page provides:
@@ -208,18 +268,21 @@ Dedicated local-storage keys:
 - `home.fundsSettings.v1`
 - `home.goals.v1`
 - `home.dayPlan.v1`
+- `home.homeGame.v1`
+- `home.homeGameSettings.v1`
 
 Firebase collections:
 
 - `clothingPurchases`, `clothingWalletLedger`, `clothingSettings`, `clothingSettlements`
 - `fundsLedger`, `fundsSettings`, `goals`, `dayPlan`
+- `homeGameEvents`, `homeGameSettings`
 
-Firebase writes use `db.update`, not root `db.set`. Older snapshots and imports that omit a
+Planner writes use `db.update`, not root `db.set`; game events use a child transaction. Older snapshots and imports that omit a
 collection must not erase current data; `payloadV: 2` marks a writer that always sends every
 collection, so for those payloads an absent array genuinely means empty.
 
 Device-local and deliberately never synced: `home.settings.v1`, `home.viewprefs.v1`,
-`home.activeProfile.v1`, `home.calendarPrefs.v1`.
+`home.activeProfile.v1`, `home.calendarPrefs.v1`, `home.homeGamePlayer.v1`.
 
 ## Security note
 
@@ -233,14 +296,66 @@ The front end is publicly hosted on GitHub Pages and connects directly to Fireba
 - Person focus verified through the real control: selecting a child filters the task list, goals, status cards and countdowns, and restores correctly.
 - Earlier clothing verification still stands: a $5.00 item + $0.50 tax + $20.00 shipping produces a $25.50 total, $3.00 parent total, and $22.50 child total; shipping-over-item-price blocks completion without a parent override reason.
 
+Everything Has a Home was verified on 2026-09-08 with two headless browser runs against the local
+file, with Firebase and every cross-origin request blocked so nothing could reach the family's
+database and no sign-in ever happened. 29 checks passed and no runtime or console errors were
+raised. Covered: the real seeded profile ids; first-visit chooser; the chooser collapsing after a
+choice; the remembered player surviving reload and being stored as a stable profile id; switching
+and cancelling a switch; an unknown saved profile falling back to the chooser; the owner step
+excluding the player; two-tap entry leaving both scores untouched while pending; the duplicate
+pending guard; confirmation applying +1/−1 together; repeated approval of the same claim being
+incapable of a second point; reversal restoring both sides, being itself reversible, and never
+deleting the record; declines moving no score and being reopenable; unknown owner crediting the
+helper with no deduction anywhere; ties sharing a rank; game records surviving reload with scores
+rebuilt from them; the Money badge counting waiting claims; Dad scoring without gaining a bank
+account or clothing participation; no horizontal overflow at 320/390/736px; reduced motion emitting
+no sparks while still stating the result in text; a storage-blocked browser still playing and
+saying so. On the sync path specifically: the real `pushCloud` payload carrying both new
+collections alongside every existing one; a snapshot written before a local claim keeping both
+devices' claims; a decision made on another device arriving and scoring both sides; a stale copy
+arriving late being unable to un-confirm; a reversal surviving synchronisation; and the real Export
+file carrying the claims, their decisions and their reversals.
+
+The strongest money check is a byte-for-byte one: `fundsLedger`, `fundsSettings`,
+`clothingPurchases`, `clothingWalletLedger`, `clothingSettings`, `clothingSettlements` and every
+balance were captured before play and compared after a full session of logging, confirming,
+declining, reversing and restoring. They were identical.
+
 Do not test financial mutations against live Firebase data.
+
+## Miss Chief release review — 2026-09-08
+
+Reviewed C's completed implementation and corrected the whole-array concurrent-write risk using
+server-side transactions. Added causal revisions and deterministic conflict resolution, preserved
+newer reversals during import, separated game writes from financial collections, added visible
+sync-failure feedback, and restored spacing between the personal game panels.
+
+Independent isolated Edge verification: **30 checks passed**, no JavaScript errors. Covered real
+two-tap UI entry, remembered/switchable player, paired scoring/undo, duplicate approval, unknown
+owner, weekly round, unchanged financial state, transaction retry against an existing remote claim,
+write failure feedback, backward clocks and equal-time conflicts, real import/export preserving
+reversals, and widths 360/390/820/1280. The phone layout was also visually inspected. External
+requests were blocked and no production records were changed. The transaction test used a local
+server double; it does not establish live Firebase permission or real-device acceptance.
+
+Release scope is the three files in this commit: `index.html` and the two product/handoff documents.
+Jason authorized the normal main-branch push after review. Actual deployment outcome is recorded
+in the Obsidian plan; the family pilot and live cross-phone sync check follow publication.
 
 ## Open items
 
 - **Firebase Database Rules have never been reviewed and are not in this repository.** Money
-  adds four new top-level keys. If the rules whitelist keys rather than allowing the family
-  node, those writes will be rejected and Money will silently stay device-local. Symptom:
-  tasks sync between phones but money does not.
+  adds four new top-level keys, and the Home Crew game adds two more (`homeGameEvents`,
+  `homeGameSettings`). If the rules whitelist keys rather than allowing the family
+  node, those writes may be rejected. Home Crew now displays a game-sync warning on write
+  failure; reconnect or reload to retry. Live rules and real two-phone sync remain unverified.
+- **The Home Crew pilot has not been played by the family yet, and no reward decision has been
+  made.** Run it for a few days, then review actual activity before deciding whether points ever
+  acquire a value. Categories are the four agreed ones; each item's real home still needs settling
+  together, and the grace period before an abandoned item counts is still undecided — the app
+  records claims, it does not adjudicate them. Watch for blaming, staged messes, or a kid opting
+  out: a proposed response is to keep helper points and drop the deduction, subject to Jason
+  deciding after the pilot. This is a recommendation, not an agreed rule change.
 - Starting balances have not been entered. The Money page ships empty by design — no balance
   was invented, because the real Chore-Bot figures are not known to the app.
 - Job prices are placeholders ($1–$5) and need setting to real household values.
@@ -268,6 +383,10 @@ Do not test financial mutations against live Firebase data.
 - Do not write text to Firebase on every keystroke.
 - Make financial changes auditable and preserve historical policy snapshots.
 - Keep Money and Clothing on one currency. A second currency reopens a settled charter refusal.
+- The Home Crew game's points are the one documented exception, and they are unspendable. Never
+  connect them to `fundsLedger`, a balance, an allowance or the clothing wallet, and never derive a
+  score from anything but the event list. Re-read the exception in `docs/product-charter.md` before
+  extending the game.
 - Unless explicitly requested, do not change the application version for minor corrections.
 - Review the exact staged files before committing or pushing.
 

@@ -952,6 +952,154 @@
     .fn-row-actions { justify-content:flex-start; margin-top:5px; }
   }
 
+  /* ============================================================
+     EVERYTHING HAS A HOME — "The Home Crew" game section (#funds)
+     A brighter, rounder surface than the ledger around it, on purpose:
+     nobody should be able to mistake a game score for a dollar balance.
+     --who is the current player's own profile colour, so each kid's screen
+     is recognisably theirs without a second palette to maintain.
+     ============================================================ */
+  .hg-shell { --who:var(--signal); background:var(--card); border:1px solid var(--line); border-top:5px solid var(--who);
+              border-radius:16px; box-shadow:var(--shadow); overflow:hidden; margin-bottom:18px; }
+  .hg-top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+            padding:11px 14px; background:var(--surface-2); border-bottom:1px solid var(--line); }
+  .hg-wordmark { display:inline-flex; align-items:center; gap:8px; font-size:15px; font-weight:800; letter-spacing:-.02em; }
+  .hg-wordmark #hgLogo { display:inline-flex; color:var(--who); }
+  .hg-round { font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted-2); }
+  .hg-body { padding:14px; display:grid; gap:13px; }
+  .hg-game:not([hidden]) { display:grid; gap:13px; }
+  .hg-ico { width:1.3em; height:1.3em; flex:none; fill:none; stroke:currentColor; stroke-width:1.7;
+            stroke-linecap:round; stroke-linejoin:round; vertical-align:-.2em; }
+  .hg-label { font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-2); margin:0 0 10px; }
+  .hg-players { display:grid; grid-template-columns:repeat(auto-fit,minmax(74px,1fr)); gap:8px; }
+  .hg-player { --who:var(--signal); display:grid; justify-items:center; gap:7px; background:var(--surface-2); border:1px solid var(--line);
+               border-radius:14px; padding:11px 5px; min-height:86px; cursor:pointer; color:var(--ink); font:inherit; font-weight:700; font-size:13px; }
+  .hg-player:hover { border-color:var(--who); }
+  .hg-player[aria-pressed="true"] { border-color:var(--who); box-shadow:0 0 0 2px var(--surface-2); }
+  .hg-picker .hg-quiet { margin-top:10px; }
+  .hg-avatar { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; background:var(--who);
+               color:#160B12; font-weight:800; font-size:16px; flex:none; }
+
+  .hg-hero { --who:var(--signal); position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1fr) auto;
+             gap:10px; align-items:center; padding:16px; border-radius:15px; border:1px solid var(--line); background:var(--surface-2); }
+  @supports (background:color-mix(in srgb,red,blue)) {
+    .hg-hero { background:linear-gradient(125deg, color-mix(in srgb, var(--who), var(--card) 74%), var(--card)); }
+  }
+  .hg-hello { font-size:12px; color:var(--muted); margin:0; }
+  .hg-hero h3 { margin:3px 0 0; font-size:19px; letter-spacing:-.02em; }
+  .hg-points { display:flex; align-items:baseline; gap:8px; margin-top:9px; }
+  .hg-number { font-family:var(--mono); font-size:40px; font-weight:800; letter-spacing:-.03em; line-height:1; }
+  .hg-number.neg { color:var(--alarm); }
+  .hg-unit { font-size:12px; color:var(--muted); }
+  .hg-badge { width:72px; height:72px; border-radius:22px; display:grid; place-items:center; background:var(--who); color:#160B12;
+              transform:rotate(6deg); }
+  .hg-badge .hg-ico { width:36px; height:36px; stroke-width:1.5; }
+  .hg-subline { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
+  .hg-tag { display:inline-flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted); background:var(--card);
+            border:1px solid var(--line); border-radius:99px; padding:4px 10px; }
+  .hg-tag .hg-ico { width:14px; height:14px; }
+
+  .hg-mission { border:1px solid var(--line); border-radius:15px; padding:13px; background:var(--surface-2); }
+  .hg-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .hg-head h3 { margin:0; font-size:16px; letter-spacing:-.02em; }
+  .hg-head .hg-ico { color:var(--who); }
+  .hg-sub { font-size:11.5px; color:var(--muted-2); margin:4px 0 0; }
+  .hg-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
+  .hg-tile { display:flex; align-items:center; gap:11px; text-align:left; min-height:74px; background:var(--card); border:1px solid var(--line);
+             border-radius:13px; padding:10px 12px; cursor:pointer; color:var(--ink); font:inherit;
+             transition:transform .14s ease, border-color .14s ease; }
+  .hg-tile:hover { border-color:var(--signal-dim); }
+  .hg-tile:active { transform:scale(.97); }
+  .hg-tile:focus-visible, .hg-player:focus-visible, .hg-owner:focus-visible, .hg-quiet:focus-visible { outline:2px solid var(--signal); outline-offset:2px; }
+  .hg-art { width:42px; height:42px; border-radius:13px; display:grid; place-items:center; flex:none;
+            background:var(--surface-2); color:var(--signal-dim); }
+  .hg-art .hg-ico { width:23px; height:23px; }
+  .hg-tile-text { display:grid; gap:2px; min-width:0; }
+  .hg-tile-text b { font-size:14px; }
+  .hg-tile-text small { font-size:10.5px; color:var(--muted-2); }
+  .hg-owners { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; margin-top:12px; }
+  .hg-owner { --who:var(--signal); display:flex; align-items:center; gap:9px; min-height:54px; background:var(--card); border:1px solid var(--line);
+              border-radius:12px; padding:8px 11px; cursor:pointer; color:var(--ink); font:inherit; font-weight:700; font-size:13.5px; text-align:left; }
+  .hg-owner:hover { border-color:var(--who); }
+  .hg-owner .hg-avatar { width:28px; height:28px; font-size:13px; }
+  .hg-owner.unknown .hg-avatar { background:var(--surface-2); color:var(--muted); border:1px dashed var(--line); }
+
+  .hg-quiet { background:none; border:1px solid var(--line); border-radius:10px; color:var(--muted); font:inherit; font-size:12.5px;
+              padding:8px 12px; cursor:pointer; min-height:40px; }
+  .hg-quiet:hover { color:var(--ink); border-color:var(--muted-2); }
+  .hg-switch { justify-self:center; min-width:170px; }
+
+  .hg-notice { position:relative; overflow:hidden; display:flex; align-items:center; gap:10px; min-height:56px; padding:11px 13px;
+               border:1px solid var(--line); border-radius:13px; background:var(--surface-2); font-size:13px; }
+  .hg-notice .hg-ico { color:var(--who); width:20px; height:20px; }
+  .hg-notice.bad { border-color:var(--star); }
+  .hg-notice.bad .hg-ico { color:var(--star); }
+
+  .hg-board { border:1px solid var(--line); border-radius:15px; padding:13px; }
+  .hg-racer { --who:var(--signal); display:grid; grid-template-columns:20px 28px minmax(0,1fr) auto; align-items:center; gap:9px; margin-top:12px; }
+  .hg-racer .hg-avatar { width:28px; height:28px; font-size:13px; }
+  .hg-rank { font-family:var(--mono); font-size:12px; color:var(--muted-2); }
+  .hg-racer-name { font-size:13.5px; font-weight:700; min-width:0; }
+  .hg-track { display:block; height:7px; border-radius:8px; background:var(--track); margin-top:6px; overflow:hidden; }
+  .hg-fill { display:block; height:100%; border-radius:8px; background:var(--who); width:0; transition:width .5s ease; }
+  .hg-pts { font-family:var(--mono); font-size:14px; font-weight:800; white-space:nowrap; }
+  .hg-pts.neg { color:var(--alarm); }
+
+  .hg-review { border:1px solid var(--line); border-radius:13px; padding:11px 13px; background:var(--card); }
+  .hg-review > summary { cursor:pointer; font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+                         color:var(--muted-2); min-height:26px; }
+  .hg-review[open] > summary { margin-bottom:6px; }
+  .hg-claim { display:flex; align-items:center; gap:9px; flex-wrap:wrap; border-top:1px solid var(--line); padding:10px 0; }
+  .hg-claim-main { flex:1; min-width:180px; }
+  .hg-claim-title { font-size:13.5px; font-weight:700; }
+  .hg-claim-title.off { color:var(--muted); text-decoration:line-through; }
+  .hg-claim-meta { font-size:11px; color:var(--muted-2); }
+  .hg-claim-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .hg-claim-head { font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted-2);
+                   margin-top:12px; padding-top:10px; border-top:1px solid var(--line); }
+  .hg-empty { font-size:12.5px; color:var(--muted); padding:9px 0; }
+  .hg-footer { font-size:11px; color:var(--muted-2); text-align:center; margin:0; }
+  .hg-note { font-size:11px; color:var(--star); margin:0; text-align:center; }
+
+  /* Celebration: a short pop plus ten sparks, drawn in CSS and cleaned up on a timer. It says
+     "your claim was sent", which is deliberately NOT the same thing as "you were given a point" —
+     the point only exists once a parent confirms it, and the leaderboard is what shows that. */
+  .hg-spark { position:absolute; left:50%; top:50%; width:7px; height:7px; border-radius:2px; background:var(--who);
+              pointer-events:none; transform:translate(-50%,-50%); animation:hg-burst .7s ease-out forwards; }
+  .hg-pop { animation:hg-pop .4s ease-out; }
+  @keyframes hg-pop { 0%{ transform:scale(.975); } 55%{ transform:scale(1.02); } 100%{ transform:scale(1); } }
+  @keyframes hg-burst { to { transform:translate(var(--dx),var(--dy)) rotate(180deg); opacity:0; } }
+  @media (prefers-reduced-motion: reduce){
+    .hg-tile, .hg-fill { transition:none !important; }
+    .hg-pop, .hg-spark { animation:none !important; }
+    .hg-spark { display:none !important; }
+  }
+
+  @media (max-width:520px){
+    .hg-body { padding:11px; gap:11px; }
+    .hg-hero { padding:13px; }
+    .hg-number { font-size:34px; }
+    .hg-badge { width:58px; height:58px; border-radius:18px; }
+    .hg-badge .hg-ico { width:29px; height:29px; }
+    .hg-tiles { grid-template-columns:1fr 1fr; gap:8px; }
+    .hg-tile { min-height:64px; padding:8px 9px; gap:8px; }
+    .hg-art { width:34px; height:34px; border-radius:11px; }
+    .hg-art .hg-ico { width:19px; height:19px; }
+    .hg-tile-text b { font-size:13px; }
+    .hg-owners { grid-template-columns:1fr 1fr; }
+    .hg-claim-actions { width:100%; }
+    .hg-claim-actions .btn { flex:1; }
+  }
+  @media (max-width:360px){
+    .hg-players { grid-template-columns:1fr 1fr; }
+    .hg-hero { grid-template-columns:minmax(0,1fr); }
+    .hg-badge { justify-self:start; }
+    /* The tiles stay two-up even on the narrowest phone: the whole point is a thumb-sized target
+       within reach, and a single column pushes the fourth category below the fold. */
+    .hg-tile { padding:7px 8px; }
+    .hg-tile-text small { font-size:10px; }
+  }
+
   @media (max-width:640px){
     .brand { width:100%; justify-content:space-between; }
     .brand-day { font-size:22px; }
@@ -1263,6 +1411,63 @@
   </header>
   <div class="fn-notice">Parent approval here is a household workflow, not secure sign-in. Anyone with this planner open can view or change money records.</div>
 
+  <!-- =====================================================================
+       EVERYTHING HAS A HOME — "The Home Crew"
+       A points-only cleanup game. It sits on the Money page because that is
+       where the family already looks to see who has earned what, and it is
+       deliberately fenced off from the money itself: nothing in this section
+       reads or writes a balance, an allowance, the clothing wallet or a
+       payout. Game points are unspendable. See docs/product-charter.md for
+       the narrow exception this holds against the no-points refusal.
+       ===================================================================== -->
+  <section class="hg-shell" id="hgShell" aria-labelledby="hgTitle">
+    <header class="hg-top">
+      <span class="hg-wordmark" id="hgTitle"><span id="hgLogo"></span> Home Crew</span>
+      <span class="hg-round" id="hgRound"></span>
+    </header>
+    <div class="hg-body">
+      <section class="hg-picker" id="hgPicker" hidden aria-label="Choose who is playing">
+        <p class="hg-label" id="hgPickerLabel">Who is playing?</p>
+        <div class="hg-players" id="hgPlayers"></div>
+        <button type="button" class="hg-quiet" id="hgCancelSwitch" hidden>Back to the game</button>
+      </section>
+
+      <div class="hg-game" id="hgGame" hidden>
+        <section class="hg-hero" id="hgHero" aria-label="Your home base"></section>
+
+        <section class="hg-mission" aria-label="Log a cleanup">
+          <div id="hgStepCategory">
+            <div class="hg-head"><h3>What did you rescue?</h3><span id="hgSparkIcon" aria-hidden="true"></span></div>
+            <p class="hg-sub">Already put it where it lives? Tap it.</p>
+            <div class="hg-tiles" id="hgTiles"></div>
+          </div>
+          <div id="hgStepOwner" hidden>
+            <div class="hg-head"><h3 id="hgOwnerTitle">Whose was it?</h3><button type="button" class="hg-quiet" id="hgBack">Back</button></div>
+            <p class="hg-sub">Tap a name to send it. That is the whole thing.</p>
+            <div class="hg-owners" id="hgOwners"></div>
+          </div>
+        </section>
+
+        <div class="hg-notice" id="hgNotice" role="status" aria-live="polite"></div>
+
+        <section class="hg-board" aria-label="This week's leaderboard">
+          <div class="hg-head"><h3>The weekly race</h3><span id="hgFlagIcon" aria-hidden="true"></span></div>
+          <div id="hgBoard"></div>
+        </section>
+      </div>
+
+      <details class="hg-review" id="hgReview">
+        <summary id="hgReviewSummary">Parent review</summary>
+        <div id="hgReviewBody"></div>
+      </details>
+
+      <p class="hg-footer">Points only, never dollars. Dad plays too.</p>
+      <button type="button" class="hg-quiet hg-switch" id="hgSwitch" hidden>Switch player</button>
+      <p class="hg-note" id="hgSyncNote" role="status" hidden>Points are saved on this device, but could not sync. Reconnect or reload to retry. If this continues, ask Dad to check sync access.</p>
+      <p class="hg-note" id="hgStorageNote" hidden>This browser is blocking saved settings, so the player choice will last only for this visit.</p>
+    </div>
+  </section>
+
   <div class="fn-grid" id="fnAccounts"></div>
 
   <section class="fn-section">
@@ -1405,7 +1610,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.17-beta";
+const VERSION = "1.18-beta";
 
 /* ---------------- storage ---------------- */
 /* Firebase does not store empty arrays: writing places:[] deletes the key outright. Every
@@ -1420,6 +1625,7 @@ const PAYLOAD_V=2;
 const K_TASKS="home.plan.v1", K_SHOP="home.shopping.v1", K_PEOPLE="home.people.v1", K_PLACES="home.places.v1", K_DATES="home.dates.v1", K_NOTES="home.notes.v1", K_BYL="home.before-you-leave.v1", K_BYL_TITLE="home.before-you-leave-title.v1", K_DATES_TITLE="home.dates-title.v1", K_DATES_COLLAPSED="home.dates-collapsed.v1", K_CAL_EXCLUSIONS="home.calendarExclusions.v1", K_CUSTODY="home.custodyDays.v1";
 const K_CLOTHING_PURCHASES="home.clothingPurchases.v1", K_CLOTHING_LEDGER="home.clothingWalletLedger.v1", K_CLOTHING_SETTINGS="home.clothingSettings.v1", K_CLOTHING_SETTLEMENTS="home.clothingSettlements.v1";
 const K_FUNDS_LEDGER="home.fundsLedger.v1", K_FUNDS_SETTINGS="home.fundsSettings.v1", K_GOALS="home.goals.v1", K_DAY_PLAN="home.dayPlan.v1";
+const K_HOME_GAME="home.homeGame.v1", K_HOME_GAME_SETTINGS="home.homeGameSettings.v1";
 function loadJSON(k){ try{ const r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
 function saveTasks(){ try{ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }catch(e){} pushCloud(); return true; }
 function saveShop(){ try{ localStorage.setItem(K_SHOP, JSON.stringify(shop)); }catch(e){} pushCloud(); }
@@ -1455,6 +1661,18 @@ function saveFunds(){
   }catch(e){}
   pushCloud();
 }
+/* Everything Has a Home. Its events and its settings are one unit for the same reason the two
+   pairs above are: confirming a claim writes an event while first use can write the settings that
+   decide who is playing. POINTS ONLY — nothing in here ever touches fundsLedger, a balance, an
+   allowance, the Clothing wallet, or a payout. See docs/product-charter.md for the narrow exception
+   this game holds against the charter's "no parallel reward currency" refusal. */
+function saveHomeGame(){
+  try{
+    localStorage.setItem(K_HOME_GAME,JSON.stringify(homeGameEvents));
+    localStorage.setItem(K_HOME_GAME_SETTINGS,JSON.stringify(homeGameSettings));
+  }catch(e){}
+  pushHomeGameCloud();
+}
 /* Goals and the end-of-day clock are shared household facts, not device preferences — a goal set on
    Dad's laptop has to show up on the kids' phones, and the day-end time is one family rule. */
 function saveGoals(){ try{ localStorage.setItem(K_GOALS, JSON.stringify(goals)); }catch(e){} pushCloud(); }
@@ -1463,6 +1681,9 @@ function saveDayPlan(){ try{ localStorage.setItem(K_DAY_PLAN, JSON.stringify(day
 /* Device-local preferences — deliberately never synced through Firebase, never included in the
    cloud payload, and never touched by import, so each device/browser keeps its own. */
 const K_SETTINGS="home.settings.v1", K_PREFS="home.viewprefs.v1", K_ACTIVE_PROFILE="home.activeProfile.v1", K_CAL_PREFS="home.calendarPrefs.v1";
+/* The Home Crew player this device is signed on as. Device-local for the same reason as the active
+   profile above: it is one phone's convenience, not a household fact, and it is not an account. */
+const K_HOME_GAME_PLAYER="home.homeGamePlayer.v1";
 function saveSettings(){ try{ localStorage.setItem(K_SETTINGS, JSON.stringify(settings)); }catch(e){} }
 function saveViewPrefs(){ try{ localStorage.setItem(K_PREFS, JSON.stringify({ showDone:document.getElementById("showDone").checked, showLater:document.getElementById("showLater").checked, showSomeday:document.getElementById("showSomeday").checked })); }catch(e){} }
 function saveActiveProfile(){ try{ localStorage.setItem(K_ACTIVE_PROFILE, JSON.stringify(activePerson)); }catch(e){} }
@@ -1484,6 +1705,8 @@ const FIREBASE_CONFIG = {
 const FAMILY_ID = "ccafc-home";   // any unique word — must match on every device
 
 let db=null, syncing=false, remoteApplying=false, pushTimer=null;
+/* Set by the snapshot handler when this device's game claims are ahead of the cloud's copy. */
+let homeGameNeedsPush=false, homeGamePushTimer=null, homeGameSyncError=false;
 function syncConfigured(){ return typeof firebase!=="undefined" && !!FIREBASE_CONFIG.apiKey && !!FIREBASE_CONFIG.databaseURL; }
 /* ---------------- authentication ----------------
    The family planner's data is private, and the database rules authorise specific Google accounts
@@ -1589,7 +1812,8 @@ function onCloudError(err){
 function hasLocalPlannerData(){
   return !!(tasks.length || shop.length || places.length || importantDates.length || notes.length ||
             beforeYouLeave.length || calendarExclusions.length || Object.keys(custodyDays).length || clothingPurchases.length ||
-            clothingWalletLedger.length || clothingSettlements.length || fundsLedger.length || goals.length);
+            clothingWalletLedger.length || clothingSettlements.length || fundsLedger.length || goals.length ||
+            homeGameEvents.length);
 }
 function applyFamilySnapshot(snap){
       const v=snap.val();
@@ -1623,8 +1847,19 @@ function applyFamilySnapshot(snap){
       { const x=listOrEmpty(v.fundsLedger,migrateFundEntry); if(x) fundsLedger=dedupeFundEntries(x); }
       if(v.fundsSettings && typeof v.fundsSettings==="object" && !Array.isArray(v.fundsSettings)) fundsSettings=migrateFundsSettings(v.fundsSettings);
       { const x=listOrEmpty(v.goals,migrateGoal); if(x) goals=x.filter(g=>g.text!==""); }
+      /* The game's claims MERGE rather than replace — see mergeHomeGameEvents. A phone that logged
+         a cleanup while offline must not lose it the moment it reconnects and receives a snapshot
+         written before that claim existed, and a claim confirmed here that has not been pushed yet
+         must not be un-confirmed by an older copy coming back. Anything this device holds that the
+         cloud has not caught up with is pushed straight back below. */
+      { const cloudGame=Array.isArray(v.homeGameEvents)?v.homeGameEvents.map(migrateHomeGameEvent):[];
+        const cloudById=new Map(cloudGame.map(e=>[e.id,e]));
+        const merged=mergeHomeGameEvents(homeGameEvents, cloudGame);
+        homeGameNeedsPush=merged.some(e=>{ const c=cloudById.get(e.id); return !c || compareHomeGameEvents(e,c)>0; });
+        homeGameEvents=merged; }
+      if(v.homeGameSettings && typeof v.homeGameSettings==="object" && !Array.isArray(v.homeGameSettings)) homeGameSettings=migrateHomeGameSettings(v.homeGameSettings);
       if(v.dayPlan && typeof v.dayPlan==="object" && !Array.isArray(v.dayPlan)) dayPlan=normalizeDayPlan(v.dayPlan);
-      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_DATES_TITLE,JSON.stringify(datesTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CUSTODY,JSON.stringify(custodyDays)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); localStorage.setItem(K_FUNDS_LEDGER,JSON.stringify(fundsLedger)); localStorage.setItem(K_FUNDS_SETTINGS,JSON.stringify(fundsSettings)); localStorage.setItem(K_GOALS,JSON.stringify(goals)); localStorage.setItem(K_DAY_PLAN,JSON.stringify(dayPlan)); }catch(e){}
+      try{ localStorage.setItem(K_PEOPLE,JSON.stringify(people)); localStorage.setItem(K_TASKS,JSON.stringify(tasks)); localStorage.setItem(K_SHOP,JSON.stringify(shop)); localStorage.setItem(K_PLACES,JSON.stringify(places)); localStorage.setItem(K_DATES,JSON.stringify(importantDates)); localStorage.setItem(K_NOTES,JSON.stringify(notes)); localStorage.setItem(K_BYL,JSON.stringify(beforeYouLeave)); localStorage.setItem(K_BYL_TITLE,JSON.stringify(bylTitle)); localStorage.setItem(K_DATES_TITLE,JSON.stringify(datesTitle)); localStorage.setItem(K_CAL_EXCLUSIONS,JSON.stringify(calendarExclusions)); localStorage.setItem(K_CUSTODY,JSON.stringify(custodyDays)); localStorage.setItem(K_CLOTHING_PURCHASES,JSON.stringify(clothingPurchases)); localStorage.setItem(K_CLOTHING_LEDGER,JSON.stringify(clothingWalletLedger)); localStorage.setItem(K_CLOTHING_SETTINGS,JSON.stringify(clothingSettings)); localStorage.setItem(K_CLOTHING_SETTLEMENTS,JSON.stringify(clothingSettlements)); localStorage.setItem(K_FUNDS_LEDGER,JSON.stringify(fundsLedger)); localStorage.setItem(K_FUNDS_SETTINGS,JSON.stringify(fundsSettings)); localStorage.setItem(K_GOALS,JSON.stringify(goals)); localStorage.setItem(K_DAY_PLAN,JSON.stringify(dayPlan)); localStorage.setItem(K_HOME_GAME,JSON.stringify(homeGameEvents)); localStorage.setItem(K_HOME_GAME_SETTINGS,JSON.stringify(homeGameSettings)); }catch(e){}
       remoteApplying=false;
       const migratedPayer=applyCheckoutPayerMigration();
       const deposited=ensureMonthlyClothingDeposits();
@@ -1633,6 +1868,10 @@ function applyFamilySnapshot(snap){
          day. Deterministic ids (allowance:<person>:<date>) make that idempotent, so two devices
          racing produce one row, not two. */
       if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
+      /* Push back whatever the merge above kept that the cloud did not have. Once the cloud carries
+         it, the next snapshot leaves homeGameNeedsPush false, so this settles rather than loops. */
+      if(ensureHomeGamePersonSettings()|(homeGameNeedsPush?1:0)) saveHomeGame();
+      homeGameNeedsPush=false;
       /* A cloud record created before Kids Schedule has no custodyDays key. Preserve this device's
          existing local schedule and seed that new field instead of silently leaving it local-only. */
       if(!cloudHasCustody && Object.keys(custodyDays).length) saveCustody();
@@ -1640,9 +1879,31 @@ function applyFamilySnapshot(snap){
       // would blow away a focused inline editor's DOM — so defer the redraw until editing ends.
       if(!editingActive()) render(); else pendingRemoteRender=true;
 }
+/* A transaction merges at the server, so simultaneous phone writes cannot replace one
+   another's claims. Keep game writes separate from the planner's financial collections. */
+function pushHomeGameCloud(){
+  if(!syncing || remoteApplying) return;
+  clearTimeout(homeGamePushTimer);
+  homeGamePushTimer=setTimeout(async()=>{
+    if(!syncing || !db) return;
+    const outgoing=homeGameEvents.map(e=>({...e}));
+    const settings=JSON.parse(JSON.stringify(homeGameSettings));
+    try{
+      await Promise.all([
+        db.child("homeGameEvents").transaction(current=>mergeHomeGameEvents(current,outgoing),undefined,false),
+        db.child("homeGameSettings").update(settings)
+      ]);
+      homeGameSyncError=false;
+    }catch(err){ homeGameSyncError=true; }
+    updateSyncBadge();
+    const note=document.getElementById("hgSyncNote");
+    if(note) note.hidden=!homeGameSyncError;
+  },250);
+}
 function pushCloud(force){
   if(!syncing || (remoteApplying && !force)) return;
   clearTimeout(pushTimer);
+  pushHomeGameCloud();
   /* update() instead of set() — a set() from this tab would blank out any top-level key it omits.
      Since a stale v1.4 tab's set() has no importantDates key, its set() would still erase importantDates
      (update() only protects against writers that also use update() with a partial payload); this change
@@ -1656,6 +1917,7 @@ function updateSyncBadge(){
   if(!authReady)        return set("○ Checking sign-in…","var(--muted-2)","Restoring your session");
   if(!authUser)         return set("○ Signed out","var(--muted-2)","Saving on this device only — sign in to sync");
   if(permissionDenied)  return set("⚠ Not authorised","var(--alarm)","This Google account isn't allowed to open the family planner");
+  if(homeGameSyncError) return set("⚠ Game not synced","var(--alarm)","Cleanup points are saved here, but the cloud write failed. Reconnect or reload to retry.");
   set(cloudConnected ? "● Synced" : "● Offline", cloudConnected ? "#23B877" : "var(--star)", cloudConnected ? "Live sync on" : "Reconnecting…");
 }
 /* The sign-in surface. Two states are worth interrupting for — signed out, and signed in with an
@@ -2339,6 +2601,229 @@ function clothingRefundToBank(personId, cents, note){
 }
 
 /* =====================================================================
+   EVERYTHING HAS A HOME  —  "The Home Crew" cleanup game
+   Points only, and deliberately nothing else. The person who puts away
+   something ANOTHER player left out gains one point; the person who left it
+   loses one. A parent confirms each claim, and confirming applies both halves
+   at once. Nothing here reads or writes fundsLedger, a balance, an allowance,
+   the Clothing wallet, or any payout: a game score is not money and cannot
+   become money without a separate, explicit decision.
+
+   The charter refuses a parallel reward currency. This is the narrow exception
+   Jason authorised on 2026-09-08, and it is narrow precisely because these
+   points are unspendable — dollars remain the only currency in the app.
+
+   Scores are DERIVED from the event list on every read. There is no stored
+   total anywhere, which is what makes the whole thing safe: approving the same
+   claim twice, or the same claim arriving from two phones, cannot move a score
+   twice, and a reversal restores both sides together because both sides were
+   only ever a reading of one event's state.
+   ===================================================================== */
+const HOME_GAME_VERSION="1.0";
+/* The four categories the family agreed on. Each item's real home is decided together before it is
+   worth a point — the label under each tile is the reminder of where that home is. */
+const HOME_GAME_CATEGORIES=[
+  {id:"dishes",  label:"Dishes",  home:"Back to the kitchen", icon:"utensils"},
+  {id:"trash",   label:"Trash",   home:"Into the bin",        icon:"trash"},
+  {id:"toys",    label:"Toys",    home:"Back in their place", icon:"blocks"},
+  {id:"clothes", label:"Clothes", home:"Hamper or drawer",    icon:"shirt"},
+];
+const HOME_GAME_STATUSES=["pending","confirmed","declined"];
+function homeGameCategory(id){ return HOME_GAME_CATEGORIES.find(c=>c.id===id)||null; }
+function homeGameCategoryLabel(id){ const c=homeGameCategory(id); return c?c.label:"Something"; }
+
+/* A round is one week, starting Sunday, keyed by that Sunday's date. A fresh week gives everyone a
+   fresh start without deleting anything: old events keep their own round key and stay in history. */
+function homeGameRoundKey(ymd){
+  const d=localMoment(/^\d{4}-\d{2}-\d{2}$/.test(ymd||"")?ymd:todayStr(),"00:00");
+  if(!d) return todayStr();
+  d.setDate(d.getDate()-d.getDay());
+  return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+}
+function homeGameCurrentRound(){ return homeGameRoundKey(todayStr()); }
+function homeGameRoundLabel(round){ return "Week of "+fmtDate(round); }
+
+function blankHomeGamePerson(){ return {playing:true}; }
+function migrateHomeGamePerson(raw){ const r=(raw&&typeof raw==="object")?raw:{}; return {playing:r.playing!==false}; }
+function blankHomeGameSettings(){ return {version:HOME_GAME_VERSION, people:{}}; }
+function migrateHomeGameSettings(raw){
+  const r=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const out=blankHomeGameSettings();
+  const src=(r.people&&typeof r.people==="object"&&!Array.isArray(r.people))?r.people:{};
+  Object.keys(src).forEach(id=>{ out.people[id]=migrateHomeGamePerson(src[id]); });
+  return out;
+}
+function homeGamePersonSettings(personId){ return homeGameSettings.people[personId]||blankHomeGamePerson(); }
+function ensureHomeGamePersonSettings(){
+  let changed=false;
+  people.forEach(p=>{ if(!homeGameSettings.people[p.id]){ homeGameSettings.people[p.id]=blankHomeGamePerson(); changed=true; } });
+  return changed;
+}
+/* Everyone in the family plays by default, Dad included. This is NOT the Money/Clothing adult rule:
+   those exclude adult role names from wallets on purpose, and the whole point of this game is that
+   the person who creates the most rescue work also has to play. Being a player can never touch a
+   bank account or clothing participation — those live in their own settings and are untouched. */
+function homeGamePlayers(){ return people.filter(p=>homeGamePersonSettings(p.id).playing); }
+function homeGameIsPlayer(personId){ return homeGamePlayers().some(p=>p.id===personId); }
+
+/* One record per cleanup claim. Everything a score, a review and a reversal needs is on it, so
+   nothing is ever recomputed from a name and no total is stored anywhere. ownerId:"" means the
+   owner is unknown: the helper is still credited and NOBODY is deducted. */
+function blankHomeGameEvent(){
+  const now=Date.now(), date=todayStr();
+  return {id:uid("hg"), round:homeGameRoundKey(date), helperId:"", ownerId:"", category:"", date,
+          created:now, status:"pending", decidedBy:"", decided:0, reversed:false, reversedAt:0, updated:now};
+}
+function migrateHomeGameEvent(raw){
+  const e=Object.assign(blankHomeGameEvent(), raw||{});
+  e.id=String(e.id||uid("hg"));
+  e.helperId=String(e.helperId||"");
+  e.ownerId=String(e.ownerId||"");
+  e.category=homeGameCategory(e.category)?e.category:HOME_GAME_CATEGORIES[0].id;
+  e.date=/^\d{4}-\d{2}-\d{2}$/.test(e.date)?e.date:todayStr();
+  e.round=/^\d{4}-\d{2}-\d{2}$/.test(e.round)?e.round:homeGameRoundKey(e.date);
+  e.status=HOME_GAME_STATUSES.includes(e.status)?e.status:"pending";
+  e.decidedBy=String(e.decidedBy||"");
+  e.decided=finiteInt(e.decided,0);
+  e.reversed=e.reversed===true;
+  e.reversedAt=finiteInt(e.reversedAt,0);
+  e.created=finiteInt(e.created,Date.now());
+  e.updated=finiteInt(e.updated,e.created);
+  e.revision=Math.max(0,finiteInt(e.revision,0));
+  return e;
+}
+/* Game claims are the one collection in this app that MERGES on sync instead of being replaced.
+   Every other list is edited by a parent on one device at a time; this one is written by four
+   people on four phones, often offline, so a whole-array overwrite would silently drop a claim
+   logged while a phone had no signal. Events are never deleted — a reversal is a state ON the
+   event, not a removal. Causal revisions preserve later decisions even if a device clock moves
+   backwards; time and canonical content break simultaneous-edit ties consistently on all devices. */
+function homeGameEventKey(e){
+  return JSON.stringify([e.status,e.reversed,e.reversedAt,e.decided,e.decidedBy,e.helperId,e.ownerId,e.category,e.date,e.round,e.created]);
+}
+function compareHomeGameEvents(a,b){
+  return (a.revision-b.revision) || (a.updated-b.updated) ||
+    (homeGameEventKey(a)<homeGameEventKey(b)?-1:homeGameEventKey(a)>homeGameEventKey(b)?1:0);
+}
+function touchHomeGameEvent(e){ e.revision+=1; e.updated=Math.max(Date.now(),e.updated+1); }
+function mergeHomeGameEvents(mine, theirs){
+  const by=new Map();
+  (Array.isArray(mine)?mine:[]).forEach(raw=>{ const e=migrateHomeGameEvent(raw); by.set(e.id,e); });
+  (Array.isArray(theirs)?theirs:[]).forEach(raw=>{
+    const e=migrateHomeGameEvent(raw), cur=by.get(e.id);
+    if(!cur || compareHomeGameEvents(e,cur)>0) by.set(e.id,e);
+  });
+  return [...by.values()].sort((a,b)=>a.created-b.created || (a.id<b.id?-1:a.id>b.id?1:0));
+}
+function homeGameEvent(id){ return homeGameEvents.find(e=>e.id===id); }
+
+/* ---- derived scores: the only place a point is ever counted ---- */
+function homeGameScoredEvents(round){
+  return homeGameEvents.filter(e=>e.status==="confirmed" && !e.reversed && (!round || e.round===round));
+}
+function homeGameScore(personId, round){
+  let n=0;
+  homeGameScoredEvents(round).forEach(e=>{ if(e.helperId===personId) n+=1; if(e.ownerId===personId) n-=1; });
+  return n;
+}
+function homeGameRescues(personId, round){ return homeGameScoredEvents(round).filter(e=>e.helperId===personId).length; }
+function homeGameLeftOut(personId, round){ return homeGameScoredEvents(round).filter(e=>e.ownerId===personId).length; }
+function homeGamePendingClaims(){ return homeGameEvents.filter(e=>e.status==="pending").sort((a,b)=>a.created-b.created); }
+function homeGamePendingFor(personId){ return homeGameEvents.filter(e=>e.status==="pending" && e.helperId===personId).length; }
+/* Recently decided claims, newest first — the parent's undo surface. Reversals stay in this list
+   too, so a mistake made during a fast family review is one tap from being put back. */
+function homeGameDecidedClaims(limit){
+  return homeGameEvents.filter(e=>e.status!=="pending")
+    .sort((a,b)=>(b.decided||b.updated)-(a.decided||a.updated))
+    .slice(0, limit||8);
+}
+/* Ties share a rank, so two people on 6 points are both #1 and the next one is #3. */
+function homeGameStandings(round){
+  const r=round||homeGameCurrentRound();
+  const rows=homeGamePlayers().map(p=>({person:p, score:homeGameScore(p.id,r), rescues:homeGameRescues(p.id,r), leftOut:homeGameLeftOut(p.id,r)}));
+  rows.sort((a,b)=>b.score-a.score || b.rescues-a.rescues || a.person.name.localeCompare(b.person.name));
+  rows.forEach(row=>{ row.rank=1+rows.filter(x=>x.score>row.score).length; });
+  return rows;
+}
+function homeGameRank(personId, round){
+  const row=homeGameStandings(round).find(r=>r.person.id===personId);
+  return row?row.rank:0;
+}
+
+/* ---- claims ---- */
+/* Same helper, same owner, same category, still waiting: almost always a double tap or a second
+   phone, never two separate rescues worth two separate points. Refused rather than filed. */
+function homeGameDuplicatePending(helperId, ownerId, category){
+  return homeGameEvents.some(e=>e.status==="pending" && e.helperId===helperId && e.ownerId===(ownerId||"") && e.category===category);
+}
+function logHomeGameCleanup(helperId, ownerId, category){
+  if(!helperId || !homeGameIsPlayer(helperId)) return {ok:false, error:"Choose who is playing first."};
+  if(!homeGameCategory(category)) return {ok:false, error:"Pick what you put away."};
+  if(ownerId && ownerId===helperId) return {ok:false, error:"Points come from putting away someone else's things."};
+  if(ownerId && !homeGameIsPlayer(ownerId)) return {ok:false, error:"That person is not in the game."};
+  if(homeGameDuplicatePending(helperId, ownerId, category)) return {ok:false, error:"That one is already waiting for a parent."};
+  const e=migrateHomeGameEvent({helperId, ownerId:ownerId||"", category});
+  homeGameEvents.push(e);
+  saveHomeGame();
+  return {ok:true, event:e};
+}
+/* Confirming is the only moment a point becomes real, and it applies BOTH halves because both
+   halves are read from this one status. Repeating it is a no-op rather than a second award, which
+   is what makes two parents tapping Confirm on two phones harmless. */
+function confirmHomeGameClaim(id, reviewerId){
+  const e=homeGameEvent(id);
+  if(!e) return {ok:false, error:"That claim is gone."};
+  if(e.status!=="pending") return {ok:false, error:"That claim has already been decided."};
+  e.status="confirmed"; e.reversed=false; e.reversedAt=0;
+  e.decidedBy=reviewerId||""; e.decided=Date.now(); touchHomeGameEvent(e);
+  saveHomeGame();
+  return {ok:true, event:e};
+}
+function declineHomeGameClaim(id, reviewerId){
+  const e=homeGameEvent(id);
+  if(!e) return {ok:false, error:"That claim is gone."};
+  if(e.status!=="pending") return {ok:false, error:"That claim has already been decided."};
+  e.status="declined"; e.decidedBy=reviewerId||""; e.decided=Date.now(); touchHomeGameEvent(e);
+  saveHomeGame();
+  return {ok:true, event:e};
+}
+/* Reversal, not deletion: the record stays, both scores go back together, and the reversal itself
+   can be undone. Nothing about a decided claim is ever destroyed. */
+function reverseHomeGameClaim(id){
+  const e=homeGameEvent(id);
+  if(!e || e.status!=="confirmed") return {ok:false, error:"Only a confirmed claim can be taken back."};
+  if(e.reversed) return {ok:false, error:"That claim is already taken back."};
+  e.reversed=true; e.reversedAt=Date.now(); touchHomeGameEvent(e);
+  saveHomeGame();
+  return {ok:true, event:e};
+}
+function restoreHomeGameClaim(id){
+  const e=homeGameEvent(id);
+  if(!e || !e.reversed) return {ok:false, error:"There is nothing to restore."};
+  e.reversed=false; e.reversedAt=0; touchHomeGameEvent(e);
+  saveHomeGame();
+  return {ok:true, event:e};
+}
+/* A declined claim can go back into the queue — "we talked about it, she did put them away". */
+function reopenHomeGameClaim(id){
+  const e=homeGameEvent(id);
+  if(!e || e.status!=="declined") return {ok:false, error:"Only a declined claim can be reopened."};
+  if(homeGameDuplicatePending(e.helperId, e.ownerId, e.category)) return {ok:false, error:"An identical claim is already waiting."};
+  e.status="pending"; e.decidedBy=""; e.decided=0; touchHomeGameEvent(e);
+  saveHomeGame();
+  return {ok:true, event:e};
+}
+function homeGameClaimText(e){
+  const helper=getPerson(e.helperId).name, cat=homeGameCategoryLabel(e.category).toLowerCase();
+  return e.ownerId ? `${helper} put away ${getPerson(e.ownerId).name}'s ${cat}` : `${helper} put away ${cat} — owner unknown`;
+}
+function homeGameClaimEffect(e){
+  return e.ownerId
+    ? `${getPerson(e.helperId).name} +1 \u00b7 ${getPerson(e.ownerId).name} \u22121`
+    : `${getPerson(e.helperId).name} +1 \u00b7 no deduction`;
+}
+
+/* =====================================================================
    GOALS FOR TODAY + THE END-OF-DAY CLOCK
    A goal is deliberately NOT a task status. It is the one or two things you
    want out of today, it is written and cleared inside the same day, and it must
@@ -2593,6 +3078,33 @@ let goals = (Array.isArray(goalsRaw)?goalsRaw:[]).map(migrateGoal).filter(g=>g.t
 let dayPlan = normalizeDayPlan(loadJSON(K_DAY_PLAN)||{});
 if(pruneOldGoals()) saveGoals();
 
+/* Everything Has a Home. Loaded after people, because who is playing is derived from the family
+   list, and after Money so it is obvious in one place that the two never touch. */
+let homeGameSettings = migrateHomeGameSettings(loadJSON(K_HOME_GAME_SETTINGS)||{});
+const homeGameRaw = loadJSON(K_HOME_GAME);
+let homeGameEvents = mergeHomeGameEvents([], Array.isArray(homeGameRaw)?homeGameRaw:[]);
+/* Which player THIS DEVICE is signed on as. Device-local and never synced, exactly like
+   home.activeProfile.v1 — each kid's phone opens straight onto them and the picker stays hidden.
+   It is a convenience, not identity: whoever is holding the phone can change it, so it proves
+   nothing and grants nothing. It is deliberately NOT the app-wide person selector either; a parent
+   filtering Home to Ariel must not start logging cleanups as Ariel.
+   Read with a raw try/catch rather than loadJSON so a browser that blocks storage outright can be
+   told apart from a device that simply has not chosen yet. */
+let homeGamePlayerId="", homeGameStorageBlocked=false;
+{
+  let saved=null;
+  try{ const raw=localStorage.getItem(K_HOME_GAME_PLAYER); saved=raw?JSON.parse(raw):null; }
+  catch(e){ homeGameStorageBlocked=true; }
+  if(typeof saved==="string" && people.some(x=>x.id===saved)) homeGamePlayerId=saved;
+}
+function saveHomeGamePlayer(){
+  try{ localStorage.setItem(K_HOME_GAME_PLAYER, JSON.stringify(homeGamePlayerId)); homeGameStorageBlocked=false; }
+  catch(e){ homeGameStorageBlocked=true; }
+}
+/* Transient screen state for the two-tap entry. Never persisted and never synced: it is where the
+   thumb is right now, not a household fact. */
+let homeGameChoosing=false, homeGameStep="category", homeGamePickedCategory="", homeGameMessage="", homeGameMessageBad=false;
+
 /* ---------------- state ---------------- */
 let editingId=null, placeEditingId=null, dateEditingId=null, overdueSet=new Set();
 /* Restore this browser/device's last-selected family filter; fall back to Everyone ("all") if the
@@ -2625,7 +3137,10 @@ const PAGES=[
   {id:"home",     label:"Today",    icon:"🏠", wrap:"homeWrap",     hash:"",          render:()=>render()},
   {id:"calendar", label:"Calendar", icon:"📅", wrap:"calendarPage", hash:"#calendar", render:renderCalendarPage},
   {id:"agenda",   label:"Agenda",   icon:"🗒️", wrap:"calendarPage", hash:"#agenda",   render:renderCalendarPage},
-  {id:"funds",    label:"Money",    icon:"💰", wrap:"fundsPage",    hash:"#funds",    render:renderFundsPage,    badge:()=>fundsPendingRequests().length},
+  /* Money's badge counts BOTH kinds of work waiting for a parent on that page: job payouts and
+     Home Crew cleanup claims. Same rule as every other badge — never narrowed by the person
+     selector, because a parent has to see outstanding work whoever is being viewed. */
+  {id:"funds",    label:"Money",    icon:"💰", wrap:"fundsPage",    hash:"#funds",    render:renderFundsPage,    badge:()=>fundsPendingRequests().length+homeGamePendingClaims().length},
   {id:"clothing", label:"Clothing", icon:"👕", wrap:"clothingPage", hash:"#clothing", render:renderClothingPage, badge:()=>pendingClothingReviews().length},
 ];
 function pageDef(id){ return PAGES.find(p=>p.id===id)||PAGES[0]; }
@@ -5340,8 +5855,246 @@ function renderFundsLedger(){
     const r=removeFundEntry(b.dataset.id); if(!r.ok){ alert(r.error); return; } render();
   }));
 }
+/* ---------------- Everything Has a Home — the Home Crew screen ----------------
+   The icons are inline SVG defined right here, on purpose. The design preview borrowed Lucide from
+   the Codex conversation host; production cannot depend on that host, and this app ships as a
+   single file with no icon library, so these are drawn in the app itself: no CDN, no extra request,
+   no third-party asset to license or keep, and they work offline and inside the installed PWA
+   exactly like everything else on the page. Each entry is a list of path data for a 24x24 box,
+   stroked with currentColor by .hg-ico. */
+const HG_ICONS={
+  house:    ["M3 10.6 12 3.2l9 7.4","M5.6 9.5V20a1 1 0 0 0 1 1h10.8a1 1 0 0 0 1-1V9.5","M9.7 21v-6.1h4.6V21"],
+  utensils: ["M7 3v5.2a2 2 0 0 0 4 0V3","M9 8.4V21","M17 3.2a3.1 3.1 0 0 1 0 6.6 3.1 3.1 0 0 1 0-6.6z","M17 9.8V21"],
+  trash:    ["M4 6.8h16","M9.2 6.8V5a1 1 0 0 1 1-1h3.6a1 1 0 0 1 1 1v1.8","M6.6 6.8l.8 12.3a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.8-12.3","M10.2 10.6v6","M13.8 10.6v6"],
+  blocks:   ["M4 4.2h6.2v6.2H4z","M13.8 4.2H20v6.2h-6.2z","M8.9 13.6h6.2v6.2H8.9z"],
+  shirt:    ["M8.6 3 4 5.2l1.6 4.5 2.5-1V21h7.8V8.7l2.5 1L20 5.2 15.4 3","M8.6 3a3.4 3.4 0 0 0 6.8 0"],
+  trophy:   ["M7 4h10v4.6a5 5 0 0 1-10 0z","M7 5.6H4.6v1A3.4 3.4 0 0 0 8 10","M17 5.6h2.4v1A3.4 3.4 0 0 1 16 10","M12 13.6V17","M8.6 20.5h6.8","M9.8 17h4.4v3.5H9.8z"],
+  check:    ["M4.6 12.4 9 16.8 19.4 6.4"],
+  x:        ["M6.4 6.4 17.6 17.6","M17.6 6.4 6.4 17.6"],
+  sparkles: ["M11 3.2 12.6 7.6 17 9.2 12.6 10.8 11 15.2 9.4 10.8 5 9.2 9.4 7.6z","M17.8 14.4l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"],
+  flag:     ["M5.2 21V3.6","M5.2 4.6h11l-2 3.4 2 3.4h-11"],
+  heart:    ["M12 20.4C12 20.4 3.6 15 3.6 9.4A4.1 4.1 0 0 1 12 7.1a4.1 4.1 0 0 1 8.4 2.3c0 5.6-8.4 11-8.4 11z"],
+  undo:     ["M9 5.2 4.2 9.6 9 14","M4.2 9.6h9.4a5.6 5.6 0 0 1 0 11.2h-2.8"],
+  users:    ["M9 11.2a3.6 3.6 0 1 0 0-7.2 3.6 3.6 0 0 0 0 7.2z","M2.6 20.6a6.4 6.4 0 0 1 12.8 0","M16.4 4.7a3.6 3.6 0 0 1 0 6.8","M17.8 14.3a6.4 6.4 0 0 1 3.6 6.3"]
+};
+function hgIcon(name){
+  const paths=HG_ICONS[name]||[];
+  return `<svg class="hg-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths.map(d=>`<path d="${d}"/>`).join("")}</svg>`;
+}
+function hgAvatar(person, extra){
+  const initial=String(person.name||"?").trim().slice(0,1).toUpperCase()||"?";
+  return `<span class="hg-avatar ${extra||""}" aria-hidden="true" style="background:${esc(person.color||"#8595A8")}">${esc(initial)}</span>`;
+}
+function hgReduceMotion(){
+  try{ return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }catch(e){ return false; }
+}
+/* Deliberately brief, and deliberately about the SUBMISSION rather than the score: the point does
+   not exist until a parent confirms it, and the leaderboard is what shows that. Skipped entirely
+   when the device asks for reduced motion — the message and the waiting count still say what
+   happened, so nothing is only communicated by movement. */
+function hgCelebrate(){
+  const box=document.getElementById("hgNotice");
+  if(!box || hgReduceMotion()) return;
+  box.classList.remove("hg-pop"); void box.offsetWidth; box.classList.add("hg-pop");
+  for(let i=0;i<10;i++){
+    const dot=document.createElement("span");
+    dot.className="hg-spark";
+    const angle=i*Math.PI/5;
+    dot.style.setProperty("--dx", Math.round(Math.cos(angle)*88)+"px");
+    dot.style.setProperty("--dy", Math.round(Math.sin(angle)*40)+"px");
+    box.appendChild(dot);
+    setTimeout(()=>{ if(dot.parentNode) dot.parentNode.removeChild(dot); }, 760);
+  }
+}
+function hgSay(text, bad){ homeGameMessage=text||""; homeGameMessageBad=!!bad; }
+function hgSetPlayer(personId){
+  homeGamePlayerId=personId;
+  homeGameChoosing=false; homeGameStep="category"; homeGamePickedCategory="";
+  saveHomeGamePlayer();
+  hgSay("You are playing as "+getPerson(personId).name+".");
+  renderHomeGame();
+}
+function hgSubmitClaim(ownerId){
+  const helper=homeGamePlayerId, category=homeGamePickedCategory;
+  homeGameStep="category"; homeGamePickedCategory="";
+  const r=logHomeGameCleanup(helper, ownerId, category);
+  if(!r.ok){ hgSay(r.error,true); renderHomeGame(); return; }
+  hgSay("Nice rescue, "+getPerson(helper).name+"! Your +1 is waiting for a parent to confirm.");
+  /* The claim is already saved. render() rather than renderHomeGame() so the Money badge and every
+     other surface that counts work waiting for a parent updates in the same beat. */
+  render();
+  hgCelebrate();
+}
+function renderHomeGame(){
+  const shell=document.getElementById("hgShell"); if(!shell) return;
+  if(ensureHomeGamePersonSettings()) saveHomeGame();
+  const players=homeGamePlayers();
+  /* A remembered player who has since left the family list, or been taken out of the game, puts
+     this device quietly back on the picker rather than opening a screen belonging to nobody. */
+  if(homeGamePlayerId && !players.some(p=>p.id===homeGamePlayerId)){ homeGamePlayerId=""; saveHomeGamePlayer(); }
+  const player=players.find(p=>p.id===homeGamePlayerId)||null;
+  const choosing=!player || homeGameChoosing;
+  const round=homeGameCurrentRound();
+
+  shell.style.setProperty("--who", player?player.color:"var(--signal)");
+  document.getElementById("hgLogo").innerHTML=hgIcon("house");
+  document.getElementById("hgSparkIcon").innerHTML=hgIcon("sparkles");
+  document.getElementById("hgFlagIcon").innerHTML=hgIcon("flag");
+  document.getElementById("hgRound").textContent=homeGameRoundLabel(round);
+  document.getElementById("hgPicker").hidden=!choosing;
+  document.getElementById("hgGame").hidden=choosing;
+  document.getElementById("hgSwitch").hidden=choosing;
+  document.getElementById("hgCancelSwitch").hidden=!player;
+  document.getElementById("hgStorageNote").hidden=!homeGameStorageBlocked;
+  document.getElementById("hgSyncNote").hidden=!homeGameSyncError;
+  document.getElementById("hgPickerLabel").textContent=player?"Who is playing now?":"Who is playing?";
+
+  /* Assigned rather than added, so re-rendering never stacks up duplicate handlers. */
+  document.getElementById("hgSwitch").onclick=()=>{ homeGameChoosing=true; homeGameStep="category"; homeGamePickedCategory=""; renderHomeGame(); document.getElementById("hgPicker").scrollIntoView({block:"nearest"}); };
+  document.getElementById("hgCancelSwitch").onclick=()=>{ homeGameChoosing=false; renderHomeGame(); };
+  document.getElementById("hgBack").onclick=()=>{ homeGameStep="category"; homeGamePickedCategory=""; renderHomeGame(); };
+
+  const notice=document.getElementById("hgNotice");
+  notice.classList.toggle("bad", homeGameMessageBad);
+  notice.innerHTML=hgIcon(homeGameMessageBad?"x":"heart")+`<span>${esc(homeGameMessage||"Everything has a home. Let's get it there.")}</span>`;
+
+  renderHomeGamePlayerPicker(players, player);
+  /* The review sits OUTSIDE the picker/game switch on purpose: a parent who has never chosen a
+     player still has to be able to confirm the claims the nav badge is counting. */
+  renderHomeGameReview();
+  if(!player) return;
+  renderHomeGameHero(player, round);
+  renderHomeGameEntry(player, players);
+  renderHomeGameBoard(player, round);
+}
+function renderHomeGamePlayerPicker(players, player){
+  const box=document.getElementById("hgPlayers");
+  if(!players.length){
+    box.innerHTML=`<div class="hg-empty">Nobody is in the game yet. Add family members with "Edit family..." on Today.</div>`;
+    return;
+  }
+  box.innerHTML=players.map(p=>
+    `<button type="button" class="hg-player" data-id="${esc(p.id)}" style="--who:${esc(p.color)}"`+
+    ` aria-pressed="${player&&player.id===p.id?"true":"false"}" aria-label="Play as ${esc(p.name)}">`+
+    `${hgAvatar(p)}<span>${esc(p.name)}</span></button>`).join("");
+  box.querySelectorAll(".hg-player").forEach(b=>b.addEventListener("click",()=>hgSetPlayer(b.dataset.id)));
+}
+function renderHomeGameHero(player, round){
+  const score=homeGameScore(player.id,round), rank=homeGameRank(player.id,round);
+  const rescues=homeGameRescues(player.id,round), leftOut=homeGameLeftOut(player.id,round);
+  const waiting=homeGamePendingFor(player.id);
+  const hero=document.getElementById("hgHero");
+  hero.style.setProperty("--who", player.color);
+  hero.innerHTML=`<div>
+      <p class="hg-hello">Hey, ${esc(player.name)}.</p>
+      <h3>Your home base.</h3>
+      <div class="hg-points"><span class="hg-number ${score<0?"neg":""}">${score>0?"+":""}${score}</span>
+        <span class="hg-unit">point${Math.abs(score)===1?"":"s"} this week</span></div>
+    </div>
+    <span class="hg-badge">${hgIcon("house")}</span>
+    <div class="hg-subline">
+      <span class="hg-tag">${hgIcon("trophy")}${rank?`#${rank} in the crew`:"No rank yet"}</span>
+      <span class="hg-tag">${hgIcon("check")}${rescues} rescue${rescues===1?"":"s"}</span>
+      <span class="hg-tag">${leftOut} left out</span>
+      <span class="hg-tag">${waiting} waiting</span>
+    </div>`;
+}
+/* Two taps, and the second one sends it: category, then whose it was. There is no submit button
+   and no confirm dialog on purpose — logging must never take longer than the cleanup did. */
+function renderHomeGameEntry(player, players){
+  const onOwnerStep = homeGameStep==="owner" && !!homeGameCategory(homeGamePickedCategory);
+  document.getElementById("hgStepCategory").hidden=onOwnerStep;
+  document.getElementById("hgStepOwner").hidden=!onOwnerStep;
+
+  const tiles=document.getElementById("hgTiles");
+  tiles.innerHTML=HOME_GAME_CATEGORIES.map(c=>
+    `<button type="button" class="hg-tile" data-cat="${esc(c.id)}">`+
+    `<span class="hg-art">${hgIcon(c.icon)}</span>`+
+    `<span class="hg-tile-text"><b>${esc(c.label)}</b><small>${esc(c.home)}</small></span></button>`).join("");
+  tiles.querySelectorAll(".hg-tile").forEach(b=>b.addEventListener("click",()=>{
+    homeGamePickedCategory=b.dataset.cat; homeGameStep="owner"; renderHomeGame();
+  }));
+
+  if(!onOwnerStep) return;
+  document.getElementById("hgOwnerTitle").textContent="Whose "+homeGameCategoryLabel(homeGamePickedCategory).toLowerCase()+"?";
+  const owners=document.getElementById("hgOwners");
+  /* The player is never in this list: a point only exists for putting away someone ELSE's things. */
+  owners.innerHTML=players.filter(p=>p.id!==player.id).map(p=>
+      `<button type="button" class="hg-owner" data-id="${esc(p.id)}" style="--who:${esc(p.color)}">${hgAvatar(p)}<span>${esc(p.name)}</span></button>`).join("")
+    +`<button type="button" class="hg-owner unknown" data-id=""><span class="hg-avatar" aria-hidden="true">?</span><span>Not sure</span></button>`;
+  owners.querySelectorAll(".hg-owner").forEach(b=>b.addEventListener("click",()=>hgSubmitClaim(b.dataset.id||"")));
+}
+function renderHomeGameBoard(player, round){
+  const rows=homeGameStandings(round), board=document.getElementById("hgBoard");
+  if(!rows.length){ board.innerHTML=`<div class="hg-empty">Nobody is in the game yet.</div>`; return; }
+  /* Bars are drawn against the leading score, so an empty week shows four empty tracks rather than
+     four full ones. A negative score has no bar; the number beside it still tells the truth. */
+  const top=Math.max(1, ...rows.map(r=>r.score));
+  board.innerHTML=rows.map(r=>{
+    const pct=Math.max(0, Math.min(100, r.score/top*100));
+    return `<div class="hg-racer" style="--who:${esc(r.person.color)}">
+      <span class="hg-rank">${r.rank}</span>
+      ${hgAvatar(r.person)}
+      <div class="hg-racer-name">${esc(r.person.name)}${r.person.id===player.id?" &middot; you":""}
+        <span class="hg-track"><span class="hg-fill" style="width:${pct.toFixed(0)}%"></span></span></div>
+      <span class="hg-pts ${r.score<0?"neg":""}">${r.score>0?"+":""}${r.score}</span></div>`;
+  }).join("");
+}
+/* The daily family review, in one batch. Confirming applies both halves of a claim at once because
+   both halves are only ever read from the one event; there is no way to award the +1 without the
+   -1. Every decision below is reversible, and a reversal is itself reversible. */
+function renderHomeGameReview(){
+  const pending=homeGamePendingClaims(), decided=homeGameDecidedClaims(6);
+  const body=document.getElementById("hgReviewBody");
+  document.getElementById("hgReviewSummary").textContent =
+    "Parent review \u00b7 " + (pending.length ? pending.length+" waiting" : "nothing waiting");
+  const parts=[];
+  if(!pending.length) parts.push(`<div class="hg-empty">Nothing waiting. Cleanups the crew logs show up here for a parent to confirm.</div>`);
+  pending.forEach(e=>{
+    parts.push(`<div class="hg-claim">
+      <div class="hg-claim-main">
+        <div class="hg-claim-title">${esc(homeGameClaimText(e))}</div>
+        <div class="hg-claim-meta">${esc(fmtDate(e.date))} \u00b7 ${esc(homeGameClaimEffect(e))}</div>
+      </div>
+      <div class="hg-claim-actions">
+        <button class="btn add hg-confirm" data-id="${esc(e.id)}">Confirm</button>
+        <button class="btn sm hg-decline" data-id="${esc(e.id)}">Decline</button>
+      </div></div>`);
+  });
+  if(decided.length){
+    parts.push(`<div class="hg-claim-head">Recently decided</div>`);
+    decided.forEach(e=>{
+      const state=e.status==="declined" ? "Declined" : (e.reversed ? "Taken back \u2014 scores restored" : "Confirmed");
+      const action=e.status==="declined"
+        ? `<button class="btn sm hg-reopen" data-id="${esc(e.id)}">Reopen</button>`
+        : (e.reversed
+            ? `<button class="btn sm hg-restore" data-id="${esc(e.id)}">Put it back</button>`
+            : `<button class="btn sm hg-reverse" data-id="${esc(e.id)}">Take it back</button>`);
+      parts.push(`<div class="hg-claim">
+        <div class="hg-claim-main">
+          <div class="hg-claim-title ${e.status==="declined"||e.reversed?"off":""}">${esc(homeGameClaimText(e))}</div>
+          <div class="hg-claim-meta">${esc(state)} \u00b7 ${esc(homeGameClaimEffect(e))}</div>
+        </div>
+        <div class="hg-claim-actions">${action}</div></div>`);
+    });
+  }
+  body.innerHTML=parts.join("");
+  const act=(sel, fn, sound)=>body.querySelectorAll(sel).forEach(b=>b.addEventListener("click",()=>{
+    const r=fn(b.dataset.id);
+    if(!r.ok){ hgSay(r.error,true); render(); return; }
+    if(sound) playCompletionSound();
+    render();
+  }));
+  act(".hg-confirm", id=>{ const r=confirmHomeGameClaim(id, homeGamePlayerId); if(r.ok) hgSay("Confirmed. "+homeGameClaimEffect(r.event)+"."); return r; }, true);
+  act(".hg-decline", id=>{ const r=declineHomeGameClaim(id, homeGamePlayerId); if(r.ok) hgSay("Claim declined. No scores changed."); return r; });
+  act(".hg-reverse", id=>{ const r=reverseHomeGameClaim(id); if(r.ok) hgSay("Taken back. Both scores are restored."); return r; });
+  act(".hg-restore", id=>{ const r=restoreHomeGameClaim(id); if(r.ok) hgSay("Put back. "+homeGameClaimEffect(r.event)+"."); return r; });
+  act(".hg-reopen",  id=>{ const r=reopenHomeGameClaim(id);  if(r.ok) hgSay("Back in the queue for a parent."); return r; });
+}
+
 function renderFundsPage(){
   if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
+  renderHomeGame();
   renderFundsAccounts();
   renderFundsRequests();
   renderFundsJobs();
@@ -5574,7 +6327,7 @@ document.getElementById("printBtn").addEventListener("pointerdown",e=>{
 });
 document.getElementById("printBtn").addEventListener("click",openPrintCenter);
 document.getElementById("exportBtn").addEventListener("click",()=>{
-  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,fundsLedger,fundsSettings,goals,dayPlan};
+  const bundle={version:VERSION,people,tasks,shop,places,importantDates,notes,beforeYouLeave,beforeYouLeaveTitle:bylTitle,calendarExclusions,custodyDays,clothingPurchases,clothingWalletLedger,clothingSettings,clothingSettlements,fundsLedger,fundsSettings,goals,dayPlan,homeGameEvents,homeGameSettings};
   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a");
   a.href=url; a.download=`home-planner-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -5612,8 +6365,12 @@ document.getElementById("importFile").addEventListener("change",e=>{
       if(d.fundsSettings&&typeof d.fundsSettings==="object"&&!Array.isArray(d.fundsSettings)) fundsSettings=migrateFundsSettings(d.fundsSettings);
       if(Array.isArray(d.goals)) goals=d.goals.map(migrateGoal).filter(g=>g.text!=="");
       if(d.dayPlan&&typeof d.dayPlan==="object"&&!Array.isArray(d.dayPlan)) dayPlan=normalizeDayPlan(d.dayPlan);
+      /* Game claims come back through the same merge the cloud uses, so a reversal in the file is
+         preserved as a reversal and an import can never resurrect a point that was taken back. */
+      if(Array.isArray(d.homeGameEvents)) homeGameEvents=mergeHomeGameEvents(homeGameEvents, d.homeGameEvents);
+      if(d.homeGameSettings&&typeof d.homeGameSettings==="object"&&!Array.isArray(d.homeGameSettings)) homeGameSettings=migrateHomeGameSettings(d.homeGameSettings);
     }
-    editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); ensureFundsPersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveCustody(); saveClothing(); saveFunds(); saveGoals(); saveDayPlan(); render();
+    editingId=null; placeEditingId=null; dateEditingId=null; ensureClothingPersonSettings(); ensureFundsPersonSettings(); ensureHomeGamePersonSettings(); savePeople(); saveTasks(); saveShop(); savePlaces(); saveDates(); saveNotes(); saveBYL(); saveBYLTitle(); saveCalExclusions(); saveCustody(); saveClothing(); saveFunds(); saveHomeGame(); saveGoals(); saveDayPlan(); render();
   }catch(err){ alert("Couldn't read that file — expected a Home planner export (.json)."); } };
   r.readAsText(f); e.target.value="";
 });
@@ -5991,6 +6748,7 @@ updateSoundToggleLabel();
 const clothingInitChanged=ensureClothingPersonSettings()|ensureMonthlyClothingDeposits();
 if(clothingInitChanged) saveClothing();
 if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
+if(ensureHomeGamePersonSettings()) saveHomeGame();
 renderAppNav(); renderAuthUI(); render(); initSync(); tick(); setInterval(tick,1000);
 /* After the first render, so the bar is at its real height when its condense delta is read.
    Until this runs the condense threshold is unreachable and the bar simply stays expanded. */
