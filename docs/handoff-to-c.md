@@ -1,5 +1,20 @@
 # Family Planner 1.18-beta — Handoff to C
 
+## One-tap personal Home correction — 2026-09-08
+
+Jason clarified that selecting a person is the complete action: immediately stay on that person's
+Home, with no required destination choice. The chooser now collapses into a named Home heading
+and a Change person action. Reloads preserve both the profile and the collapsed state. All also
+completes the selection and restores the family overview. Home tasks, progress and overdue counts
+follow the profile; Calendar, Agenda, Chores, Clothing and EHAH follow automatically. Personal
+history filters are hidden while an individual is selected, and new clothing/money forms default
+to the selected eligible person without changing the owner of existing records.
+
+24 isolated checks passed, including seeded Home tasks, immediate selection without navigation,
+reload/deep links, every page's profile, new-entry defaults, All clearing old filters and no JS
+errors. No live household records were used. This is browser-local personalization, not a new
+authentication or permission system.
+
 ## Current navigation revision — 2026-09-08
 
 Jason requested this revision before inviting the kids. This section supersedes the earlier

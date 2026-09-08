@@ -1277,8 +1277,8 @@
 <div class="wrap" id="homeWrap">
 
   <section class="home-family" aria-label="Choose whose day to view">
-    <div class="hg-head"><h2>Home, together.</h2><button class="hg-quiet" onclick="togglePeopleEditor()">Edit family</button></div>
-    <p class="hg-sub">Choose your name once. Your tasks, chores and game follow you.</p>
+    <div class="hg-head"><h2 id="familyHomeTitle">Who is here?</h2><button id="familyChange" class="hg-quiet" onclick="familyChoosing=true;renderPeopleBar()">Change person</button></div>
+    <p class="hg-sub" id="familyChooseHint">Choose your name to open your Home. We will remember it on this browser.</p>
     <div class="family-choices" id="whoPick"></div>
   </section>
   <nav class="home-shortcuts" aria-label="Home shortcuts">
@@ -1404,6 +1404,7 @@
   <section class="tools" aria-labelledby="homeToolsTitle">
     <div class="eyebrow tools-title" id="homeToolsTitle">Settings &amp; tools</div>
     <div class="tools-row">
+      <button class="btn sm" onclick="togglePeopleEditor()">Edit family</button>
       <button class="btn sm" id="soundToggle">Sound: On</button>
       <button class="btn sm" id="printBtn">🖨 Print</button>
       <button class="btn sm" id="exportBtn">Export</button>
@@ -3112,6 +3113,7 @@ let editingId=null, placeEditingId=null, dateEditingId=null, overdueSet=new Set(
 /* Restore this browser/device's last-selected family filter; fall back to Everyone ("all") if the
    stored id no longer matches a real person (e.g. that family member was removed since). */
 let activePerson = (()=>{ const stored=loadJSON(K_ACTIVE_PROFILE) ?? loadJSON(K_HOME_GAME_PLAYER); if(stored==null || stored==="all") return "all"; if(typeof stored==="string" && people.some(p=>p.id===stored)) return stored; return "all"; })();
+let familyChoosing=loadJSON(K_ACTIVE_PROFILE)==null && loadJSON(K_HOME_GAME_PLAYER)==null;
 let datesAllOpen=false, pastDatesOpen=false;
 let pendingRemoteRender=false;
 
@@ -3599,7 +3601,7 @@ function render(){
     if(editingId===t.id) listEl.appendChild(renderEditor(t)); else listEl.appendChild(renderRow(t,next&&next.id===t.id));
   });
 
-  const done=tasks.filter(isDone).length; const over=tasks.filter(isOverdue).length;
+  const done=tasks.filter(isDone).length; const over=tasks.filter(t=>isOverdue(t)&&personVisible(t)).length;
   const delCompletedBtn=document.getElementById("deleteCompletedBtn");
   delCompletedBtn.textContent=`Delete completed (${done})`;
   delCompletedBtn.disabled=done===0;
@@ -3615,10 +3617,10 @@ function render(){
 }
 
 function renderProgress(){
-  const todays=tasks.filter(isToday); const tot=todays.length; const done=todays.filter(isDone).length;
+  const todays=tasks.filter(t=>isToday(t)&&personVisible(t)); const tot=todays.length; const done=todays.filter(isDone).length;
   document.getElementById("progressCount").textContent=`${done} of ${tot} done`;
   document.getElementById("progressBar").style.width=tot?(done/tot*100)+"%":"0%";
-  const over=tasks.filter(isOverdue).length;
+  const over=tasks.filter(t=>isOverdue(t)&&personVisible(t)).length;
   const oc=document.getElementById("overdueChip"); if(oc) oc.textContent = over ? `⚠ ${over} overdue` : "";
 }
 
@@ -3651,7 +3653,9 @@ function chooseFamilyPerson(id){
   activePerson=people.some(p=>p.id===id)?id:"all";
   homeGamePlayerId=activePerson==="all"?"":activePerson;
   homeGameStep="category"; homeGamePickedCategory=""; homeGameMessage="";
+  familyChoosing=false;
   saveActiveProfile();
+  calState.person=activePerson; saveCalPrefs();
   for(const id of ["fnPersonFilter","clPersonFilter"]){const el=document.getElementById(id);if(el)el.value="all";}
   render();
 }
@@ -3659,6 +3663,10 @@ function renderPeopleBar(){
   if(activePerson!=="all"&&!people.some(p=>p.id===activePerson)){activePerson="all";saveActiveProfile();}
   homeGamePlayerId=activePerson==="all"?"":activePerson;
   const pick=document.getElementById("whoPick");
+  pick.hidden=!familyChoosing;
+  document.getElementById("familyChooseHint").hidden=!familyChoosing;
+  document.getElementById("familyChange").hidden=familyChoosing;
+  document.getElementById("familyHomeTitle").textContent=familyChoosing?"Who is here?":activePerson==="all"?"Everyone's Home":getPerson(activePerson).name+"'s Home";
   pick.innerHTML=[{id:"all",name:"All",color:"var(--signal)"},...people].map(p=>
     `<button class="family-choice" data-person="${esc(p.id)}" style="--who:${esc(p.color)}" aria-pressed="${activePerson===p.id}"><span class="hg-avatar">${p.id==="all"?"✦":esc(p.name.slice(0,1))}</span><b>${esc(p.name)}</b></button>`).join("");
   pick.querySelectorAll("button").forEach(b=>b.onclick=()=>chooseFamilyPerson(b.dataset.person));
@@ -5470,7 +5478,7 @@ function renderClothingPage(){
   const fullRetail=completed.filter(p=>p.discount===0).length, soon=completed.filter(p=>p.returnDeadline&&p.returnDeadline>=todayStr()&&p.returnDeadline<=addDaysStr(todayStr(),7)).length;
   const stats=[[money(retail),"Verified retail"],[money(spent),"Actually spent"],[money(saved),"Verified savings"],[bpsLabel(avg),"Average discount"],[money(parent),"Parent total"],[money(child),"Child total"],[best?bpsLabel(best.discount):"—","Best % deal"],[dollars?money(Math.max(0,dollars.verifiedRetailPrice-dollars.pricePaid)):"—","Most saved"],[String(fullRetail),"Full-retail items"],[String(soon),"Returns due ≤7d"]];
   document.getElementById("clStatGrid").innerHTML=stats.map(([v,l])=>`<div class="cl-stat"><div class="cl-stat-value">${esc(v)}</div><div class="cl-stat-label">${esc(l)}</div></div>`).join("");
-  const pf=document.getElementById("clPersonFilter"), old=pf.value||"all", want=clScoped||old; pf.innerHTML=`<option value="all">All children</option>`+clothingParticipants().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join(""); pf.value=[...pf.options].some(o=>o.value===want)?want:"all";
+  const pf=document.getElementById("clPersonFilter"), want=activePerson; pf.hidden=activePerson!=="all"; pf.innerHTML=`<option value="all">All children</option>`+clothingParticipants().map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join(""); pf.value=[...pf.options].some(o=>o.value===want)?want:"all";
   renderClothingPurchases(); renderClothingVerificationQueue();
 }
 function filteredClothingPurchases(){ const person=document.getElementById("clPersonFilter").value, status=document.getElementById("clStatusFilter").value, participantIds=new Set(clothingParticipants().map(p=>p.id)); return clothingPurchases.filter(p=>{
@@ -5516,7 +5524,7 @@ function clothingVerifierNames(){ const adults=people.filter(p=>CLOTHING_ADULT_R
 function clothingVerifierOptions(selected){ const names=clothingVerifierNames(), value=selected||"Daddy"; return [...new Set([value,"Daddy",...names])].map(name=>`<option value="${esc(name)}" ${name===value?"selected":""}>${esc(name)}</option>`).join(""); }
 function clothingPurchaseNavList(id){ const list=filteredClothingPurchases().filter(p=>!p.deleted&&!p.returned); return list.some(p=>p.id===id)?list:clothingPurchases.filter(p=>!p.deleted&&!p.returned).sort((a,b)=>(b.purchaseDate||"").localeCompare(a.purchaseDate||"")||(b.updated||0)-(a.updated||0)); }
 function openClothingPurchaseModal(id,opts){
-  opts=opts||{}; const existing=id?clothingPurchases.find(x=>x.id===id):null, calculator=!!opts.calculator; const p=migrateClothingPurchase(existing||Object.assign(blankClothingPurchase(),{personId:opts.personId||((activeClothingPeople()[0]||{}).id||"")}));
+  opts=opts||{}; const existing=id?clothingPurchases.find(x=>x.id===id):null, calculator=!!opts.calculator; const p=migrateClothingPurchase(existing||Object.assign(blankClothingPurchase(),{personId:opts.personId||scopeTo(activeClothingPeople())||((activeClothingPeople()[0]||{}).id||"")}));
   if(!p.personId){ alert("Enable at least one clothing wallet in Settings first."); return; }
   const isCompleted=!!existing&&existing.status==="completed", cfg0=clothingPersonSettings(p.personId), nav=existing&&!calculator?clothingPurchaseNavList(p.id):[], navIndex=nav.findIndex(x=>x.id===p.id), prev=navIndex>0?nav[navIndex-1]:null, next=navIndex>=0&&navIndex<nav.length-1?nav[navIndex+1]:null; if(isCompleted)p.actualParentContribution=effectiveParentContribution(existing);
   openClModal(modal=>{
@@ -6028,7 +6036,7 @@ function renderFundsPage(){
                [money(owedTotal),"Owed for clothing"]];
   document.getElementById("fnStatGrid").innerHTML=stats.map(([v,l])=>`<div class="fn-stat"><div class="fn-stat-value">${esc(v)}</div><div class="fn-stat-label">${esc(l)}</div></div>`).join("");
   const pf=document.getElementById("fnPersonFilter"), old=pf.value||"all";
-  const scopedId=scopeTo(accounts), want=scopedId||old;
+  const want=activePerson; pf.hidden=activePerson!=="all";
   pf.innerHTML=fundsPersonOptions(want,"Everyone");
   pf.value=[...pf.options].some(o=>o.value===want)?want:"all";
   renderFundsLedger();
@@ -6038,7 +6046,7 @@ function renderFundsPage(){
 function openFundEntryModal(seed){
   const s=seed||{}, accounts=fundsAccounts();
   if(!accounts.length){ alert("Give someone a bank account in Settings first."); return; }
-  const personId=s.personId||accounts[0].id, kind=FUND_KINDS[s.kind]&&!FUND_KIND_CLOTHING.has(s.kind)?s.kind:"deposit";
+  const personId=s.personId||scopeTo(accounts)||accounts[0].id, kind=FUND_KINDS[s.kind]&&!FUND_KIND_CLOTHING.has(s.kind)?s.kind:"deposit";
   openClModal(modal=>{
     modal.innerHTML=`<h2>Record money</h2>
       <div class="cl-modal-sub">Money in and money out, recorded straight away. Clothing transfers have their own buttons so both sides always agree.</div>
