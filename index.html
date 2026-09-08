@@ -1276,12 +1276,12 @@
 
 <div class="wrap" id="homeWrap">
 
-  <section class="home-family" aria-label="Choose whose day to view">
-    <div class="hg-head"><h2 id="familyHomeTitle">Who is here?</h2><button id="familyChange" class="hg-quiet" onclick="familyChoosing=true;renderPeopleBar()">Change person</button></div>
+  <section class="home-family" id="familyWelcome" aria-label="Choose whose day to view">
+    <div class="hg-head"><h2 id="familyHomeTitle">Who is here?</h2></div>
     <p class="hg-sub" id="familyChooseHint">Choose your name to open your Home. We will remember it on this browser.</p>
     <div class="family-choices" id="whoPick"></div>
   </section>
-  <nav class="home-shortcuts" aria-label="Home shortcuts">
+  <nav class="home-shortcuts" id="homeShortcuts" aria-label="Home shortcuts">
     <button onclick="showPage('ehah')"><span>🏠</span><b>EHAH</b><small>Everything Has a Home</small></button>
     <button onclick="showPage('funds')"><span>🧹</span><b>Chores</b><small>Pick a job. Earn money.</small></button>
   </nav>
@@ -1403,7 +1403,7 @@
 
   <section class="tools" aria-labelledby="homeToolsTitle">
     <div class="eyebrow tools-title" id="homeToolsTitle">Settings &amp; tools</div>
-    <div class="tools-row">
+    <div class="tools-row"><button id="familyChange" class="btn sm" onclick="familyChoosing=true;renderPeopleBar();document.getElementById('familyWelcome').scrollIntoView({block:'start'})">Change person</button>
       <button class="btn sm" onclick="togglePeopleEditor()">Edit family</button>
       <button class="btn sm" id="soundToggle">Sound: On</button>
       <button class="btn sm" id="printBtn">🖨 Print</button>
@@ -3663,6 +3663,8 @@ function renderPeopleBar(){
   if(activePerson!=="all"&&!people.some(p=>p.id===activePerson)){activePerson="all";saveActiveProfile();}
   homeGamePlayerId=activePerson==="all"?"":activePerson;
   const pick=document.getElementById("whoPick");
+  document.getElementById("familyWelcome").hidden=!familyChoosing;
+  document.getElementById("homeShortcuts").hidden=!familyChoosing;
   pick.hidden=!familyChoosing;
   document.getElementById("familyChooseHint").hidden=!familyChoosing;
   document.getElementById("familyChange").hidden=familyChoosing;

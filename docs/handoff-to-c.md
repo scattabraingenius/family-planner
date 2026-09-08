@@ -437,3 +437,7 @@ It went stale between 1.13-beta and 1.16-beta — it still listed an already-fix
 mode bug as the next thing to do, and described committed files as uncommitted. A handoff
 that is wrong is worse than none. Update it in the same commit as the work it describes, or
 delete it.
+
+## Welcome block clearance — 2026-09-08
+
+Jason clarified via screenshot that the entire named-Home heading and shortcut block must clear after choosing a person. Both sections now hide together; Change person lives in Home tools and reopens the chooser. Top navigation retains EHAH and Chores. 26 isolated checks passed, including whole-block clearance, remembered selection and all page defaults. This supersedes the retained named-Home heading described above.
