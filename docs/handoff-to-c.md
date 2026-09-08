@@ -80,8 +80,19 @@ Interior pages keep a shared `.pagehead` (title + that page's own actions) and n
   has nothing in that module (Dad has no clothing wallet). Calendar's duplicate person chips
   were removed; `calState.person` now simply mirrors `activePerson`.
 - **On phones** the bar wraps to three rows with icon-over-label buttons, then condenses to
-  just the nav row (~59px, down from ~143px) once the page scrolls past 60px, with a
-  hysteresis gap so it cannot flicker. Desktop is a flat 60px and never condenses.
+  just the nav row (~59px, down from ~143px) once the page has scrolled. Desktop is a flat
+  60px and never condenses.
+- **The condense thresholds are measured at runtime, and must never be hard-coded.** The bar
+  is `position:sticky`, so it is *in flow*: condensing it shortens the document by the height
+  it gives up, and the browser's scroll anchoring then moves `scrollY` by that same amount to
+  keep the visible content still. If the expand and condense thresholds sit closer together
+  than that shift, every toggle lands past the opposite threshold and the two states chase
+  each other at 60fps. That shipped in 1.17-beta and was reported as the page "spazzing out"
+  while scrolling: with an 84px bar delta and a 20/60 gap it ran
+  `100 -> condense -> 16 -> expand -> 100 -> ...` forever, trapping the scroll wherever the
+  user stopped inside the band. `measureBarCondenseDelta()` now reads the real height
+  difference and sets the condense threshold to `expand + delta + 24`, re-measuring on resize
+  because the delta depends on how the nav wraps and is 0 above the 820px breakpoint.
 - `history.replaceState`, not `pushState`: tapping through the bar must not stack up
   back-button history.
 - `renderAppNav()` rebuilds only when its content signature changes, so a render triggered by

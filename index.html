@@ -2630,18 +2630,52 @@ const PAGES=[
 ];
 function pageDef(id){ return PAGES.find(p=>p.id===id)||PAGES[0]; }
 /* Condense the bar once the page has scrolled. Passive listener + rAF so it never competes with
-   scrolling itself, and a hysteresis gap (condense at 60, expand at 20) so a bar sitting exactly on
-   the threshold cannot flicker open and shut. */
-let barCondensed=false, barTicking=false;
+   scrolling itself.
+
+   The hysteresis gap is not cosmetic, and it cannot be a guess. The bar is position:sticky, so it
+   sits IN FLOW: condensing it shortens the document by the height it gives up, and the browser's
+   scroll anchoring then moves scrollY by that same amount to keep the visible content still. If the
+   two thresholds are closer together than that shift, every toggle lands past the opposite
+   threshold and the states chase each other at 60fps. That shipped, and it looked like the page
+   was seizing: at 84px of bar and a 20/60 gap, it ran 100 -> condense -> 16 -> expand -> 100 -> ...
+   forever, trapping the scroll wherever the user stopped in the band.
+
+   So the gap is derived from the real measured height difference, plus slack. Never hard-code it;
+   the bar's height depends on the viewport, the font, and how the nav wraps. */
+let barCondensed=false, barTicking=false, barExpandAt=8, barCondenseAt=9999;
+function measureBarCondenseDelta(){
+  const bar=document.getElementById("appBar"); if(!bar) return;
+  /* Toggling the class forces two layouts, which can itself trigger an anchoring shift, so the
+     scroll position is put back afterwards. Both reads happen in one synchronous block, so no
+     intermediate state is ever painted. */
+  const y=window.scrollY||document.documentElement.scrollTop||0;
+  const had=bar.classList.contains("condensed");
+  bar.classList.remove("condensed");
+  const tall=bar.getBoundingClientRect().height;
+  bar.classList.add("condensed");
+  const short=bar.getBoundingClientRect().height;
+  bar.classList.toggle("condensed", had);
+  if((window.scrollY||0)!==y){ try{ window.scrollTo(0,y); }catch(e){} }
+  /* Desktop never condenses, so the delta is 0 there and the thresholds simply collapse to a
+     small, harmless gap. */
+  barCondenseAt = barExpandAt + Math.max(0, tall-short) + 24;
+}
 function syncAppBarCondensed(){
   barTicking=false;
   const y=window.scrollY||document.documentElement.scrollTop||0;
-  const want = barCondensed ? y>20 : y>60;
+  const want = barCondensed ? y>barExpandAt : y>barCondenseAt;
   if(want===barCondensed) return;
   barCondensed=want;
   const bar=document.getElementById("appBar"); if(bar) bar.classList.toggle("condensed",want);
 }
 window.addEventListener("scroll",()=>{ if(!barTicking){ barTicking=true; requestAnimationFrame(syncAppBarCondensed); } },{passive:true});
+/* Re-measure when the viewport changes: rotating a phone rewraps the nav, and crossing the 820px
+   breakpoint removes the condensed rules altogether. */
+let barMeasureTimer=null;
+window.addEventListener("resize",()=>{
+  clearTimeout(barMeasureTimer);
+  barMeasureTimer=setTimeout(()=>{ measureBarCondenseDelta(); syncAppBarCondensed(); },150);
+});
 function showPage(id){
   const def=pageDef(id);
   closeActiveEdit(true);
@@ -5958,6 +5992,9 @@ const clothingInitChanged=ensureClothingPersonSettings()|ensureMonthlyClothingDe
 if(clothingInitChanged) saveClothing();
 if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
 renderAppNav(); renderAuthUI(); render(); initSync(); tick(); setInterval(tick,1000);
+/* After the first render, so the bar is at its real height when its condense delta is read.
+   Until this runs the condense threshold is unreachable and the bar simply stays expanded. */
+measureBarCondenseDelta(); syncAppBarCondensed();
 /* Shareable page links work both on initial load and when a hash link is selected in an open tab. */
 function routePageFromHash(){
   const target=PAGES.find(p=>p.hash && p.hash===location.hash);
