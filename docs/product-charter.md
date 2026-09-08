@@ -28,7 +28,7 @@ be that well-defined before it ships. Nothing gets built to a lower bar.
 
 Consequences if the above holds:
 
-- Google sign-in gates cloud access. Home Crew separately remembers a device-local player;
+- Google sign-in gates cloud access. Home remembers one device-local family selection;
   that convenience is not authenticated player identity or a parent role.
 - Mobile read layouts are a first-class surface, not a courtesy. Half the audience only ever sees
   the app at ~390px.
@@ -83,7 +83,7 @@ this charter.
   it only as long as there is exactly one currency in the app.)*
 
   **[decided] Narrow exception, 2026-09-08 — game scores in Everything Has a Home.** Jason
-  authorised a points-only cleanup game ("The Home Crew") in the Money page. It keeps a score per
+  authorised a points-only cleanup game, now on its own EHAH page (navigation revision below). It keeps a score per
   person: put away something another player left out and you gain a point, the person who left it
   loses one. The exception is deliberately narrow, and these are the terms that keep it from
   becoming the thing this non-goal refuses:
@@ -112,7 +112,13 @@ responsibility. It does not mean every household fact.
 
 ## Page map
 
-Current pages that work and stay: **Home** · **Calendar** · **Money** · **Clothing**
+Current pages: **Home** · **Calendar** · **Agenda** · **Chores** · **EHAH** · **Clothing**
+
+**[decided] Navigation revision, 2026-09-08.** Jason requested a task-first Home with direct
+Chores/EHAH buttons and no dollar totals. One remembered family selector on Home (All plus each
+person) replaces the header dropdown and separate game chooser. Chores keeps paid jobs and
+collapsible financial details; EHAH keeps cleanup points on its own page. All is an overview,
+never an identity used to claim credit. This supersedes earlier embedded-game placement.
 
 Eventual target, adopted as direction rather than an immediate refactor:
 

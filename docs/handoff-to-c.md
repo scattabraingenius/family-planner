@@ -1,5 +1,31 @@
 # Family Planner 1.18-beta — Handoff to C
 
+## Current navigation revision — 2026-09-08
+
+Jason requested this revision before inviting the kids. This section supersedes the earlier
+Money-embedded game, separate game player selector, and Home bank-strip descriptions below.
+
+- Home is the family/task/navigation hub. Five visible buttons select All, Dad, Bella, Abby or
+  Ariel from the actual profile list. The existing active-profile key remembers the choice;
+  the legacy game choice is a fallback only when that key is absent. No header dropdown.
+- Home contains direct Chores and EHAH buttons. Calendar, Agenda and Clothing remain in the main
+  navigation. Dollar totals and savings summaries were removed from Home; tasks precede date
+  management. Empty Up Next panels no longer occupy space.
+- Money is labelled **Chores**; its existing `#funds` link still works. Jobs appear first.
+  Balances, money history and parent management controls remain under an expandable section.
+- **EHAH** has its own `#ehah` page. Its chooser and Switch player button were removed. It derives
+  the helper from Home's selection. All shows the leaderboard and parent review, with a Home link
+  for choosing a person; it cannot file a claim. Chores likewise does not pick an arbitrary child
+  when All (or an adult without a chore account) is selected.
+- One device-local selection is a convenience, not authentication. Scores, cloud transaction
+  merging, approvals, reversals and money records retain their existing data semantics.
+
+Verification: 36 isolated Edge checks passed across 320/390/820/1280 widths, including Home,
+Chores, EHAH, Calendar and Clothing. Checked deep links/reload, profile propagation, two-tap
+logging, All behavior, unchanged financial state, absence of Home dollar totals and no JS errors.
+Phone screenshots were visually inspected. Tests used local fixtures with external services
+blocked; real family records and live sync permissions were not tested or changed.
+
 ## Current state
 
 - Repository: `D:\Integrated Life Solutions\Apps\MM..HOME`  (canonical; moved off OneDrive

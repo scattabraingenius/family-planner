@@ -1219,6 +1219,20 @@
     .ab-nav .navbtn { position:relative; }
     .ab-nav .nav-badge { position:absolute; top:3px; right:calc(50% - 20px); min-width:15px; height:15px; font-size:9.5px; }
   }
+  .home-family {margin-bottom:16px;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--card);}
+  .home-family h2 {margin:0;font-size:20px;}
+  .family-choices {display:flex;gap:8px;flex-wrap:wrap;}
+  .family-choice {flex:1;min-width:52px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;color:var(--ink);border:1px solid var(--line);border-radius:14px;background:transparent;cursor:pointer;}
+  .family-choice[aria-pressed="true"] {border-color:var(--who);background:color-mix(in srgb,var(--who) 16%,transparent);box-shadow:inset 0 -3px var(--who);}
+  .home-shortcuts {display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 20px;}
+  .home-shortcuts button {display:grid;grid-template-columns:auto 1fr;gap:3px 10px;text-align:left;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);cursor:pointer;}
+  .home-shortcuts button>span {grid-row:span 2;font-size:26px;align-self:center;}
+  .home-shortcuts small {color:var(--muted);font-size:11px;}
+  .home-shortcuts button:first-child {border-color:var(--signal);}
+  .money-details>summary {cursor:pointer;padding:8px 0;font-weight:700;}
+  .nextup.empty {display:none;}
+  [hidden] {display:none!important;}
+  @media(max-width:620px){.home-shortcuts {grid-template-columns:repeat(2,1fr);} .home-family {padding:12px;} .family-choices {gap:5px;} .family-choice {font-size:12px;} .ab-nav {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));width:100%;} .ab-nav .navbtn {min-width:0;padding:8px 2px;}}
 </style>
 </head>
 <body>
@@ -1246,7 +1260,7 @@
       <span class="ab-date" id="datestr"></span>
     </div>
     <div class="clock ab-clock" id="clock">--:--<span class="sec">:--</span></div>
-    <span class="who-pick" id="whoPick"></span>
+
     <nav class="ab-nav" id="appNav" aria-label="Main"></nav>
     <div class="ab-account">
       <span class="sync-badge" id="syncBadge"></span>
@@ -1262,7 +1276,16 @@
 
 <div class="wrap" id="homeWrap">
 
-  <!-- Opened by the "Edit family..." choice at the bottom of the app bar's dropdown. -->
+  <section class="home-family" aria-label="Choose whose day to view">
+    <div class="hg-head"><h2>Home, together.</h2><button class="hg-quiet" onclick="togglePeopleEditor()">Edit family</button></div>
+    <p class="hg-sub">Choose your name once. Your tasks, chores and game follow you.</p>
+    <div class="family-choices" id="whoPick"></div>
+  </section>
+  <nav class="home-shortcuts" aria-label="Home shortcuts">
+    <button onclick="showPage('ehah')"><span>🏠</span><b>EHAH</b><small>Everything Has a Home</small></button>
+    <button onclick="showPage('funds')"><span>🧹</span><b>Chores</b><small>Pick a job. Earn money.</small></button>
+  </nav>
+  <!-- Family editing stays on Home. -->
   <div class="people-editor hidden" id="peopleEditor"></div>
 
   <!-- Today's read-out. Lives on Home rather than in the bar: it answers "how is today going",
@@ -1276,35 +1299,6 @@
   </div>
 
   <div class="nextup empty" id="nextup"></div>
-
-  <div class="dates-section" id="datesSection">
-    <div class="dates-head">
-      <div class="panel-title" style="margin:0">
-        <button class="dates-fold" id="datesFold" aria-expanded="true" aria-controls="datesQuick" title="Collapse / expand">▾</button>
-        <span class="byl-title-wrap">
-          <span class="editable byl-title-text" id="datesTitleText" tabindex="0" role="button" aria-label="Edit section title"></span>
-          <button class="byl-title-reset" id="datesTitleReset" title="Reset title" aria-label="Reset section title">↺</button>
-        </span>
-      </div>
-      <div class="dates-head-actions">
-        <button class="btn sm" id="addDateBtn">+ Add date</button>
-        <button class="btn sm" id="viewAllDatesBtn" aria-expanded="false">View all</button>
-      </div>
-    </div>
-    <div class="dates-quick" id="datesQuick"></div>
-    <div class="dates-all hidden" id="datesAll">
-      <div class="dates-all-head">
-        <div class="panel-title" style="margin:0">All upcoming dates</div>
-        <button class="btn sm" id="closeAllDatesBtn">Close</button>
-      </div>
-      <div class="dates-all-list" id="datesAllList"></div>
-      <button class="dates-past-toggle" id="pastDatesToggle" aria-expanded="false">Show past dates</button>
-      <div class="dates-past-list hidden" id="pastDatesList"></div>
-    </div>
-  </div>
-
-  <!-- Bank balances, read-only mirror of the Money page. Tapping a card opens it. -->
-  <div class="bankstrip" id="bankStrip"></div>
 
   <div class="panels">
     <div>
@@ -1379,6 +1373,34 @@
     </div>
   </div>
 
+  <div class="dates-section" id="datesSection">
+    <div class="dates-head">
+      <div class="panel-title" style="margin:0">
+        <button class="dates-fold" id="datesFold" aria-expanded="true" aria-controls="datesQuick" title="Collapse / expand">▾</button>
+        <span class="byl-title-wrap">
+          <span class="editable byl-title-text" id="datesTitleText" tabindex="0" role="button" aria-label="Edit section title"></span>
+          <button class="byl-title-reset" id="datesTitleReset" title="Reset title" aria-label="Reset section title">↺</button>
+        </span>
+      </div>
+      <div class="dates-head-actions">
+        <button class="btn sm" id="addDateBtn">+ Add date</button>
+        <button class="btn sm" id="viewAllDatesBtn" aria-expanded="false">View all</button>
+      </div>
+    </div>
+    <div class="dates-quick" id="datesQuick"></div>
+    <div class="dates-all hidden" id="datesAll">
+      <div class="dates-all-head">
+        <div class="panel-title" style="margin:0">All upcoming dates</div>
+        <button class="btn sm" id="closeAllDatesBtn">Close</button>
+      </div>
+      <div class="dates-all-list" id="datesAllList"></div>
+      <button class="dates-past-toggle" id="pastDatesToggle" aria-expanded="false">Show past dates</button>
+      <div class="dates-past-list hidden" id="pastDatesList"></div>
+    </div>
+  </div>
+
+
+
   <section class="tools" aria-labelledby="homeToolsTitle">
     <div class="eyebrow tools-title" id="homeToolsTitle">Settings &amp; tools</div>
     <div class="tools-row">
@@ -1402,40 +1424,65 @@
      ===================================================================== -->
 <div class="funds-wrap hidden" id="fundsPage">
   <header class="pagehead">
-    <h1 class="pagehead-title"><span aria-hidden="true">💰</span> Money<span class="pagehead-scope" id="fnScope"></span></h1>
+    <h1 class="pagehead-title"><span aria-hidden="true">🧹</span> Chores<span class="pagehead-scope" id="fnScope"></span></h1>
+
+  </header>
+
+
+  <section class="fn-section">
+    <div class="fn-section-head"><span class="fn-section-title">Jobs you can do</span><span class="shop-count" id="fnJobsHint"></span></div>
+    <select id="fnJobPerson" hidden aria-label="Selected family member"></select><p class="hg-sub" id="fnPlayerHint"></p>
+    <div class="fn-jobs" id="fnJobList"></div>
+  </section>
+
+
+  <section class="fn-section">
+    <div class="fn-section-head"><span class="fn-section-title">Waiting for a parent</span><span class="shop-count" id="fnRequestCount"></span></div>
+    <div id="fnRequestQueue"></div>
+  </section>
+
+
+
+  <details class="fn-section money-details"><summary>Earnings &amp; money history</summary>
     <div class="pagehead-actions">
       <button class="btn add" id="fnNewEntryBtn">+ Record money</button>
       <button class="btn sm" id="fnJobsBtn">Edit jobs</button>
       <button class="btn sm" id="fnSettingsBtn">Settings</button>
     </div>
-  </header>
   <div class="fn-notice">Parent approval here is a household workflow, not secure sign-in. Anyone with this planner open can view or change money records.</div>
+  <div class="fn-grid" id="fnAccounts"></div>
+  <div class="fn-stat-grid" id="fnStatGrid"></div>
 
-  <!-- =====================================================================
-       EVERYTHING HAS A HOME — "The Home Crew"
-       A points-only cleanup game. It sits on the Money page because that is
-       where the family already looks to see who has earned what, and it is
-       deliberately fenced off from the money itself: nothing in this section
-       reads or writes a balance, an allowance, the clothing wallet or a
-       payout. Game points are unspendable. See docs/product-charter.md for
-       the narrow exception this holds against the no-points refusal.
-       ===================================================================== -->
+  <section class="fn-section">
+    <div class="fn-section-head"><span class="fn-section-title">Money history</span><span class="shop-count" id="fnLedgerCount"></span></div>
+    <div class="fn-filter-row">
+      <select class="ctrl" id="fnPersonFilter" aria-label="Filter history by person"></select>
+      <select class="ctrl" id="fnTypeFilter" aria-label="Filter history by kind">
+        <option value="all">All money</option>
+        <option value="in">Money in</option>
+        <option value="out">Money out</option>
+        <option value="pending">Waiting for approval</option>
+        <option value="clothing">Clothing transfers</option>
+      </select>
+    </div>
+    <div class="fn-table-wrap"><table class="fn-table"><thead><tr><th>Date</th><th>Who</th><th>What</th><th>Kind</th><th>Amount</th><th>Balance after</th><th></th></tr></thead><tbody id="fnLedgerBody"></tbody></table></div>
+  </section>
+  </details>
+</div>
+
+<div class="funds-wrap hidden" id="ehahPage">
+  <header class="pagehead"><h1 class="pagehead-title">Everything Has a Home</h1><a class="btn sm" href="#" onclick="showPage('home');return false">Home</a></header>
   <section class="hg-shell" id="hgShell" aria-labelledby="hgTitle">
     <header class="hg-top">
-      <span class="hg-wordmark" id="hgTitle"><span id="hgLogo"></span> Home Crew</span>
+      <span class="hg-wordmark" id="hgTitle"><span id="hgLogo"></span> EHAH</span>
       <span class="hg-round" id="hgRound"></span>
     </header>
     <div class="hg-body">
-      <section class="hg-picker" id="hgPicker" hidden aria-label="Choose who is playing">
-        <p class="hg-label" id="hgPickerLabel">Who is playing?</p>
-        <div class="hg-players" id="hgPlayers"></div>
-        <button type="button" class="hg-quiet" id="hgCancelSwitch" hidden>Back to the game</button>
-      </section>
-
+      <div class="hg-empty" id="hgOverview">The whole crew, together. <a href="#" onclick="showPage('home');return false">Choose your name on Home</a> to log a cleanup.</div>
       <div class="hg-game" id="hgGame" hidden>
         <section class="hg-hero" id="hgHero" aria-label="Your home base"></section>
 
-        <section class="hg-mission" aria-label="Log a cleanup">
+        <section class="hg-mission" id="hgMission" aria-label="Log a cleanup">
           <div id="hgStepCategory">
             <div class="hg-head"><h3>What did you rescue?</h3><span id="hgSparkIcon" aria-hidden="true"></span></div>
             <p class="hg-sub">Already put it where it lives? Tap it.</p>
@@ -1462,41 +1509,12 @@
       </details>
 
       <p class="hg-footer">Points only, never dollars. Dad plays too.</p>
-      <button type="button" class="hg-quiet hg-switch" id="hgSwitch" hidden>Switch player</button>
+
       <p class="hg-note" id="hgSyncNote" role="status" hidden>Points are saved on this device, but could not sync. Reconnect or reload to retry. If this continues, ask Dad to check sync access.</p>
-      <p class="hg-note" id="hgStorageNote" hidden>This browser is blocking saved settings, so the player choice will last only for this visit.</p>
+
     </div>
   </section>
 
-  <div class="fn-grid" id="fnAccounts"></div>
-
-  <section class="fn-section">
-    <div class="fn-section-head"><span class="fn-section-title">Waiting for a parent</span><span class="shop-count" id="fnRequestCount"></span></div>
-    <div id="fnRequestQueue"></div>
-  </section>
-
-  <section class="fn-section">
-    <div class="fn-section-head"><span class="fn-section-title">Jobs you can do</span><span class="shop-count" id="fnJobsHint"></span></div>
-    <div class="fn-filter-row"><select class="ctrl" id="fnJobPerson" aria-label="Who is doing the job"></select></div>
-    <div class="fn-jobs" id="fnJobList"></div>
-  </section>
-
-  <div class="fn-stat-grid" id="fnStatGrid"></div>
-
-  <section class="fn-section">
-    <div class="fn-section-head"><span class="fn-section-title">Money history</span><span class="shop-count" id="fnLedgerCount"></span></div>
-    <div class="fn-filter-row">
-      <select class="ctrl" id="fnPersonFilter" aria-label="Filter history by person"></select>
-      <select class="ctrl" id="fnTypeFilter" aria-label="Filter history by kind">
-        <option value="all">All money</option>
-        <option value="in">Money in</option>
-        <option value="out">Money out</option>
-        <option value="pending">Waiting for approval</option>
-        <option value="clothing">Clothing transfers</option>
-      </select>
-    </div>
-    <div class="fn-table-wrap"><table class="fn-table"><thead><tr><th>Date</th><th>Who</th><th>What</th><th>Kind</th><th>Amount</th><th>Balance after</th><th></th></tr></thead><tbody id="fnLedgerBody"></tbody></table></div>
-  </section>
 </div>
 
 <div class="clothing-wrap hidden" id="clothingPage">
@@ -3083,33 +3101,17 @@ if(pruneOldGoals()) saveGoals();
 let homeGameSettings = migrateHomeGameSettings(loadJSON(K_HOME_GAME_SETTINGS)||{});
 const homeGameRaw = loadJSON(K_HOME_GAME);
 let homeGameEvents = mergeHomeGameEvents([], Array.isArray(homeGameRaw)?homeGameRaw:[]);
-/* Which player THIS DEVICE is signed on as. Device-local and never synced, exactly like
-   home.activeProfile.v1 — each kid's phone opens straight onto them and the picker stays hidden.
-   It is a convenience, not identity: whoever is holding the phone can change it, so it proves
-   nothing and grants nothing. It is deliberately NOT the app-wide person selector either; a parent
-   filtering Home to Ariel must not start logging cleanups as Ariel.
-   Read with a raw try/catch rather than loadJSON so a browser that blocks storage outright can be
-   told apart from a device that simply has not chosen yet. */
-let homeGamePlayerId="", homeGameStorageBlocked=false;
-{
-  let saved=null;
-  try{ const raw=localStorage.getItem(K_HOME_GAME_PLAYER); saved=raw?JSON.parse(raw):null; }
-  catch(e){ homeGameStorageBlocked=true; }
-  if(typeof saved==="string" && people.some(x=>x.id===saved)) homeGamePlayerId=saved;
-}
-function saveHomeGamePlayer(){
-  try{ localStorage.setItem(K_HOME_GAME_PLAYER, JSON.stringify(homeGamePlayerId)); homeGameStorageBlocked=false; }
-  catch(e){ homeGameStorageBlocked=true; }
-}
+/* Derived from the one remembered Home selection; never authenticated identity. */
+let homeGamePlayerId="";
 /* Transient screen state for the two-tap entry. Never persisted and never synced: it is where the
    thumb is right now, not a household fact. */
-let homeGameChoosing=false, homeGameStep="category", homeGamePickedCategory="", homeGameMessage="", homeGameMessageBad=false;
+let homeGameStep="category", homeGamePickedCategory="", homeGameMessage="", homeGameMessageBad=false;
 
 /* ---------------- state ---------------- */
 let editingId=null, placeEditingId=null, dateEditingId=null, overdueSet=new Set();
 /* Restore this browser/device's last-selected family filter; fall back to Everyone ("all") if the
    stored id no longer matches a real person (e.g. that family member was removed since). */
-let activePerson = (()=>{ const stored=loadJSON(K_ACTIVE_PROFILE); if(stored==null || stored==="all") return "all"; if(typeof stored==="string" && people.some(p=>p.id===stored)) return stored; return "all"; })();
+let activePerson = (()=>{ const stored=loadJSON(K_ACTIVE_PROFILE) ?? loadJSON(K_HOME_GAME_PLAYER); if(stored==null || stored==="all") return "all"; if(typeof stored==="string" && people.some(p=>p.id===stored)) return stored; return "all"; })();
 let datesAllOpen=false, pastDatesOpen=false;
 let pendingRemoteRender=false;
 
@@ -3117,7 +3119,7 @@ let pendingRemoteRender=false;
 /* "calendar" (month grid) and "agenda" are separate destinations that share one page shell,
    one data model and one filter bar — only the body renderer differs. */
 let currentPage="home"; // always opens on Home; never persisted, matching today's load behavior
-const PAGE_HASHES=["#calendar","#agenda","#clothing","#funds"];
+const PAGE_HASHES=["#calendar","#agenda","#clothing","#funds","#ehah"];
 function isCalendarSurface(){ return currentPage==="calendar"||currentPage==="agenda"; }
 function defaultCalState(){ return {
   monthCursor: todayStr().slice(0,7), // "YYYY-MM"
@@ -3134,13 +3136,12 @@ let custodyPaintOpen=false, custodyPaintPerson="", custodyPaintDragging=false, c
    lives outside all of these wrappers and is never hidden, which is what makes Money -> Clothing a
    single tap instead of a trip through Home. */
 const PAGES=[
-  {id:"home",     label:"Today",    icon:"🏠", wrap:"homeWrap",     hash:"",          render:()=>render()},
+  {id:"home",     label:"Home",     icon:"🏠", wrap:"homeWrap",     hash:"",          render:()=>render()},
   {id:"calendar", label:"Calendar", icon:"📅", wrap:"calendarPage", hash:"#calendar", render:renderCalendarPage},
   {id:"agenda",   label:"Agenda",   icon:"🗒️", wrap:"calendarPage", hash:"#agenda",   render:renderCalendarPage},
-  /* Money's badge counts BOTH kinds of work waiting for a parent on that page: job payouts and
-     Home Crew cleanup claims. Same rule as every other badge — never narrowed by the person
-     selector, because a parent has to see outstanding work whoever is being viewed. */
-  {id:"funds",    label:"Money",    icon:"💰", wrap:"fundsPage",    hash:"#funds",    render:renderFundsPage,    badge:()=>fundsPendingRequests().length+homeGamePendingClaims().length},
+  /* Separate approval badges for paid chores and cleanup points. */
+  {id:"funds",    label:"Chores",   icon:"🧹", wrap:"fundsPage",    hash:"#funds",    render:renderFundsPage,    badge:()=>fundsPendingRequests().length},
+  {id:"ehah", label:"EHAH", icon:"🏠", wrap:"ehahPage", hash:"#ehah", render:renderHomeGame, badge:()=>homeGamePendingClaims().length},
   {id:"clothing", label:"Clothing", icon:"👕", wrap:"clothingPage", hash:"#clothing", render:renderClothingPage, badge:()=>pendingClothingReviews().length},
 ];
 function pageDef(id){ return PAGES.find(p=>p.id===id)||PAGES[0]; }
@@ -3568,7 +3569,7 @@ function currentView(){
 function render(){
   normalizeLater();
   renderPeopleBar();
-  renderBankStrip();
+
   renderGoals();
   renderNotes();
   renderShop();
@@ -3610,6 +3611,7 @@ function render(){
   if(isCalendarSurface()) renderCalendarPage();
   if(currentPage==="clothing") renderClothingPage();
   if(currentPage==="funds") renderFundsPage();
+  if(currentPage==="ehah") renderHomeGame();
 }
 
 function renderProgress(){
@@ -3637,7 +3639,7 @@ function whoHighlightHtml(){
   const left=tasks.filter(t=>isActive(t)&&isToday(t)&&personVisible(t)).length;
   const bits=[left?`<b>${left}</b> left today`:`nothing left today 🎉`];
   if(goalsLeft) bits.push(`<b>${goalsLeft}</b> goal${goalsLeft===1?"":"s"}`);
-  if(isFundsParticipant(p)&&fundsPersonSettings(p.id).enabled) bits.push(`<b>${money(fundsBalance(p.id))}</b> in the bank`);
+
   return `Hi ${esc(p.name)} — ` + bits.join(" · ");
 }
 /* A dropdown in the header strip, not a row of chips and not a bar of its own. Four chips plus an
@@ -3645,75 +3647,22 @@ function whoHighlightHtml(){
    no vertical space, sits level with the clock, and takes the selected person's colour. "Edit
    family…" is the last option rather than a separate button, so the control stays one thing.
    The choice is remembered per device by saveActiveProfile(). */
+function chooseFamilyPerson(id){
+  activePerson=people.some(p=>p.id===id)?id:"all";
+  homeGamePlayerId=activePerson==="all"?"":activePerson;
+  homeGameStep="category"; homeGamePickedCategory=""; homeGameMessage="";
+  saveActiveProfile();
+  for(const id of ["fnPersonFilter","clPersonFilter"]){const el=document.getElementById(id);if(el)el.value="all";}
+  render();
+}
 function renderPeopleBar(){
-  const pick=document.getElementById("whoPick"); if(!pick) return;
-  const sel=getPerson(activePerson);
-  pick.style.setProperty("--who", activePerson==="all" ? "var(--signal)" : sel.color);
-  const opt=(id,label,count)=>`<option value="${esc(id)}" ${activePerson===id?"selected":""}>${esc(label)}${count?` (${count})`:""}</option>`;
-  pick.innerHTML=`<span class="who-dot" aria-hidden="true"></span><select id="whoSelect" aria-label="Whose day is showing">${
-      opt("all","Everyone",0)+people.map(p=>opt(p.id,p.name,personCount(p.id))).join("")
-    }<option value="__edit">Edit family…</option></select>`;
-  pick.querySelector("#whoSelect").addEventListener("change",e=>{
-    /* "Edit family…" is an action, not a selection — snap the value back before opening the editor
-       so the header never claims the family list is the person being viewed. */
-    if(e.target.value==="__edit"){ e.target.value=activePerson; togglePeopleEditor(); return; }
-    activePerson=e.target.value; saveActiveProfile();
-    /* render() repaints Home and, through its tail, whichever interior page is open — so one call
-       keeps the whole app pointed at the newly chosen person. */
-    render();
-  });
-  const hi=document.getElementById("whoHi"); if(hi) hi.innerHTML=whoHighlightHtml();
-}
-
-/* Per-kid status cards on Home — the parent's at-a-glance board.
-   Balances alone answered "how much money", which is not the question a parent opens Home with.
-   Each card now carries the whole kid: what's left today, goals, anything waiting for approval, and
-   how their savings goal is going. Tapping one focuses Home on that kid; tapping it again goes back
-   to Everyone, so checking on all three is three taps and no dropdown.
-
-   Money is still read-only here. Every way to CHANGE money lives on the Money page, so Home can
-   never become a second editor that disagrees with it.
-
-   Shows a card for every child, not just every account: a kid whose bank account is switched off
-   still has tasks and goals worth seeing, they just have no balance to show. */
-function personTodayCount(pid){ return tasks.filter(t=>isActive(t)&&isToday(t)&&(isFamilyTask(t)||taskPeopleIds(t).includes(pid))).length; }
-function personGoalCount(pid){
-  const ts=todayStr();
-  return goals.filter(g=>{
-    if(g.date!==ts||g.done) return false;
-    const ids=normPeople(g.people);
-    return !ids.length||ids.includes("family")||ids.includes(pid);
-  }).length;
-}
-function renderBankStrip(){
-  const el=document.getElementById("bankStrip"); if(!el) return;
-  const list=people.filter(isFundsParticipant).filter(p=>activePerson==="all"||p.id===activePerson);
-  if(!list.length){ el.innerHTML=""; el.classList.add("hidden"); return; }
-  el.classList.remove("hidden");
-  el.innerHTML=list.map(p=>{
-    const cfg=fundsPersonSettings(p.id), hasAccount=cfg.enabled;
-    const bal=fundsBalance(p.id), pend=fundsPendingTotal(p.id);
-    const left=personTodayCount(p.id), goalsLeft=personGoalCount(p.id);
-    const status = left
-      ? `${left} left today · ${goalsLeft} goal${goalsLeft===1?"":"s"}`
-      : (goalsLeft ? `Tasks done · ${goalsLeft} goal${goalsLeft===1?"":"s"} to go` : "All done today 🎉");
-    const pct=cfg.goalCents>0?Math.max(0,Math.min(100,bal/cfg.goalCents*100)):0;
-    const goal=(hasAccount&&cfg.goalCents>0)?`<span class="bc-goal"><span class="bar"><span style="width:${pct}%"></span></span>
-        <span class="bc-goal-lab"><span>${esc(cfg.goalLabel||"Saving for")}</span><span>${Math.round(pct)}%</span></span></span>`:"";
-    const focused=activePerson===p.id;
-    return `<button class="bankcard ${pend>0?"pending":""} ${focused?"focused":""}" style="--who:${p.color}" data-id="${p.id}"
-        aria-pressed="${focused}" aria-label="${focused?`Show everyone again`:`Show only ${esc(p.name)}`}">
-      <span class="bc-name"><span class="dot" aria-hidden="true"></span>${esc(p.name)}${hasAccount?`<span class="bc-amt">${money(bal)}</span>`:""}</span>
-      <span class="bc-status">${esc(status)}</span>
-      ${pend>0?`<span class="bc-approve">⏳ ${money(pend)} to approve</span>`:""}
-      ${goal}</button>`;
-  }).join("");
-  /* Tap to focus, tap again to go back — the same control both ways, so a parent checking on three
-     kids never has to find the dropdown to get out again. */
-  el.querySelectorAll(".bankcard").forEach(b=>b.addEventListener("click",()=>{
-    activePerson = (activePerson===b.dataset.id) ? "all" : b.dataset.id;
-    saveActiveProfile(); render();
-  }));
+  if(activePerson!=="all"&&!people.some(p=>p.id===activePerson)){activePerson="all";saveActiveProfile();}
+  homeGamePlayerId=activePerson==="all"?"":activePerson;
+  const pick=document.getElementById("whoPick");
+  pick.innerHTML=[{id:"all",name:"All",color:"var(--signal)"},...people].map(p=>
+    `<button class="family-choice" data-person="${esc(p.id)}" style="--who:${esc(p.color)}" aria-pressed="${activePerson===p.id}"><span class="hg-avatar">${p.id==="all"?"✦":esc(p.name.slice(0,1))}</span><b>${esc(p.name)}</b></button>`).join("");
+  pick.querySelectorAll("button").forEach(b=>b.onclick=()=>chooseFamilyPerson(b.dataset.person));
+  document.getElementById("whoHi").innerHTML=whoHighlightHtml();
 }
 
 function togglePeopleEditor(){ closeActiveEdit(true); const pe=document.getElementById("peopleEditor"); pe.classList.toggle("hidden"); if(!pe.classList.contains("hidden")) renderPeopleEditor(); }
@@ -5802,10 +5751,12 @@ function renderFundsJobs(){
      get wrong on a phone. On Everyone it keeps whatever was last chosen. */
   if(scoped) sel.value=scoped;
   else if(accounts.length && ![...sel.options].some(o=>o.value===prev)) sel.value=accounts[0].id;
+  sel.value=scoped||"";
+  document.getElementById("fnPlayerHint").innerHTML=scoped?`Jobs for ${esc(getPerson(scoped).name)}`:`<a href="#" onclick="showPage('home');return false">Choose your name on Home</a> to mark a chore done.`;
   const active=fundsSettings.jobs.filter(j=>j.active), el=document.getElementById("fnJobList");
-  document.getElementById("fnJobsHint").textContent=accounts.length?"Tap one when it's done":"Add an account first";
+  document.getElementById("fnJobsHint").textContent=scoped?"Tap one when it's done":"Choose a person on Home";
   if(!active.length){ el.innerHTML=`<div class="dates-empty">No jobs yet. Use “Edit jobs” to add what earns money here.</div>`; return; }
-  el.innerHTML=active.map(j=>`<button class="fn-job ${accounts.length?"":"disabled"}" data-id="${j.id}" ${accounts.length?"":"disabled"}>
+  el.innerHTML=active.map(j=>`<button class="fn-job ${scoped?"":"disabled"}" data-id="${j.id}" ${scoped?"":"disabled"}>
       <span class="fj-emoji" aria-hidden="true">${esc(j.emoji)}</span>
       <span class="fj-name">${esc(j.name)}</span>
       <span class="fj-amt">${money(j.amountCents)}</span></button>`).join("");
@@ -5907,13 +5858,6 @@ function hgCelebrate(){
   }
 }
 function hgSay(text, bad){ homeGameMessage=text||""; homeGameMessageBad=!!bad; }
-function hgSetPlayer(personId){
-  homeGamePlayerId=personId;
-  homeGameChoosing=false; homeGameStep="category"; homeGamePickedCategory="";
-  saveHomeGamePlayer();
-  hgSay("You are playing as "+getPerson(personId).name+".");
-  renderHomeGame();
-}
 function hgSubmitClaim(ownerId){
   const helper=homeGamePlayerId, category=homeGamePickedCategory;
   homeGameStep="category"; homeGamePickedCategory="";
@@ -5926,58 +5870,26 @@ function hgSubmitClaim(ownerId){
   hgCelebrate();
 }
 function renderHomeGame(){
-  const shell=document.getElementById("hgShell"); if(!shell) return;
   if(ensureHomeGamePersonSettings()) saveHomeGame();
-  const players=homeGamePlayers();
-  /* A remembered player who has since left the family list, or been taken out of the game, puts
-     this device quietly back on the picker rather than opening a screen belonging to nobody. */
-  if(homeGamePlayerId && !players.some(p=>p.id===homeGamePlayerId)){ homeGamePlayerId=""; saveHomeGamePlayer(); }
-  const player=players.find(p=>p.id===homeGamePlayerId)||null;
-  const choosing=!player || homeGameChoosing;
+  homeGamePlayerId=activePerson==="all"?"":activePerson;
+  const players=homeGamePlayers(),player=players.find(p=>p.id===homeGamePlayerId)||null;
   const round=homeGameCurrentRound();
-
-  shell.style.setProperty("--who", player?player.color:"var(--signal)");
+  document.getElementById("hgShell").style.setProperty("--who",player?player.color:"var(--signal)");
   document.getElementById("hgLogo").innerHTML=hgIcon("house");
   document.getElementById("hgSparkIcon").innerHTML=hgIcon("sparkles");
   document.getElementById("hgFlagIcon").innerHTML=hgIcon("flag");
   document.getElementById("hgRound").textContent=homeGameRoundLabel(round);
-  document.getElementById("hgPicker").hidden=!choosing;
-  document.getElementById("hgGame").hidden=choosing;
-  document.getElementById("hgSwitch").hidden=choosing;
-  document.getElementById("hgCancelSwitch").hidden=!player;
-  document.getElementById("hgStorageNote").hidden=!homeGameStorageBlocked;
+  document.getElementById("hgGame").hidden=false;
+  document.getElementById("hgHero").hidden=!player;
+  document.getElementById("hgMission").hidden=!player;
+  document.getElementById("hgOverview").hidden=!!player;
   document.getElementById("hgSyncNote").hidden=!homeGameSyncError;
-  document.getElementById("hgPickerLabel").textContent=player?"Who is playing now?":"Who is playing?";
-
-  /* Assigned rather than added, so re-rendering never stacks up duplicate handlers. */
-  document.getElementById("hgSwitch").onclick=()=>{ homeGameChoosing=true; homeGameStep="category"; homeGamePickedCategory=""; renderHomeGame(); document.getElementById("hgPicker").scrollIntoView({block:"nearest"}); };
-  document.getElementById("hgCancelSwitch").onclick=()=>{ homeGameChoosing=false; renderHomeGame(); };
-  document.getElementById("hgBack").onclick=()=>{ homeGameStep="category"; homeGamePickedCategory=""; renderHomeGame(); };
-
-  const notice=document.getElementById("hgNotice");
-  notice.classList.toggle("bad", homeGameMessageBad);
+  document.getElementById("hgBack").onclick=()=>{homeGameStep="category";renderHomeGame();};
+  const notice=document.getElementById("hgNotice");notice.hidden=!player;
+  notice.classList.toggle("bad",homeGameMessageBad);
   notice.innerHTML=hgIcon(homeGameMessageBad?"x":"heart")+`<span>${esc(homeGameMessage||"Everything has a home. Let's get it there.")}</span>`;
-
-  renderHomeGamePlayerPicker(players, player);
-  /* The review sits OUTSIDE the picker/game switch on purpose: a parent who has never chosen a
-     player still has to be able to confirm the claims the nav badge is counting. */
-  renderHomeGameReview();
-  if(!player) return;
-  renderHomeGameHero(player, round);
-  renderHomeGameEntry(player, players);
-  renderHomeGameBoard(player, round);
-}
-function renderHomeGamePlayerPicker(players, player){
-  const box=document.getElementById("hgPlayers");
-  if(!players.length){
-    box.innerHTML=`<div class="hg-empty">Nobody is in the game yet. Add family members with "Edit family..." on Today.</div>`;
-    return;
-  }
-  box.innerHTML=players.map(p=>
-    `<button type="button" class="hg-player" data-id="${esc(p.id)}" style="--who:${esc(p.color)}"`+
-    ` aria-pressed="${player&&player.id===p.id?"true":"false"}" aria-label="Play as ${esc(p.name)}">`+
-    `${hgAvatar(p)}<span>${esc(p.name)}</span></button>`).join("");
-  box.querySelectorAll(".hg-player").forEach(b=>b.addEventListener("click",()=>hgSetPlayer(b.dataset.id)));
+  renderHomeGameReview();renderHomeGameBoard(player,round);
+  if(player){renderHomeGameHero(player,round);renderHomeGameEntry(player,players);}
 }
 function renderHomeGameHero(player, round){
   const score=homeGameScore(player.id,round), rank=homeGameRank(player.id,round);
@@ -6035,7 +5947,7 @@ function renderHomeGameBoard(player, round){
     return `<div class="hg-racer" style="--who:${esc(r.person.color)}">
       <span class="hg-rank">${r.rank}</span>
       ${hgAvatar(r.person)}
-      <div class="hg-racer-name">${esc(r.person.name)}${r.person.id===player.id?" &middot; you":""}
+      <div class="hg-racer-name">${esc(r.person.name)}${r.person.id===player?.id?" &middot; you":""}
         <span class="hg-track"><span class="hg-fill" style="width:${pct.toFixed(0)}%"></span></span></div>
       <span class="hg-pts ${r.score<0?"neg":""}">${r.score>0?"+":""}${r.score}</span></div>`;
   }).join("");
@@ -6094,7 +6006,6 @@ function renderHomeGameReview(){
 
 function renderFundsPage(){
   if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
-  renderHomeGame();
   renderFundsAccounts();
   renderFundsRequests();
   renderFundsJobs();
