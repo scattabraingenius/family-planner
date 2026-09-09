@@ -441,3 +441,20 @@ delete it.
 ## Welcome block clearance — 2026-09-08
 
 Jason clarified via screenshot that the entire named-Home heading and shortcut block must clear after choosing a person. Both sections now hide together; Change person lives in Home tools and reopens the chooser. Top navigation retains EHAH and Chores. 26 isolated checks passed, including whole-block clearance, remembered selection and all page defaults. This supersedes the retained named-Home heading described above.
+
+## EHAH bulk entry — 2026-09-08
+
+Jason requested bulk entry after putting away 35 things. Bulk add opens an owner/category quantity
+grid using the remembered Home person as helper. Fill only relevant counts, send once. Each cell
+creates one pending quantity-bearing claim, so one approval or reversal covers that group.
+Known owners lose the same quantity; unknown ownership has no deduction. Scores/rescue counts
+sum quantities, and old events migrate to quantity 1. Quantities travel through existing event
+sync/import/export. Whole numbers 1–9999 are accepted; validation precedes any save. Bulk entry
+can record additional items alongside pending claims; users are told to enter only unlogged items.
+Submit closes the form and disables duplicate submission; Cancel saves nothing. Single-item entry
+retains its existing duplicate guard. Reload older app tabs so they display quantity-aware scores.
+
+19 isolated checks passed: 35 items split across owners, group approval/undo/restore, persistence,
+legacy migration, unknown owner, invalid counts, merge quantity preservation, unchanged financial
+state, cancel and modal fit at 320/390/820. Phone screenshot inspected; no JS errors or production
+household-data writes during testing.

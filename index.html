@@ -1233,6 +1233,13 @@
   .nextup.empty {display:none;}
   [hidden] {display:none!important;}
   @media(max-width:620px){.home-shortcuts {grid-template-columns:repeat(2,1fr);} .home-family {padding:12px;} .family-choices {gap:5px;} .family-choice {font-size:12px;} .ab-nav {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));width:100%;} .ab-nav .navbtn {min-width:0;padding:8px 2px;}}
+.hg-bulk-person {border:1px solid var(--line);border-radius:12px;margin:12px 0;padding:10px;}
+.hg-bulk-person legend {font-weight:700;padding:0 6px;}
+.hg-bulk-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.hg-bulk-grid label {font-size:12px;min-width:0;}
+.hg-bulk-grid input {box-sizing:border-box;width:100%;margin-top:5px;padding:10px 5px;font-size:16px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;}
+.hg-bulk-grid .hg-ico {width:14px;height:14px;}
+@media(max-width:360px){.hg-bulk-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}
 </style>
 </head>
 <body>
@@ -1485,7 +1492,7 @@
 
         <section class="hg-mission" id="hgMission" aria-label="Log a cleanup">
           <div id="hgStepCategory">
-            <div class="hg-head"><h3>What did you rescue?</h3><span id="hgSparkIcon" aria-hidden="true"></span></div>
+            <div class="hg-head"><h3>What did you rescue?</h3><span id="hgSparkIcon" aria-hidden="true"></span></div><button class="btn sm" id="hgBulk" onclick="openHomeGameBulk()">Bulk add</button>
             <p class="hg-sub">Already put it where it lives? Tap it.</p>
             <div class="hg-tiles" id="hgTiles"></div>
           </div>
@@ -2709,6 +2716,7 @@ function migrateHomeGameEvent(raw){
   e.created=finiteInt(e.created,Date.now());
   e.updated=finiteInt(e.updated,e.created);
   e.revision=Math.max(0,finiteInt(e.revision,0));
+  e.quantity=Math.max(1,Math.min(9999,finiteInt(e.quantity,1)));
   return e;
 }
 /* Game claims are the one collection in this app that MERGES on sync instead of being replaced.
@@ -2718,7 +2726,7 @@ function migrateHomeGameEvent(raw){
    event, not a removal. Causal revisions preserve later decisions even if a device clock moves
    backwards; time and canonical content break simultaneous-edit ties consistently on all devices. */
 function homeGameEventKey(e){
-  return JSON.stringify([e.status,e.reversed,e.reversedAt,e.decided,e.decidedBy,e.helperId,e.ownerId,e.category,e.date,e.round,e.created]);
+  return JSON.stringify([e.status,e.reversed,e.reversedAt,e.decided,e.decidedBy,e.helperId,e.ownerId,e.category,e.date,e.round,e.created,e.quantity]);
 }
 function compareHomeGameEvents(a,b){
   return (a.revision-b.revision) || (a.updated-b.updated) ||
@@ -2742,11 +2750,11 @@ function homeGameScoredEvents(round){
 }
 function homeGameScore(personId, round){
   let n=0;
-  homeGameScoredEvents(round).forEach(e=>{ if(e.helperId===personId) n+=1; if(e.ownerId===personId) n-=1; });
+  homeGameScoredEvents(round).forEach(e=>{ if(e.helperId===personId) n+=e.quantity; if(e.ownerId===personId) n-=e.quantity; });
   return n;
 }
-function homeGameRescues(personId, round){ return homeGameScoredEvents(round).filter(e=>e.helperId===personId).length; }
-function homeGameLeftOut(personId, round){ return homeGameScoredEvents(round).filter(e=>e.ownerId===personId).length; }
+function homeGameRescues(personId, round){ return homeGameScoredEvents(round).filter(e=>e.helperId===personId).reduce((n,e)=>n+e.quantity,0); }
+function homeGameLeftOut(personId, round){ return homeGameScoredEvents(round).filter(e=>e.ownerId===personId).reduce((n,e)=>n+e.quantity,0); }
 function homeGamePendingClaims(){ return homeGameEvents.filter(e=>e.status==="pending").sort((a,b)=>a.created-b.created); }
 function homeGamePendingFor(personId){ return homeGameEvents.filter(e=>e.status==="pending" && e.helperId===personId).length; }
 /* Recently decided claims, newest first — the parent's undo surface. Reversals stay in this list
@@ -2834,12 +2842,13 @@ function reopenHomeGameClaim(id){
 }
 function homeGameClaimText(e){
   const helper=getPerson(e.helperId).name, cat=homeGameCategoryLabel(e.category).toLowerCase();
-  return e.ownerId ? `${helper} put away ${getPerson(e.ownerId).name}'s ${cat}` : `${helper} put away ${cat} — owner unknown`;
+  const amount=e.quantity>1?`${e.quantity} items · `:"";
+  return amount+(e.ownerId ? `${helper} put away ${getPerson(e.ownerId).name}'s ${cat}` : `${helper} put away ${cat} — owner unknown`);
 }
 function homeGameClaimEffect(e){
   return e.ownerId
-    ? `${getPerson(e.helperId).name} +1 \u00b7 ${getPerson(e.ownerId).name} \u22121`
-    : `${getPerson(e.helperId).name} +1 \u00b7 no deduction`;
+    ? `${getPerson(e.helperId).name} +${e.quantity} \u00b7 ${getPerson(e.ownerId).name} \u2212${e.quantity}`
+    : `${getPerson(e.helperId).name} +${e.quantity} \u00b7 no deduction`;
 }
 
 /* =====================================================================
@@ -5868,6 +5877,45 @@ function hgCelebrate(){
   }
 }
 function hgSay(text, bad){ homeGameMessage=text||""; homeGameMessageBad=!!bad; }
+/* One quantity-bearing claim per filled cell: one review/undo handles all its items.
+   Older events migrate to quantity 1. No money is involved. */
+function logHomeGameBulk(helperId, rows){
+  if(!homeGameIsPlayer(helperId)) return {ok:false,error:"Choose your name on Home first."};
+  if(!Array.isArray(rows)||!rows.length) return {ok:false,error:"Enter at least one quantity."};
+  const keys=new Set();
+  for(const r of rows){
+    const key=JSON.stringify([r.ownerId||"",r.category]);
+    if(!homeGameCategory(r.category)||!Number.isInteger(r.quantity)||r.quantity<1||r.quantity>9999||r.ownerId===helperId||(r.ownerId&&!homeGameIsPlayer(r.ownerId))||keys.has(key))
+      return {ok:false,error:"Use whole numbers from 1 to 9,999 for another person's items."};
+    keys.add(key);
+  }
+  const events=rows.map(r=>migrateHomeGameEvent({helperId,ownerId:r.ownerId||"",category:r.category,quantity:r.quantity}));
+  homeGameEvents.push(...events);saveHomeGame();
+  return {ok:true,total:rows.reduce((n,r)=>n+r.quantity,0)};
+}
+function openHomeGameBulk(){
+  const helper=activePerson;
+  if(!homeGameIsPlayer(helper)) return;
+  openClModal(modal=>{
+    const owners=[...homeGamePlayers().filter(p=>p.id!==helper),{id:"",name:"Not sure"}];
+    modal.innerHTML=`<h2>Bulk add</h2><p>How many did you put away, ${esc(getPerson(helper).name)}? Fill only what you need, then send once.</p>
+      <form id="hgBulkForm">
+      ${owners.map(p=>`<fieldset class="hg-bulk-person"><legend>${esc(p.name)}</legend><div class="hg-bulk-grid">${HOME_GAME_CATEGORIES.map(c=>`<label>${hgIcon(c.icon)} ${esc(c.label)}<input type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0" data-owner="${esc(p.id)}" data-category="${c.id}" aria-label="${esc(p.name)} ${c.label}"></label>`).join("")}</div></fieldset>`).join("")}
+      <p class="hg-sub">One point per item after parent approval. Known owners lose the same number. Not sure means no deduction. Only enter items you have not already logged.</p>
+      <p id="hgBulkError" role="alert"></p><div class="cl-modal-actions"><button type="button" class="btn" id="hgBulkCancel">Cancel</button><button type="submit" class="btn add" id="hgBulkSend">Send for review</button></div></form>`;
+    const form=modal.querySelector("form"),send=modal.querySelector("#hgBulkSend");
+    form.oninput=()=>{const total=[...form.querySelectorAll("input")].reduce((n,i)=>n+(Number(i.value)||0),0);send.textContent=total>0?`Send ${total} items for review`:"Send for review";};
+    modal.querySelector("#hgBulkCancel").onclick=closeClModal;
+    form.onsubmit=e=>{
+      e.preventDefault();if(send.disabled)return;
+      if(activePerson!==helper){modal.querySelector("#hgBulkError").textContent="The selected person changed. Close this and reopen Bulk add.";return;}
+      const rows=[...form.querySelectorAll("input")].filter(i=>i.value!==""&&Number(i.value)!==0).map(i=>({ownerId:i.dataset.owner,category:i.dataset.category,quantity:Number(i.value)}));
+      const result=logHomeGameBulk(helper,rows);
+      if(!result.ok){modal.querySelector("#hgBulkError").textContent=result.error;return;}
+      send.disabled=true;closeClModal();hgSay(`${result.total} items sent for parent review. Nice cleanup!`);render();hgCelebrate();
+    };
+  });
+}
 function hgSubmitClaim(ownerId){
   const helper=homeGamePlayerId, category=homeGamePickedCategory;
   homeGameStep="category"; homeGamePickedCategory="";
