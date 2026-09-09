@@ -1412,6 +1412,7 @@
     <div class="eyebrow tools-title" id="homeToolsTitle">Settings &amp; tools</div>
     <div class="tools-row"><button id="familyChange" class="btn sm" onclick="familyChoosing=true;renderPeopleBar();document.getElementById('familyWelcome').scrollIntoView({block:'start'})">Change person</button>
       <button class="btn sm" onclick="togglePeopleEditor()">Edit family</button>
+      <button class="btn sm" onclick="const u=new URL(location.href);u.searchParams.set('refresh',Date.now());location.replace(u.href)">Update app</button>
       <button class="btn sm" id="soundToggle">Sound: On</button>
       <button class="btn sm" id="printBtn">🖨 Print</button>
       <button class="btn sm" id="exportBtn">Export</button>
@@ -1636,7 +1637,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.18-beta";
+const VERSION = "1.19-beta";
 
 /* ---------------- storage ---------------- */
 /* Firebase does not store empty arrays: writing places:[] deletes the key outright. Every
@@ -2783,13 +2784,19 @@ function homeGameRank(personId, round){
 function homeGameDuplicatePending(helperId, ownerId, category){
   return homeGameEvents.some(e=>e.status==="pending" && e.helperId===helperId && e.ownerId===(ownerId||"") && e.category===category);
 }
+/* Parent naming follows the existing household role convention, not authenticated roles. */
+function homeGameIsParent(id){const p=people.find(p=>p.id===id);return !!p&&CLOTHING_ADULT_ROLE_NAMES.has(String(p.name||"").trim().toLowerCase());}
+function prepareHomeGameClaim(raw){
+  const e=migrateHomeGameEvent(raw);
+  if(homeGameIsParent(e.helperId)){e.status="confirmed";e.decidedBy=e.helperId;e.decided=Date.now();touchHomeGameEvent(e);}
+  return e;
+}
 function logHomeGameCleanup(helperId, ownerId, category){
   if(!helperId || !homeGameIsPlayer(helperId)) return {ok:false, error:"Choose who is playing first."};
   if(!homeGameCategory(category)) return {ok:false, error:"Pick what you put away."};
   if(ownerId && ownerId===helperId) return {ok:false, error:"Points come from putting away someone else's things."};
   if(ownerId && !homeGameIsPlayer(ownerId)) return {ok:false, error:"That person is not in the game."};
-  if(homeGameDuplicatePending(helperId, ownerId, category)) return {ok:false, error:"That one is already waiting for a parent."};
-  const e=migrateHomeGameEvent({helperId, ownerId:ownerId||"", category});
+  const e=prepareHomeGameClaim({helperId, ownerId:ownerId||"", category});
   homeGameEvents.push(e);
   saveHomeGame();
   return {ok:true, event:e};
@@ -2835,7 +2842,6 @@ function restoreHomeGameClaim(id){
 function reopenHomeGameClaim(id){
   const e=homeGameEvent(id);
   if(!e || e.status!=="declined") return {ok:false, error:"Only a declined claim can be reopened."};
-  if(homeGameDuplicatePending(e.helperId, e.ownerId, e.category)) return {ok:false, error:"An identical claim is already waiting."};
   e.status="pending"; e.decidedBy=""; e.decided=0; touchHomeGameEvent(e);
   saveHomeGame();
   return {ok:true, event:e};
@@ -5889,7 +5895,7 @@ function logHomeGameBulk(helperId, rows){
       return {ok:false,error:"Use whole numbers from 1 to 9,999 for another person's items."};
     keys.add(key);
   }
-  const events=rows.map(r=>migrateHomeGameEvent({helperId,ownerId:r.ownerId||"",category:r.category,quantity:r.quantity}));
+  const events=rows.map(r=>prepareHomeGameClaim({helperId,ownerId:r.ownerId||"",category:r.category,quantity:r.quantity}));
   homeGameEvents.push(...events);saveHomeGame();
   return {ok:true,total:rows.reduce((n,r)=>n+r.quantity,0)};
 }
@@ -5901,10 +5907,10 @@ function openHomeGameBulk(){
     modal.innerHTML=`<h2>Bulk add</h2><p>How many did you put away, ${esc(getPerson(helper).name)}? Fill only what you need, then send once.</p>
       <form id="hgBulkForm">
       ${owners.map(p=>`<fieldset class="hg-bulk-person"><legend>${esc(p.name)}</legend><div class="hg-bulk-grid">${HOME_GAME_CATEGORIES.map(c=>`<label>${hgIcon(c.icon)} ${esc(c.label)}<input type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0" data-owner="${esc(p.id)}" data-category="${c.id}" aria-label="${esc(p.name)} ${c.label}"></label>`).join("")}</div></fieldset>`).join("")}
-      <p class="hg-sub">One point per item after parent approval. Known owners lose the same number. Not sure means no deduction. Only enter items you have not already logged.</p>
-      <p id="hgBulkError" role="alert"></p><div class="cl-modal-actions"><button type="button" class="btn" id="hgBulkCancel">Cancel</button><button type="submit" class="btn add" id="hgBulkSend">Send for review</button></div></form>`;
+      <p class="hg-sub">${homeGameIsParent(helper)?"Your entries count immediately. One point per item.":"One point per item after parent approval."} Known owners lose the same number. Not sure means no deduction. Only enter items you have not already logged.</p>
+      <p id="hgBulkError" role="alert"></p><div class="cl-modal-actions"><button type="button" class="btn" id="hgBulkCancel">Cancel</button><button type="submit" class="btn add" id="hgBulkSend">${homeGameIsParent(helper)?"Add items":"Send for review"}</button></div></form>`;
     const form=modal.querySelector("form"),send=modal.querySelector("#hgBulkSend");
-    form.oninput=()=>{const total=[...form.querySelectorAll("input")].reduce((n,i)=>n+(Number(i.value)||0),0);send.textContent=total>0?`Send ${total} items for review`:"Send for review";};
+    form.oninput=()=>{const total=[...form.querySelectorAll("input")].reduce((n,i)=>n+(Number(i.value)||0),0);send.textContent=homeGameIsParent(helper)?`Add ${total} items`:total>0?`Send ${total} items for review`:"Send for review";};
     modal.querySelector("#hgBulkCancel").onclick=closeClModal;
     form.onsubmit=e=>{
       e.preventDefault();if(send.disabled)return;
@@ -5912,7 +5918,7 @@ function openHomeGameBulk(){
       const rows=[...form.querySelectorAll("input")].filter(i=>i.value!==""&&Number(i.value)!==0).map(i=>({ownerId:i.dataset.owner,category:i.dataset.category,quantity:Number(i.value)}));
       const result=logHomeGameBulk(helper,rows);
       if(!result.ok){modal.querySelector("#hgBulkError").textContent=result.error;return;}
-      send.disabled=true;closeClModal();hgSay(`${result.total} items sent for parent review. Nice cleanup!`);render();hgCelebrate();
+      send.disabled=true;closeClModal();hgSay(homeGameIsParent(helper)?`${result.total} items counted. Nice cleanup!`:`${result.total} items sent for parent review. Nice cleanup!`);render();hgCelebrate();
     };
   });
 }
@@ -5921,7 +5927,7 @@ function hgSubmitClaim(ownerId){
   homeGameStep="category"; homeGamePickedCategory="";
   const r=logHomeGameCleanup(helper, ownerId, category);
   if(!r.ok){ hgSay(r.error,true); renderHomeGame(); return; }
-  hgSay("Nice rescue, "+getPerson(helper).name+"! Your +1 is waiting for a parent to confirm.");
+  hgSay(homeGameIsParent(helper)?"Counted. "+homeGameClaimEffect(r.event)+".":"Nice rescue, "+getPerson(helper).name+"! Your +1 is waiting for a parent to confirm.");
   /* The claim is already saved. render() rather than renderHomeGame() so the Money badge and every
      other surface that counts work waiting for a parent updates in the same beat. */
   render();
@@ -6736,7 +6742,7 @@ routePageFromHash();
    the planner's existing local-only behavior and never produces a file:// console error. */
 if("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost" || location.hostname==="127.0.0.1")){
   window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Family Planner service worker registration failed:",err));
+    navigator.serviceWorker.register("./service-worker.js",{updateViaCache:"none"}).then(reg=>reg.update()).catch(err=>console.warn("Family Planner service worker registration failed:",err));
   });
 }
 </script>

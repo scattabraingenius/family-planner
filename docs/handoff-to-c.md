@@ -458,3 +458,23 @@ retains its existing duplicate guard. Reload older app tabs so they display quan
 legacy migration, unknown owner, invalid counts, merge quantity preservation, unchanged financial
 state, cancel and modal fit at 320/390/820. Phone screenshot inspected; no JS errors or production
 household-data writes during testing.
+
+## Repeated cleanups, parent entry and stale launch — 1.19-beta
+
+Jason clarified that pending claims must never block more cleanups. Removed the same-helper,
+owner/category pending gate from single entry and reopening. Every deliberate two-tap entry is
+its own claim; bulk batches can also accumulate. Children remain pending until later review.
+Dad/Daddy and other existing adult household role names now create confirmed game claims directly,
+including bulk quantities, with normal reversible review history. This is the app's existing name
+convention, not secure role enforcement. Existing pending claims are not retroactively approved.
+
+Phone screenshots showed the old Today/Money/dropdown layout; current root and index URLs both
+served EHAH. Updated the service-worker shell to v3, revalidate navigation against HTTP cache,
+bypass cached worker checks, and added Update app under Home tools. Saved profile/data storage
+is not cleared. Fresh launch link: index.html?refresh=1.19#ehah. Physical iPhone state remains
+unverified; the fresh link is the recovery path for an old open tab.
+
+Verified in isolated Edge: 42 repeated child cleanups plus a 35-item batch remain pending,
+parent direct/bulk credit, later child review, paired undo, unchanged financial state, 26 existing
+profile checks, and actual local service-worker v2-to-v3 upgrade with local storage preserved,
+unrelated caches retained and the updated app launching offline. No production records modified.

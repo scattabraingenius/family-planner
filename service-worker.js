@@ -1,4 +1,4 @@
-const CACHE_NAME = "mm-home-shell-v2";
+const CACHE_NAME = "mm-home-shell-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,14 +11,14 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL.map(url=>new Request(url,{cache:"reload"})))));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.filter(key => key.startsWith("mm-home-shell-") && key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -36,7 +36,7 @@ self.addEventListener("fetch", event => {
   if(request.mode === "navigate"){
     /* Network-first keeps normal deployments fresh. The cached shell is used only when offline. */
     event.respondWith(
-      fetch(request).then(response => {
+      fetch(new Request(request,{cache:"no-cache"})).then(response => {
         if(response && response.ok){
           const copy = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
