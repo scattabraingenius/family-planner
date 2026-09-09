@@ -478,3 +478,7 @@ Verified in isolated Edge: 42 repeated child cleanups plus a 35-item batch remai
 parent direct/bulk credit, later child review, paired undo, unchanged financial state, 26 existing
 profile checks, and actual local service-worker v2-to-v3 upgrade with local storage preserved,
 unrelated caches retained and the updated app launching offline. No production records modified.
+
+## Other stuff — 2026-09-08
+
+Added Jason's requested Other stuff category to both quick and bulk EHAH entry. Uses the same owner, quantity, approval and reversal rules. Isolated checks verified Other stuff parent/bulk credit and undo with no financial changes or JS errors.

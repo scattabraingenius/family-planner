@@ -1236,6 +1236,8 @@
 .hg-bulk-person {border:1px solid var(--line);border-radius:12px;margin:12px 0;padding:10px;}
 .hg-bulk-person legend {font-weight:700;padding:0 6px;}
 .hg-bulk-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
+.hg-tile[data-cat="other"] {grid-column:1/-1;}
+.hg-bulk-grid label:last-child {grid-column:span 2;}
 .hg-bulk-grid label {font-size:12px;min-width:0;}
 .hg-bulk-grid input {box-sizing:border-box;width:100%;margin-top:5px;padding:10px 5px;font-size:16px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;}
 .hg-bulk-grid .hg-ico {width:14px;height:14px;}
@@ -2654,6 +2656,7 @@ const HOME_GAME_CATEGORIES=[
   {id:"trash",   label:"Trash",   home:"Into the bin",        icon:"trash"},
   {id:"toys",    label:"Toys",    home:"Back in their place", icon:"blocks"},
   {id:"clothes", label:"Clothes", home:"Hamper or drawer",    icon:"shirt"},
+  {id:"other", label:"Other stuff", home:"Anything else put away", icon:"blocks"},
 ];
 const HOME_GAME_STATUSES=["pending","confirmed","declined"];
 function homeGameCategory(id){ return HOME_GAME_CATEGORIES.find(c=>c.id===id)||null; }
