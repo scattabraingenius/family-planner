@@ -482,3 +482,32 @@ unrelated caches retained and the updated app launching offline. No production r
 ## Other stuff — 2026-09-08
 
 Added Jason's requested Other stuff category to both quick and bulk EHAH entry. Uses the same owner, quantity, approval and reversal rules. Isolated checks verified Other stuff parent/bulk credit and undo with no financial changes or JS errors.
+
+## Instant play, score correction and history — 1.20-beta
+
+Jason removed the EHAH review requirement: all players score immediately, including bulk entry.
+Old pending cleanup events migrate deterministically to confirmed; declined and reversed records
+remain excluded. Activity & undo replaces review. Paid Chores and Clothing approval rules are
+unchanged. No quota, subscription or money-setting changes are part of this release.
+
+Edit scores is available with a parent household profile or All selected. Pick a week, type each
+person's desired total, and save. Set everyone to 0 fills the form for clearing practice totals;
+it does not save until Save scores. Corrections are game events, not money or deletions. A stable
+per-person/week correction record stores the offset from cleanups, so repeated saves are
+idempotent and concurrent copies merge deterministically. Revising that correction replaces its
+previous offset; Activity shows the latest correction, not an immutable audit of every edit.
+Corrections can be undone and do not count as rescues. Existing event IDs and storage keys stay.
+
+The countdown ends Sunday midnight in the device's local timezone, matching existing rounds.
+At rollover the weekly leaderboard starts at zero; historical event rounds remain. Weekly and
+all-time totals are derived from cleanups plus corrections, preserved through sync/export/import.
+Other replaces Other stuff and requires a description in quick entry and per-owner bulk entry;
+old Other records without descriptions remain readable as other items. Descriptions appear in
+Activity and are escaped for display. Future individual corrections can also target prior weeks.
+
+30 isolated Edge checks passed: child instant points, named Other (quick/bulk), exact and negative
+score edits, repeat-save idempotence, correction merge, legacy pending migration, old-week totals,
+Sunday rollover, practice reset, reload persistence, unchanged financial state, and editor/page
+layout at 320/390/820/1280. Phone screenshots inspected. No production household records were
+read or modified by tests. v4 service-worker cache refreshes the shell; everyone should reload
+older tabs to get the new scoring model. Existing saved pending records count on the new client.

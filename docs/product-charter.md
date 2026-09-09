@@ -95,7 +95,7 @@ this charter.
     value is a separate decision to be made after the pilot, and it would require its own charter
     entry, deterministic one-time award ids, and the existing signed-cents ledger.
   - **The score is derived, never stored.** It is recomputed from the confirmed, non-reversed
-    cleanup events every time it is read, so there is no total anyone could treat as an asset.
+    cleanup events plus explicit score-correction events every time it is read. Jason authorized direct weekly score editing during the points-only pilot; corrections never touch money.
   - **It is a pilot.** If it produces blaming, staged messes, or discouraged kids, review the
     deduction rule with Jason. Dropping deductions is a recommendation, not yet an agreed change.
 - **Freeform note-taking.** Already tried and failed once. Do not rebuild it under a new name.
@@ -194,3 +194,7 @@ Structure and constraints come first; visual polish second.
   than allowing the whole family node, they must be updated before sync will accept them.
 - 2026-08-08 — Initial charter. Written after hiding Quick Notes and Before You Leave, and after
   comparing against Ohana Wall, Hearth, and Home Assistant dashboard practice.
+
+## EHAH trust-first update — 2026-09-08
+
+Jason removed EHAH parent review so everyone sees points immediately. Weekly score correction, a practice zeroing control, Sunday-midnight countdown, weekly/all-time totals and descriptions for Other are authorized. Historical rounds remain; game edits never change dollars. This supersedes earlier game-review requirements. Chores and Clothing keep their existing approval rules.

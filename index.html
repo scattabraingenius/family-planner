@@ -1242,6 +1242,12 @@
 .hg-bulk-grid input {box-sizing:border-box;width:100%;margin-top:5px;padding:10px 5px;font-size:16px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;}
 .hg-bulk-grid .hg-ico {width:14px;height:14px;}
 @media(max-width:360px){.hg-bulk-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}
+.hg-score-row {display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0;}
+.hg-score-row input {width:110px;padding:10px;font-size:16px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;}
+.hg-other-description {display:block;margin-top:10px;}
+.hg-other-description textarea {display:block;box-sizing:border-box;width:100%;min-height:64px;margin-top:5px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);font:inherit;padding:8px;}
+#hgCountdown {font-size:13px;font-variant-numeric:tabular-nums;}
+.hg-history-table {width:100%;min-width:300px;border-collapse:collapse;font-size:12px;} .hg-history-table th,.hg-history-table td {padding:10px 6px;text-align:left;border-bottom:1px solid var(--line);} .hg-history-table th {font-size:11px;}
 </style>
 </head>
 <body>
@@ -1489,6 +1495,8 @@
       <span class="hg-round" id="hgRound"></span>
     </header>
     <div class="hg-body">
+      <div class="hg-head"><span id="hgCountdown" role="timer"></span><button class="btn sm" id="hgEditScores" onclick="openHomeGameScores()">Edit scores</button></div>
+      <p class="hg-sub">A fresh week starts Sunday at midnight. Past scores stay in history.</p>
       <div class="hg-empty" id="hgOverview">The whole crew, together. <a href="#" onclick="showPage('home');return false">Choose your name on Home</a> to log a cleanup.</div>
       <div class="hg-game" id="hgGame" hidden>
         <section class="hg-hero" id="hgHero" aria-label="Your home base"></section>
@@ -1515,11 +1523,12 @@
       </div>
 
       <details class="hg-review" id="hgReview">
-        <summary id="hgReviewSummary">Parent review</summary>
+        <summary id="hgReviewSummary">Activity &amp; undo</summary>
         <div id="hgReviewBody"></div>
       </details>
 
-      <p class="hg-footer">Points only, never dollars. Dad plays too.</p>
+      <details class="hg-review" id="hgHistory"><summary>Weekly &amp; all-time scores</summary><div id="hgHistoryBody"></div></details>
+      <p class="hg-footer">Points count right away. Points only, never dollars.</p>
 
       <p class="hg-note" id="hgSyncNote" role="status" hidden>Points are saved on this device, but could not sync. Reconnect or reload to retry. If this continues, ask Dad to check sync access.</p>
 
@@ -1639,7 +1648,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
-const VERSION = "1.19-beta";
+const VERSION = "1.20-beta";
 
 /* ---------------- storage ---------------- */
 /* Firebase does not store empty arrays: writing places:[] deletes the key outright. Every
@@ -2656,7 +2665,7 @@ const HOME_GAME_CATEGORIES=[
   {id:"trash",   label:"Trash",   home:"Into the bin",        icon:"trash"},
   {id:"toys",    label:"Toys",    home:"Back in their place", icon:"blocks"},
   {id:"clothes", label:"Clothes", home:"Hamper or drawer",    icon:"shirt"},
-  {id:"other", label:"Other stuff", home:"Anything else put away", icon:"blocks"},
+  {id:"other", label:"Other", home:"Anything else put away", icon:"blocks"},
 ];
 const HOME_GAME_STATUSES=["pending","confirmed","declined"];
 function homeGameCategory(id){ return HOME_GAME_CATEGORIES.find(c=>c.id===id)||null; }
@@ -2721,6 +2730,10 @@ function migrateHomeGameEvent(raw){
   e.updated=finiteInt(e.updated,e.created);
   e.revision=Math.max(0,finiteInt(e.revision,0));
   e.quantity=Math.max(1,Math.min(9999,finiteInt(e.quantity,1)));
+  e.description=String(e.description||"").trim().slice(0,160);
+  e.kind=e.kind==="adjustment"?"adjustment":"cleanup";
+  e.scoreDelta=finiteInt(e.scoreDelta,0);
+  if(e.status==="pending"){e.status="confirmed";e.decided=e.decided||e.created;e.revision+=1;e.updated+=1;}
   return e;
 }
 /* Game claims are the one collection in this app that MERGES on sync instead of being replaced.
@@ -2730,7 +2743,7 @@ function migrateHomeGameEvent(raw){
    event, not a removal. Causal revisions preserve later decisions even if a device clock moves
    backwards; time and canonical content break simultaneous-edit ties consistently on all devices. */
 function homeGameEventKey(e){
-  return JSON.stringify([e.status,e.reversed,e.reversedAt,e.decided,e.decidedBy,e.helperId,e.ownerId,e.category,e.date,e.round,e.created,e.quantity]);
+  return JSON.stringify([e.status,e.reversed,e.reversedAt,e.decided,e.decidedBy,e.helperId,e.ownerId,e.category,e.date,e.round,e.created,e.quantity,e.description,e.kind,e.scoreDelta]);
 }
 function compareHomeGameEvents(a,b){
   return (a.revision-b.revision) || (a.updated-b.updated) ||
@@ -2754,11 +2767,11 @@ function homeGameScoredEvents(round){
 }
 function homeGameScore(personId, round){
   let n=0;
-  homeGameScoredEvents(round).forEach(e=>{ if(e.helperId===personId) n+=e.quantity; if(e.ownerId===personId) n-=e.quantity; });
+  homeGameScoredEvents(round).forEach(e=>{if(e.kind==="adjustment"){if(e.helperId===personId)n+=e.scoreDelta;}else{if(e.helperId===personId)n+=e.quantity;if(e.ownerId===personId)n-=e.quantity;}});
   return n;
 }
-function homeGameRescues(personId, round){ return homeGameScoredEvents(round).filter(e=>e.helperId===personId).reduce((n,e)=>n+e.quantity,0); }
-function homeGameLeftOut(personId, round){ return homeGameScoredEvents(round).filter(e=>e.ownerId===personId).reduce((n,e)=>n+e.quantity,0); }
+function homeGameRescues(personId, round){ return homeGameScoredEvents(round).filter(e=>e.kind!=="adjustment"&&e.helperId===personId).reduce((n,e)=>n+e.quantity,0); }
+function homeGameLeftOut(personId, round){ return homeGameScoredEvents(round).filter(e=>e.kind!=="adjustment"&&e.ownerId===personId).reduce((n,e)=>n+e.quantity,0); }
 function homeGamePendingClaims(){ return homeGameEvents.filter(e=>e.status==="pending").sort((a,b)=>a.created-b.created); }
 function homeGamePendingFor(personId){ return homeGameEvents.filter(e=>e.status==="pending" && e.helperId===personId).length; }
 /* Recently decided claims, newest first — the parent's undo surface. Reversals stay in this list
@@ -2791,15 +2804,16 @@ function homeGameDuplicatePending(helperId, ownerId, category){
 function homeGameIsParent(id){const p=people.find(p=>p.id===id);return !!p&&CLOTHING_ADULT_ROLE_NAMES.has(String(p.name||"").trim().toLowerCase());}
 function prepareHomeGameClaim(raw){
   const e=migrateHomeGameEvent(raw);
-  if(homeGameIsParent(e.helperId)){e.status="confirmed";e.decidedBy=e.helperId;e.decided=Date.now();touchHomeGameEvent(e);}
+  e.status="confirmed";e.decidedBy=e.helperId;e.decided=Date.now();
   return e;
 }
-function logHomeGameCleanup(helperId, ownerId, category){
+function logHomeGameCleanup(helperId, ownerId, category, description=""){
   if(!helperId || !homeGameIsPlayer(helperId)) return {ok:false, error:"Choose who is playing first."};
   if(!homeGameCategory(category)) return {ok:false, error:"Pick what you put away."};
   if(ownerId && ownerId===helperId) return {ok:false, error:"Points come from putting away someone else's things."};
   if(ownerId && !homeGameIsPlayer(ownerId)) return {ok:false, error:"That person is not in the game."};
-  const e=prepareHomeGameClaim({helperId, ownerId:ownerId||"", category});
+  if(category==="other"&&!String(description).trim())return {ok:false,error:"What did you put away?"};
+  const e=prepareHomeGameClaim({helperId, ownerId:ownerId||"", category,description});
   homeGameEvents.push(e);
   saveHomeGame();
   return {ok:true, event:e};
@@ -2850,11 +2864,13 @@ function reopenHomeGameClaim(id){
   return {ok:true, event:e};
 }
 function homeGameClaimText(e){
-  const helper=getPerson(e.helperId).name, cat=homeGameCategoryLabel(e.category).toLowerCase();
+  if(e.kind==="adjustment")return `Score correction for ${getPerson(e.helperId).name}${e.description?" — "+e.description:""}`;
+  const helper=getPerson(e.helperId).name, cat=e.category==="other"?(e.description||"other items"):homeGameCategoryLabel(e.category).toLowerCase();
   const amount=e.quantity>1?`${e.quantity} items · `:"";
   return amount+(e.ownerId ? `${helper} put away ${getPerson(e.ownerId).name}'s ${cat}` : `${helper} put away ${cat} — owner unknown`);
 }
 function homeGameClaimEffect(e){
+  if(e.kind==="adjustment")return `${getPerson(e.helperId).name} ${e.scoreDelta>=0?"+":""}${e.scoreDelta}`;
   return e.ownerId
     ? `${getPerson(e.helperId).name} +${e.quantity} \u00b7 ${getPerson(e.ownerId).name} \u2212${e.quantity}`
     : `${getPerson(e.helperId).name} +${e.quantity} \u00b7 no deduction`;
@@ -3124,6 +3140,7 @@ let homeGameEvents = mergeHomeGameEvents([], Array.isArray(homeGameRaw)?homeGame
 let homeGamePlayerId="";
 /* Transient screen state for the two-tap entry. Never persisted and never synced: it is where the
    thumb is right now, not a household fact. */
+let homeGameOtherDescription="";
 let homeGameStep="category", homeGamePickedCategory="", homeGameMessage="", homeGameMessageBad=false;
 
 /* ---------------- state ---------------- */
@@ -3161,7 +3178,7 @@ const PAGES=[
   {id:"agenda",   label:"Agenda",   icon:"🗒️", wrap:"calendarPage", hash:"#agenda",   render:renderCalendarPage},
   /* Separate approval badges for paid chores and cleanup points. */
   {id:"funds",    label:"Chores",   icon:"🧹", wrap:"fundsPage",    hash:"#funds",    render:renderFundsPage,    badge:()=>fundsPendingRequests().length},
-  {id:"ehah", label:"EHAH", icon:"🏠", wrap:"ehahPage", hash:"#ehah", render:renderHomeGame, badge:()=>homeGamePendingClaims().length},
+  {id:"ehah", label:"EHAH", icon:"🏠", wrap:"ehahPage", hash:"#ehah", render:renderHomeGame, badge:()=>0},
   {id:"clothing", label:"Clothing", icon:"👕", wrap:"clothingPage", hash:"#clothing", render:renderClothingPage, badge:()=>pendingClothingReviews().length},
 ];
 function pageDef(id){ return PAGES.find(p=>p.id===id)||PAGES[0]; }
@@ -5894,11 +5911,11 @@ function logHomeGameBulk(helperId, rows){
   const keys=new Set();
   for(const r of rows){
     const key=JSON.stringify([r.ownerId||"",r.category]);
-    if(!homeGameCategory(r.category)||!Number.isInteger(r.quantity)||r.quantity<1||r.quantity>9999||r.ownerId===helperId||(r.ownerId&&!homeGameIsPlayer(r.ownerId))||keys.has(key))
+    if(!homeGameCategory(r.category)||!Number.isInteger(r.quantity)||r.quantity<1||r.quantity>9999||(r.category==="other"&&!String(r.description||"").trim())||r.ownerId===helperId||(r.ownerId&&!homeGameIsPlayer(r.ownerId))||keys.has(key))
       return {ok:false,error:"Use whole numbers from 1 to 9,999 for another person's items."};
     keys.add(key);
   }
-  const events=rows.map(r=>prepareHomeGameClaim({helperId,ownerId:r.ownerId||"",category:r.category,quantity:r.quantity}));
+  const events=rows.map(r=>prepareHomeGameClaim({helperId,ownerId:r.ownerId||"",category:r.category,quantity:r.quantity,description:r.description}));
   homeGameEvents.push(...events);saveHomeGame();
   return {ok:true,total:rows.reduce((n,r)=>n+r.quantity,0)};
 }
@@ -5909,28 +5926,29 @@ function openHomeGameBulk(){
     const owners=[...homeGamePlayers().filter(p=>p.id!==helper),{id:"",name:"Not sure"}];
     modal.innerHTML=`<h2>Bulk add</h2><p>How many did you put away, ${esc(getPerson(helper).name)}? Fill only what you need, then send once.</p>
       <form id="hgBulkForm">
-      ${owners.map(p=>`<fieldset class="hg-bulk-person"><legend>${esc(p.name)}</legend><div class="hg-bulk-grid">${HOME_GAME_CATEGORIES.map(c=>`<label>${hgIcon(c.icon)} ${esc(c.label)}<input type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0" data-owner="${esc(p.id)}" data-category="${c.id}" aria-label="${esc(p.name)} ${c.label}"></label>`).join("")}</div></fieldset>`).join("")}
-      <p class="hg-sub">${homeGameIsParent(helper)?"Your entries count immediately. One point per item.":"One point per item after parent approval."} Known owners lose the same number. Not sure means no deduction. Only enter items you have not already logged.</p>
-      <p id="hgBulkError" role="alert"></p><div class="cl-modal-actions"><button type="button" class="btn" id="hgBulkCancel">Cancel</button><button type="submit" class="btn add" id="hgBulkSend">${homeGameIsParent(helper)?"Add items":"Send for review"}</button></div></form>`;
+      ${owners.map(p=>`<fieldset class="hg-bulk-person"><legend>${esc(p.name)}</legend><div class="hg-bulk-grid">${HOME_GAME_CATEGORIES.map(c=>`<label>${hgIcon(c.icon)} ${esc(c.label)}<input type="number" inputmode="numeric" min="0" max="9999" step="1" placeholder="0" data-owner="${esc(p.id)}" data-category="${c.id}" aria-label="${esc(p.name)} ${c.label}"></label>`).join("")}</div><label class="hg-other-description" hidden>What did you put away?<textarea maxlength="160" placeholder="Books, shoes, craft supplies…"></textarea></label></fieldset>`).join("")}
+      <p class="hg-sub">Your entries count immediately. One point per item. Known owners lose the same number. Not sure means no deduction. Only enter items you have not already logged.</p>
+      <p id="hgBulkError" role="alert"></p><div class="cl-modal-actions"><button type="button" class="btn" id="hgBulkCancel">Cancel</button><button type="submit" class="btn add" id="hgBulkSend">Add items</button></div></form>`;
     const form=modal.querySelector("form"),send=modal.querySelector("#hgBulkSend");
-    form.oninput=()=>{const total=[...form.querySelectorAll("input")].reduce((n,i)=>n+(Number(i.value)||0),0);send.textContent=homeGameIsParent(helper)?`Add ${total} items`:total>0?`Send ${total} items for review`:"Send for review";};
+    form.oninput=()=>{const total=[...form.querySelectorAll("input[type=number]")].reduce((n,i)=>n+(Number(i.value)||0),0);send.textContent=`Add ${total} items`;
+      form.querySelectorAll("fieldset").forEach(f=>{const need=Number(f.querySelector('[data-category="other"]').value)>0;f.querySelector('.hg-other-description').hidden=!need;f.querySelector('textarea').required=need;});};
     modal.querySelector("#hgBulkCancel").onclick=closeClModal;
     form.onsubmit=e=>{
       e.preventDefault();if(send.disabled)return;
       if(activePerson!==helper){modal.querySelector("#hgBulkError").textContent="The selected person changed. Close this and reopen Bulk add.";return;}
-      const rows=[...form.querySelectorAll("input")].filter(i=>i.value!==""&&Number(i.value)!==0).map(i=>({ownerId:i.dataset.owner,category:i.dataset.category,quantity:Number(i.value)}));
+      const rows=[...form.querySelectorAll("input[type=number]")].filter(i=>i.value!==""&&Number(i.value)!==0).map(i=>({ownerId:i.dataset.owner,category:i.dataset.category,quantity:Number(i.value),description:i.closest("fieldset").querySelector("textarea").value}));
       const result=logHomeGameBulk(helper,rows);
       if(!result.ok){modal.querySelector("#hgBulkError").textContent=result.error;return;}
-      send.disabled=true;closeClModal();hgSay(homeGameIsParent(helper)?`${result.total} items counted. Nice cleanup!`:`${result.total} items sent for parent review. Nice cleanup!`);render();hgCelebrate();
+      send.disabled=true;closeClModal();hgSay(`${result.total} items counted. Nice cleanup!`);render();hgCelebrate();
     };
   });
 }
 function hgSubmitClaim(ownerId){
   const helper=homeGamePlayerId, category=homeGamePickedCategory;
   homeGameStep="category"; homeGamePickedCategory="";
-  const r=logHomeGameCleanup(helper, ownerId, category);
+  const r=logHomeGameCleanup(helper, ownerId, category,homeGameOtherDescription);
   if(!r.ok){ hgSay(r.error,true); renderHomeGame(); return; }
-  hgSay(homeGameIsParent(helper)?"Counted. "+homeGameClaimEffect(r.event)+".":"Nice rescue, "+getPerson(helper).name+"! Your +1 is waiting for a parent to confirm.");
+  hgSay("Counted. "+homeGameClaimEffect(r.event)+".");
   /* The claim is already saved. render() rather than renderHomeGame() so the Money badge and every
      other surface that counts work waiting for a parent updates in the same beat. */
   render();
@@ -5955,7 +5973,9 @@ function renderHomeGame(){
   const notice=document.getElementById("hgNotice");notice.hidden=!player;
   notice.classList.toggle("bad",homeGameMessageBad);
   notice.innerHTML=hgIcon(homeGameMessageBad?"x":"heart")+`<span>${esc(homeGameMessage||"Everything has a home. Let's get it there.")}</span>`;
-  renderHomeGameReview();renderHomeGameBoard(player,round);
+  renderHomeGameReview();renderHomeGameBoard(player,round);renderHomeGameHistory();
+  document.getElementById("hgEditScores").hidden=!(homeGameIsParent(activePerson)||activePerson==="all");
+  document.getElementById("hgCountdown").dataset.round=round;tickHomeGameCountdown();
   if(player){renderHomeGameHero(player,round);renderHomeGameEntry(player,players);}
 }
 function renderHomeGameHero(player, round){
@@ -5975,7 +5995,7 @@ function renderHomeGameHero(player, round){
       <span class="hg-tag">${hgIcon("trophy")}${rank?`#${rank} in the crew`:"No rank yet"}</span>
       <span class="hg-tag">${hgIcon("check")}${rescues} rescue${rescues===1?"":"s"}</span>
       <span class="hg-tag">${leftOut} left out</span>
-      <span class="hg-tag">${waiting} waiting</span>
+      <span class="hg-tag">${homeGameScore(player.id)} all-time points</span>
     </div>`;
 }
 /* Two taps, and the second one sends it: category, then whose it was. There is no submit button
@@ -5991,7 +6011,9 @@ function renderHomeGameEntry(player, players){
     `<span class="hg-art">${hgIcon(c.icon)}</span>`+
     `<span class="hg-tile-text"><b>${esc(c.label)}</b><small>${esc(c.home)}</small></span></button>`).join("");
   tiles.querySelectorAll(".hg-tile").forEach(b=>b.addEventListener("click",()=>{
-    homeGamePickedCategory=b.dataset.cat; homeGameStep="owner"; renderHomeGame();
+    homeGamePickedCategory=b.dataset.cat;homeGameOtherDescription="";
+    if(homeGamePickedCategory==="other"){openHomeGameOther();return;}
+    homeGameStep="owner"; renderHomeGame();
   }));
 
   if(!onOwnerStep) return;
@@ -6023,52 +6045,63 @@ function renderHomeGameBoard(player, round){
    both halves are only ever read from the one event; there is no way to award the +1 without the
    -1. Every decision below is reversible, and a reversal is itself reversible. */
 function renderHomeGameReview(){
-  const pending=homeGamePendingClaims(), decided=homeGameDecidedClaims(6);
   const body=document.getElementById("hgReviewBody");
-  document.getElementById("hgReviewSummary").textContent =
-    "Parent review \u00b7 " + (pending.length ? pending.length+" waiting" : "nothing waiting");
-  const parts=[];
-  if(!pending.length) parts.push(`<div class="hg-empty">Nothing waiting. Cleanups the crew logs show up here for a parent to confirm.</div>`);
-  pending.forEach(e=>{
-    parts.push(`<div class="hg-claim">
-      <div class="hg-claim-main">
-        <div class="hg-claim-title">${esc(homeGameClaimText(e))}</div>
-        <div class="hg-claim-meta">${esc(fmtDate(e.date))} \u00b7 ${esc(homeGameClaimEffect(e))}</div>
-      </div>
-      <div class="hg-claim-actions">
-        <button class="btn add hg-confirm" data-id="${esc(e.id)}">Confirm</button>
-        <button class="btn sm hg-decline" data-id="${esc(e.id)}">Decline</button>
-      </div></div>`);
+  const events=homeGameEvents.slice().sort((a,b)=>b.updated-a.updated);
+  document.getElementById("hgReviewSummary").textContent=`Activity & undo · ${events.length}`;
+  body.innerHTML=events.length?events.map(e=>`<div class="hg-claim"><div class="hg-claim-main"><div class="hg-claim-title">${esc(homeGameClaimText(e))}</div><div class="hg-claim-meta">${esc(fmtDate(e.date))} · ${esc(e.reversed?"Undone":e.status==="declined"?"Previously declined":homeGameClaimEffect(e))}</div></div>${e.status!=="declined"?`<button class="btn sm hg-undo" data-id="${esc(e.id)}">${e.reversed?"Restore":"Undo"}</button>`:""}</div>`).join(""):"<p>No cleanups yet. Your first one counts right away.</p>";
+  body.querySelectorAll('.hg-undo').forEach(b=>b.onclick=()=>{const e=homeGameEvent(b.dataset.id);if(!e)return;e.reversed?restoreHomeGameClaim(e.id):reverseHomeGameClaim(e.id);render();});
+}
+function openHomeGameOther(){
+  openClModal(modal=>{
+    modal.innerHTML=`<h2>What did you put away?</h2><form id="hgOtherForm"><input id="hgOtherText" class="ctrl" required maxlength="160" placeholder="Books, shoes, craft supplies…" aria-label="What did you put away?"><div class="cl-modal-actions"><button type="button" class="btn" id="hgOtherCancel">Cancel</button><button class="btn add" type="submit">Next: whose was it?</button></div></form>`;
+    modal.querySelector('#hgOtherCancel').onclick=closeClModal;
+    modal.querySelector('form').onsubmit=e=>{e.preventDefault();const text=modal.querySelector('input').value.trim();if(!text)return;homeGameOtherDescription=text;homeGameStep="owner";closeClModal();renderHomeGame();};
+    modal.querySelector('input').focus();
   });
-  if(decided.length){
-    parts.push(`<div class="hg-claim-head">Recently decided</div>`);
-    decided.forEach(e=>{
-      const state=e.status==="declined" ? "Declined" : (e.reversed ? "Taken back \u2014 scores restored" : "Confirmed");
-      const action=e.status==="declined"
-        ? `<button class="btn sm hg-reopen" data-id="${esc(e.id)}">Reopen</button>`
-        : (e.reversed
-            ? `<button class="btn sm hg-restore" data-id="${esc(e.id)}">Put it back</button>`
-            : `<button class="btn sm hg-reverse" data-id="${esc(e.id)}">Take it back</button>`);
-      parts.push(`<div class="hg-claim">
-        <div class="hg-claim-main">
-          <div class="hg-claim-title ${e.status==="declined"||e.reversed?"off":""}">${esc(homeGameClaimText(e))}</div>
-          <div class="hg-claim-meta">${esc(state)} \u00b7 ${esc(homeGameClaimEffect(e))}</div>
-        </div>
-        <div class="hg-claim-actions">${action}</div></div>`);
-    });
-  }
-  body.innerHTML=parts.join("");
-  const act=(sel, fn, sound)=>body.querySelectorAll(sel).forEach(b=>b.addEventListener("click",()=>{
-    const r=fn(b.dataset.id);
-    if(!r.ok){ hgSay(r.error,true); render(); return; }
-    if(sound) playCompletionSound();
-    render();
-  }));
-  act(".hg-confirm", id=>{ const r=confirmHomeGameClaim(id, homeGamePlayerId); if(r.ok) hgSay("Confirmed. "+homeGameClaimEffect(r.event)+"."); return r; }, true);
-  act(".hg-decline", id=>{ const r=declineHomeGameClaim(id, homeGamePlayerId); if(r.ok) hgSay("Claim declined. No scores changed."); return r; });
-  act(".hg-reverse", id=>{ const r=reverseHomeGameClaim(id); if(r.ok) hgSay("Taken back. Both scores are restored."); return r; });
-  act(".hg-restore", id=>{ const r=restoreHomeGameClaim(id); if(r.ok) hgSay("Put back. "+homeGameClaimEffect(r.event)+"."); return r; });
-  act(".hg-reopen",  id=>{ const r=reopenHomeGameClaim(id);  if(r.ok) hgSay("Back in the queue for a parent."); return r; });
+}
+function homeGameNextRoundDate(now=new Date()){
+  const end=new Date(now);end.setHours(0,0,0,0);end.setDate(end.getDate()+7-end.getDay());return end;
+}
+function tickHomeGameCountdown(){
+  const el=document.getElementById('hgCountdown');if(!el||currentPage!=="ehah")return;
+  const now=new Date(),seconds=Math.max(0,Math.floor((homeGameNextRoundDate(now)-now)/1000));
+  el.textContent=`Next week in ${Math.floor(seconds/86400)}d ${Math.floor(seconds%86400/3600)}h ${Math.floor(seconds%3600/60)}m ${seconds%60}s`;
+  if(el.dataset.round!==homeGameCurrentRound()&&!editingActive())renderHomeGame();
+}
+function homeGameHistoryPeople(){
+  const ids=new Set([...people.map(p=>p.id),...homeGameEvents.flatMap(e=>[e.helperId,e.ownerId]).filter(Boolean)]);
+  return [...ids].map(id=>({...getPerson(id),id}));
+}
+function homeGameWeeks(){return [...new Set([homeGameCurrentRound(),...homeGameEvents.map(e=>e.round)])].sort().reverse();}
+function renderHomeGameHistory(){
+  const players=homeGameHistoryPeople();
+  const row=(label,round)=>`<tr><th>${esc(label)}</th>${players.map(p=>`<td>${homeGameScore(p.id,round)}</td>`).join("")}</tr>`;
+  document.getElementById('hgHistoryBody').innerHTML=`<div class="fn-table-wrap"><table class="hg-history-table"><thead><tr><th>Round</th>${players.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${row("All time",null)}${homeGameWeeks().map(w=>row(homeGameRoundLabel(w),w)).join("")}</tbody></table></div>`;
+}
+function setHomeGameScores(rows,round){
+  if(!(homeGameIsParent(activePerson)||activePerson==="all"))return {ok:false,error:"Choose Dad on Home to edit scores."};
+  if(!homeGameWeeks().includes(round)||!Array.isArray(rows)||rows.some(r=>!people.some(p=>p.id===r.id)||!Number.isInteger(r.score)||Math.abs(r.score)>999999))return {ok:false,error:"Use whole-number scores between -999,999 and 999,999."};
+  rows.forEach(r=>{
+    const id=`hg-adjust:${round}:${r.id}`,existing=homeGameEvent(id);
+    const old=existing&&existing.status==="confirmed"&&!existing.reversed?existing.scoreDelta:0;
+    const delta=r.score-(homeGameScore(r.id,round)-old);
+    if(existing&&existing.scoreDelta===delta&&!existing.reversed)return;
+    if(!existing&&!delta)return;
+    const e=existing||prepareHomeGameClaim({id,helperId:r.id,round,kind:"adjustment"});
+    e.kind="adjustment";e.scoreDelta=delta;e.description=`Set week total to ${r.score}`;e.reversed=false;e.status="confirmed";e.decidedBy=activePerson;e.decided=Date.now();touchHomeGameEvent(e);
+    if(!existing)homeGameEvents.push(e);
+  });saveHomeGame();return {ok:true};
+}
+function openHomeGameScores(){
+  if(!(homeGameIsParent(activePerson)||activePerson==="all"))return;
+  openClModal(modal=>{
+    modal.innerHTML=`<h2>Edit scores</h2><p>Type the total each person should have. Only the chosen week changes; history and all-time totals update too.</p><form id="hgScoresForm"><label>Week <select class="ctrl" id="hgScoreWeek">${homeGameWeeks().map(w=>`<option value="${w}">${esc(homeGameRoundLabel(w))}</option>`).join("")}</select></label><div id="hgScoreRows"></div><p id="hgScoreError" role="alert"></p><div class="cl-modal-actions"><button type="button" class="btn" id="hgZeroScores">Set everyone to 0</button><button type="button" class="btn" id="hgScoresCancel">Cancel</button><button type="submit" class="btn add">Save scores</button></div></form>`;
+    const week=modal.querySelector('#hgScoreWeek');
+    const paint=()=>{modal.querySelector('#hgScoreRows').innerHTML=people.map(p=>`<label class="hg-score-row">${esc(p.name)}<input type="number" step="1" required min="-999999" max="999999" data-person="${esc(p.id)}" aria-label="${esc(p.name)} score" value="${homeGameScore(p.id,week.value)}"></label>`).join("");};paint();week.onchange=paint;
+    modal.querySelector('#hgZeroScores').onclick=()=>modal.querySelectorAll('[data-person]').forEach(i=>i.value=0);
+    modal.querySelector('#hgScoresCancel').onclick=closeClModal;
+    modal.querySelector('form').onsubmit=e=>{e.preventDefault();const result=setHomeGameScores([...modal.querySelectorAll('[data-person]')].map(i=>({id:i.dataset.person,score:Number(i.value)})),week.value);if(!result.ok){modal.querySelector('#hgScoreError').textContent=result.error;return;}closeClModal();hgSay("Scores updated.");render();};
+  });
 }
 
 function renderFundsPage(){
@@ -6698,7 +6731,7 @@ window.addEventListener("afterprint", ()=>{
 });
 
 /* ---------------- tick ---------------- */
-function tick(){ const d=new Date(); document.getElementById("clock").innerHTML=`${pad2(d.getHours())}:${pad2(d.getMinutes())}<span class="sec">:${pad2(d.getSeconds())}</span>`;
+function tick(){ tickHomeGameCountdown(); const d=new Date(); document.getElementById("clock").innerHTML=`${pad2(d.getHours())}:${pad2(d.getMinutes())}<span class="sec">:${pad2(d.getSeconds())}</span>`;
   /* Countdowns patch text in place and never rebuild DOM, so they run even while an editor is open —
      the clock should not freeze just because someone is typing elsewhere on the page. */
   updateCountdownTicks();
