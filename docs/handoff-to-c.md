@@ -1,5 +1,39 @@
 # Family Planner 1.18-beta — Handoff to C
 
+## Shared app bar, Life Admin and Bank — 1.21-beta, 2026-09-11 (local, not published)
+
+Source request: `MM-Home-UI-Handoff-2026-09-11` (workspace root) plus Jason's answers the same day.
+The handoff's "MM Home" is the SB2G page (`the-grind/`); its "MM Food" is this planner.
+
+- **One shared bar** with ScattaBrain to Genius. The CSS between `shared-appbar:start/end` and
+  the script between `shared-appnav-js:start/end` are byte-identical in both `index.html` files;
+  `update-mm-home.py` refuses to embed while they differ. Large live clock first (never hidden
+  on phones; a compact clock stays beside the nav when the phone bar condenses), weekday/date
+  beside it (repaints at midnight), an empty reserved slot, then the nav. Account stays in the bar.
+- **Nav:** Home · Calendar · Agenda · Life Admin ▾ (EHAH, Clothing, Chores, Bank). Emoji replaced
+  by the handoff PNGs in `icons/nav/` (precached by the worker, cache `mm-home-shell-v5`). Items are
+  real links with in-app click routing. Life Admin is a disclosure button (`aria-expanded`,
+  `aria-controls`): click/tap/Enter/Space toggle, hover opens only on a fine pointer, arrows move
+  through links, Escape/outside click/tabbing away close. Its trigger is active on any child page
+  and shows the sum of the Chores + Clothing approval badges.
+- **Embedded copy only:** `const SB2G_URL` is flipped by the embed script, which adds the SB2G
+  button and a **Time** item linking to `../#time`. The standalone site shows neither.
+- **Bank (`#bank`)** — Jason asked for Money to become its own page called Bank, "their personal
+  family bank account". Account cards (balance, + Pay in, – Purchase, clothing wallet/bill, goal,
+  clothing settlement), stats, transactions, Account settings. **Chores (`#funds`)** keeps jobs,
+  the approval queue and Edit jobs. No ledger kinds, storage keys or sync paths changed; only the
+  display labels "Cash added" → "Deposit" and "Spent" → "Purchase".
+
+Verification (in-app Chromium pane, local PowerShell static server, not signed in, no household
+data): desktop 1280, 375 and 320 widths for standalone and embedded copies; no horizontal
+overflow; all nine icons load; no emoji in the bar; Life Admin by mouse, hover, tap and keyboard
+(arrow/Escape/outside/Tab; Enter/Space rely on native button activation, which the pane's synthetic
+keys cannot fire, so `click()` was used); #bank/#funds/#clothing deep links; Time link opens SB2G's
+Time view; badge sum; seeded local ledger rows rendered on Bank; purchase modal title/kind; date
+rollover. Service-worker registration is refused by this pane for every page, so offline and
+precache behavior were not exercised — worker syntax and every shell URL (HTTP 200) were checked.
+Physical phone acceptance and publishing are Jason's call.
+
 ## One-tap personal Home correction — 2026-09-08
 
 Jason clarified that selecting a person is the complete action: immediately stay on that person's

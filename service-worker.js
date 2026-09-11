@@ -1,4 +1,4 @@
-const CACHE_NAME = "mm-home-shell-v4";
+const CACHE_NAME = "mm-home-shell-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,7 +7,16 @@ const APP_SHELL = [
   "./icons/apple-touch-icon.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/icon-maskable-512.png"
+  "./icons/icon-maskable-512.png",
+  "./icons/nav/home.png",
+  "./icons/nav/calendar.png",
+  "./icons/nav/agenda.png",
+  "./icons/nav/time.png",
+  "./icons/nav/life-admin.png",
+  "./icons/nav/ehah.png",
+  "./icons/nav/clothing.png",
+  "./icons/nav/chores.png",
+  "./icons/nav/money.png"
 ];
 
 self.addEventListener("install", event => {
