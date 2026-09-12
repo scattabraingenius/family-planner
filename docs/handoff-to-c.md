@@ -1,6 +1,35 @@
 # Family Planner 1.18-beta — Handoff to C
 
-## Shared app bar, Life Admin and Bank — 1.21-beta, 2026-09-11 (local, not published)
+## Kids standalone release — 2026-09-12 (published)
+
+Jason accepted misc's proposal to publish only the kids standalone Family Planner now, leaving
+the unified SB2G app unchanged, and authorized normal reviewed promotion of the verified transfer
+branch to `main`. Executed by C per `CLAUDE-KIDS-RELEASE.md`.
+
+- Content reviewed commit-by-commit against `origin/main` before promotion (not just commit
+  titles — the branch's base commit is literally titled "not for release"; its actual diff is
+  nav/bar/icon/Bank-page-split only, confirmed no ledger-kind, storage-key or sync-path changes).
+- `git merge --ff-only` of `famos-2026-09-11-verified-transfer` into `main` in a separate
+  canonical-root worktree (left the existing preview checkout on its branch untouched), then a
+  normal (non-force) `git push origin main`. Linear history, no merge commit.
+- **Released `main` SHA: `cb0cba99074c132c06afde4ef2cad27cbf74c351`.**
+- GitHub Pages built that exact SHA (`status: built`, confirmed via the Pages API). Live site
+  verified via cache-busted fetches and a byte-for-byte diff of `index.html`/`service-worker.js`
+  against the released commit: identical.
+- Dedicated isolated-browser checks (cross-origin/Firebase blocked, no sign-in) passed against
+  both a local server and the live public URL: no SB2G button or Time link anywhere (top nav or
+  Life panel); nav is exactly Home · Calendar · Agenda · Life; Life holds EHAH, Clothing, Chores,
+  Bank; all nav icons and family portrait/group photos load; `#calendar`/`#agenda`/`#funds`/
+  `#clothing`/`#ehah`/`#bank` deep links all route correctly; service worker registers (cache
+  `mm-home-shell-v9`) and the shell (including a deep link) still renders fully offline.
+- Existing `tests\unified-pwa.test.cjs` (unified repo, unchanged, known `image.complete` timing
+  race not hit this run) also passed against the current icon set.
+- Unified repo (`Apps\ScattaBrain to Genius`, `the-grind.git`) was read-only verified, not
+  touched: `main` unchanged at `ea6096ac2da9ae6ff57d27cfec402c256acb3663`.
+- Public URL: <https://scattabraingenius.github.io/family-planner/>. Full evidence:
+  `Resources\FamOS-local-verification-2026-09-11\claude-kids-release-status.md`.
+
+## Shared app bar, Life Admin and Bank — 1.21-beta, 2026-09-11 (superseded above — now published)
 
 Source request: `MM-Home-UI-Handoff-2026-09-11` (workspace root) plus Jason's answers the same day.
 The handoff's "MM Home" is the SB2G page (`the-grind/`); its "MM Food" is this planner.
@@ -81,13 +110,14 @@ blocked; real family records and live sync permissions were not tested or change
   2026-09-04, then out of `D:\dev\family-planner` — see Open items. Older `D:\dev` paths in this
   document's history are historical.)
 - Branch: `main`
-- Base commit before this Home Crew release: `6908c50a5b6ea420dbada8bec1b44dd505d10ea2`
-- Application version: `1.18-beta`
+- `main` HEAD as of the 2026-09-12 kids standalone release: `cb0cba99074c132c06afde4ef2cad27cbf74c351`
+  (base commit before the original Home Crew release, for older history: `6908c50a5b6ea420dbada8bec1b44dd505d10ea2`)
+- Application version: `1.18-beta` (nav/bar/icons refreshed since; version string not bumped for this release — see the 2026-09-12 section above)
 - Clothing policy version: `1.1`
 - Funds version: `1.0`
 - Home Crew game version: `1.0`
 - Production site: <https://scattabraingenius.github.io/family-planner/>
-- Home deep links: `#calendar` · `#agenda` · `#funds` · `#clothing`
+- Home deep links: `#calendar` · `#agenda` · `#funds` · `#clothing` · `#ehah` · `#bank`
 
 Untracked items are now governed by `.gitignore` rather than by remembering this
 paragraph: `.claude/`, `test-artifacts/`, and `tmp/` are ignored. Everything else in the
