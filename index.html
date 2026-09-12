@@ -3046,6 +3046,17 @@ function transferOnlyParticipants(){
   return moneyParticipants().filter(p=>!already.has(p.id) &&
     (fundsBalance(p.id)!==0 || fundsLedger.some(e=>e.personId===p.id) || debtsOwedByPerson(p.id).length || debtsOwedToPerson(p.id).length));
 }
+/* Everyone the Bank page actually shows a card for: fundsAccounts() plus any transfer-only
+   participant (Dad, once he has activity). renderBankPage's stat grid uses this union — not
+   fundsAccounts() alone — for its person-scoping and its "In the bank"/"Earned"/"Spent" totals, so
+   that (a) selecting Dad's own scope shows Dad's own total instead of a blank $0 page, and (b) a
+   transfer to or from Dad doesn't make the household "In the bank" figure look like money vanished
+   or appeared from nowhere — it is still all there, just previously uncounted because Dad's card
+   wasn't. Job/allowance/clothing-wallet eligibility is untouched: that is still fundsAccounts() only. */
+function bankParticipants(){
+  const already=new Set(fundsAccounts().map(p=>p.id));
+  return fundsAccounts().concat(transferOnlyParticipants().filter(p=>!already.has(p.id)));
+}
 
 /* =====================================================================
    EVERYTHING HAS A HOME  —  "The Home Crew" cleanup game
@@ -6534,7 +6545,10 @@ function renderFundsPage(){
 function renderBankPage(){
   if(ensureFundsPersonSettings()|ensureWeeklyAllowances()) saveFunds();
   renderFundsAccounts();
-  const allAccounts=fundsAccounts(), statScope=scopeTo(allAccounts);
+  /* bankParticipants(), not fundsAccounts() alone: every card actually shown on this page (Dad
+     included, once he has activity) must count toward its own stats and be selectable as its own
+     scope — see bankParticipants() above. */
+  const allAccounts=bankParticipants(), statScope=scopeTo(allAccounts);
   const accounts=statScope?allAccounts.filter(p=>p.id===statScope):allAccounts;
   const ids=new Set(accounts.map(p=>p.id));
   const rows=fundsLedger.filter(e=>ids.has(e.personId)&&e.status==="approved");

@@ -71,24 +71,36 @@ record — no commit exists yet in either app repo.
 
 **Not yet done / explicit limitations, reported per instruction rather than claimed away:**
 
-- **Firebase writes here are the same whole-payload `db.update` every other Money field already
-  uses (`pushCloud`'s debounced write of the full `fundsLedger` array), not a per-row transaction
-  like the Home Crew game's claims.** Two devices recording a transfer/repayment at nearly the same
-  moment are not guaranteed atomic against each other — this is a pre-existing characteristic of the
-  whole Money module this feature reuses rather than a new regression, but it is real and unverified
-  against actual concurrent devices; only local, single-tab, Firebase-blocked isolated testing was
-  performed. No production Firebase data was read, written, or connected to at any point.
-  Live-rules review remains the pre-existing open item at the bottom of this document.
-- Household "In the bank" total (the Bank page stat grid) still sums only `fundsAccounts()`
-  (unchanged) — it does not include Dad's or another transfer-only participant's balance. This was
-  a deliberate minimal choice (avoid widening an existing stat's scope beyond what the task asked
-  for) rather than an oversight; worth a explicit decision from Jason/misc if Dad's balance should
-  count toward that figure too.
-- Not yet run against the embedded unified copies (`/the-grind/mm-home/`, the not-yet-existing
-  `/s2g/mm-home/`) — `scripts/update-mm-home.py` regeneration and a smoke check happen next, before
-  the status report.
+- **Plainly stated: this feature has only ever been exercised on one device, in one browser tab, with
+  Firebase blocked. Cross-device / multi-device sync of a transfer or repayment has NOT been tested
+  at all, and no atomicity claim is made for it.** Transfers/repayments write through the same
+  whole-payload `db.update` every other Money field already uses (`pushCloud`'s debounced write of
+  the entire `fundsLedger` array) — not a per-row Firebase transaction like the Home Crew game's
+  claims use. Two devices recording a transfer/repayment within the same sync window are not
+  guaranteed atomic against each other; the newest-`updated`-wins dedupe rule (verified in isolation
+  above) is the only defense against that today, and it has only been verified against synthetic
+  same-process data, never a real second device. This is a pre-existing characteristic of the whole
+  Money module this feature reuses, not a new regression introduced here — but it is real, it is
+  untested beyond a single device, and it should be reported to Jason/misc as exactly that rather
+  than as a solved problem. No production Firebase data was read, written, or connected to at any
+  point in any test. Live Firebase Database Rules review remains the pre-existing open item at the
+  bottom of this document.
+- ~~Household "In the bank" total sums only `fundsAccounts()`~~ **Corrected after misc's follow-up
+  review**: the stat grid's person-scoping and totals now use a new `bankParticipants()` (the union
+  of `fundsAccounts()` and `transferOnlyParticipants()` — every card actually shown on the page), not
+  `fundsAccounts()` alone. The original narrower scope was a real bug, not just a minimal choice:
+  excluding Dad's receiving side made a child→Dad transfer look like it silently removed money from
+  the household total, and selecting Dad's own scope showed a blank $0 page instead of his own
+  numbers. Job/allowance/clothing-wallet eligibility is untouched — that is still `fundsAccounts()`
+  only. Covered by new automated checks: the total is unchanged by a transfer entirely within
+  `bankParticipants()`, Dad's own selected scope equals his own card balance, and whole-family
+  conservation holds with Dad included.
+- Verified against the embedded unified copy too (`mm-home/index.html` inside `Apps\ScattaBrain to
+  Genius`, regenerated via `scripts/update-mm-home.py`) — the full 28-check suite and the unchanged
+  `tests/unified-pwa.test.cjs` both pass there. See
+  `Resources\FamOS-local-verification-2026-09-11\claude-bank-transfer-status.md` for exact evidence.
 - Isolated automated coverage only (`Resources\FamOS-local-verification-2026-09-11\bank-transfer-check.cjs`,
-  23 numbered checks, cross-origin/Firebase blocked, no sign-in, synthetic seeded family data — the
+  28 numbered checks, cross-origin/Firebase blocked, no sign-in, synthetic seeded family data — the
   real household's records were never read or touched). Physical multi-device and real-family
   acceptance remain Jason's first-use check, same as every other feature in this document.
 
