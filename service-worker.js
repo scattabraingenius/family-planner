@@ -1,4 +1,4 @@
-const CACHE_NAME = "mm-home-shell-v5";
+const CACHE_NAME = "mm-home-shell-v8-illustrated-icons";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,15 +8,17 @@ const APP_SHELL = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
-  "./icons/nav/home.png",
-  "./icons/nav/calendar.png",
-  "./icons/nav/agenda.png",
-  "./icons/nav/time.png",
-  "./icons/nav/life-admin.png",
-  "./icons/nav/ehah.png",
-  "./icons/nav/clothing.png",
-  "./icons/nav/chores.png",
-  "./icons/nav/money.png"
+  "./icons/nav/family-all.png",
+  "./icons/nav/family-portraits.png",
+  "./icons/nav/home.svg",
+  "./icons/nav/calendar.svg",
+  "./icons/nav/agenda.svg",
+  "./icons/nav/time.svg",
+  "./icons/nav/life-admin.svg",
+  "./icons/nav/ehah.svg",
+  "./icons/nav/clothing.svg",
+  "./icons/nav/chores.svg",
+  "./icons/nav/money.svg"
 ];
 
 self.addEventListener("install", event => {
