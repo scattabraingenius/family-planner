@@ -1,5 +1,97 @@
 # Family Planner 1.18-beta — Handoff to C
 
+## Bank "Send money" and "Pay back" — 2026-09-12 (implemented, isolated-test verified, NOT published)
+
+Source request: `Resources\FamOS-local-verification-2026-09-11\CLAUDE-BANK-TRANSFERS.md`, plus a
+same-day addendum extending scope to Dad. Jason approved implementation **and** eventual
+publication; misc owns review before publish, so this is a code-complete handoff, not a release
+record — no commit exists yet in either app repo.
+
+**What shipped**, entirely inside the existing Bank page (`index.html`), reusing the existing
+`fundsLedger`/signed-cents ledger — no new storage collection:
+
+- One header button, **Send money**: From, To, Amount, a required explicit "Does this need to be
+  paid back?" Yes/No with no default (Save is blocked until one is chosen), an optional note, and a
+  single live-updating confirmation sentence in the modal itself — e.g. "Ariel is lending Bella
+  $50.00. Bella will owe Ariel $50.00." or "...is giving...No repayment needed." No interest, due
+  dates, or second approval screen, per spec.
+- **Pay back**, opened from a "You owe X — Pay back" line on the debtor's own account card. Partial
+  or full, capped at the lesser of the remaining debt and the payer's available balance.
+- Four new `fundsLedger` kinds — `transfer-out`/`transfer-in` (the gift/loan pair) and
+  `repay-out`/`repay-in` (the repayment pair) — always written as **one linked pair under a shared
+  `linkId`** in a single call, exactly like the existing Clothing bridge (`bankToClothingWallet` /
+  `bankPaysClothingBill`). `removeFundEntry` already refused any row with a `linkId`, so these
+  inherit that protection with no code change; the generic "Record money" editor's kind dropdown
+  omits all four, and its Save handler independently re-checks the submitted kind so a tampered
+  `<select>` can't create a lone, unpaired half either.
+- **Debt is derived, never stored** — `transferDebt(debtor, creditor)` sums that directed pair's
+  loan legs minus that pair's repayment legs on every read, the same principle as the Home Crew
+  score and the Clothing settlement balance. It is directional and per-pair on purpose: it never
+  nets against a loan running the other way between the same two people.
+- **A wrong gift reverses with a gift sent back; a wrong loan does not** — only Pay back is counted
+  by `transferDebt`, so a gift sent back leaves a mistaken loan's debt fully intact while also
+  moving unrelated money. This was caught by misc's preliminary review against the first draft
+  (which had a merely descriptive, inaccurate code comment implying either would work) and is now
+  both corrected in the comment and covered by an automated test that proves a gift-back does NOT
+  clear loan debt and Pay back does.
+- Excluded from household earned/spent totals (`fundsEarnedSince`, and the Bank page's "Earned this
+  month"/"Spent this month" stat tiles): money moving between two family accounts is neither.
+- **Dad, and any other adult role name `isFundsParticipant` normally excludes from `fundsAccounts()`
+  (jobs/allowance/clothing wallet), can give, lend, borrow and be repaid exactly like the kids**,
+  per Jason's addendum. `moneyParticipants()` (all of `people`) replaces `fundsAccounts()` for
+  transfer pickers, the ledger person-filter, and the generic "Record money" Who select — jobs,
+  allowance defaults and the clothing bridge still use `fundsAccounts()` unchanged. No opening
+  balance was invented for Dad; his balance is whatever has actually been recorded (a manual
+  deposit, or money received). **Design note flagged to misc, now resolved**: Dad's compact Bank
+  card (balance + debts only — no jobs/allowance/goal/clothing-wallet buttons) appears only once he
+  has any ledger activity, to avoid a permanent $0.00 card for every unused adult role name. Before
+  that first activity he is still reachable two ways so this is never a dead end: the header's
+  "+ Record money" (its Who list already includes him), and a "give them a starting balance first"
+  link that appears inside Send money itself whenever the selected From/To person's balance is $0.
+- **A parent's explicit "account disabled" choice for a child (the Account settings checkbox) is
+  honored** — `moneyParticipantEligible()` refuses a transfer to/from a child whose account was
+  turned off, with a message pointing back to Account settings. Distinguished from Dad's own
+  default `enabled:false` (never a deliberate disablement for an adult role) via `isFundsParticipant`,
+  so the same check that protects a disabled child's account does not accidentally re-exclude Dad.
+- **Validation is strict at the domain-function boundary**, not normalized before checking: cents
+  must already be `Number.isInteger` (a fractional value like `1.7` is rejected outright, not
+  silently rounded — this was a real bug misc's independent browser test caught in the first draft,
+  where `finiteInt()`'s `Math.round` accepted it), `isLoan` must be the literal boolean `true` or
+  `false` (a truthy string or `1` is rejected rather than coerced), amounts are capped at $1,000,000
+  and must be a genuine safe integer, and both participants must be different, real, current people.
+- Double-submit guard on both modals: the Save button disables immediately, and a short
+  signature-based guard additionally refuses the exact same (kind, from, to, amount, choice, note)
+  submitted again within 4 seconds — verified against a real synchronous double-click in the DOM,
+  not just called twice in isolation.
+- Radio-choice styling: the Yes/No "does this need to be paid back?" choice originally inherited the
+  generic `.cl-field label`/`.cl-field input` rules (9px uppercase mono label, `width:100%` input)
+  meant for a text field, which wrapped into a barely-readable 4-line stack at 390px per misc's
+  visual review screenshot. Fixed with scoped `.sm-repay-option` styling (normal sentence case,
+  13.5px, `width:auto` radio, full tap-target padding); no other visual change.
+
+**Not yet done / explicit limitations, reported per instruction rather than claimed away:**
+
+- **Firebase writes here are the same whole-payload `db.update` every other Money field already
+  uses (`pushCloud`'s debounced write of the full `fundsLedger` array), not a per-row transaction
+  like the Home Crew game's claims.** Two devices recording a transfer/repayment at nearly the same
+  moment are not guaranteed atomic against each other — this is a pre-existing characteristic of the
+  whole Money module this feature reuses rather than a new regression, but it is real and unverified
+  against actual concurrent devices; only local, single-tab, Firebase-blocked isolated testing was
+  performed. No production Firebase data was read, written, or connected to at any point.
+  Live-rules review remains the pre-existing open item at the bottom of this document.
+- Household "In the bank" total (the Bank page stat grid) still sums only `fundsAccounts()`
+  (unchanged) — it does not include Dad's or another transfer-only participant's balance. This was
+  a deliberate minimal choice (avoid widening an existing stat's scope beyond what the task asked
+  for) rather than an oversight; worth a explicit decision from Jason/misc if Dad's balance should
+  count toward that figure too.
+- Not yet run against the embedded unified copies (`/the-grind/mm-home/`, the not-yet-existing
+  `/s2g/mm-home/`) — `scripts/update-mm-home.py` regeneration and a smoke check happen next, before
+  the status report.
+- Isolated automated coverage only (`Resources\FamOS-local-verification-2026-09-11\bank-transfer-check.cjs`,
+  23 numbered checks, cross-origin/Firebase blocked, no sign-in, synthetic seeded family data — the
+  real household's records were never read or touched). Physical multi-device and real-family
+  acceptance remain Jason's first-use check, same as every other feature in this document.
+
 ## Kids standalone release — 2026-09-12 (published)
 
 Jason accepted misc's proposal to publish only the kids standalone Family Planner now, leaving

@@ -173,6 +173,24 @@ Structure and constraints come first; visual polish second.
 
 ## Change log
 
+- 2026-09-12 — **Bank "Send money" and "Pay back"**, one button on the existing Bank page. Passes
+  the feature test: the recurring problem is that the family already gives, lends and repays cash
+  between each other with nothing recording what was a gift versus what is still owed; everyone
+  uses it, Dad included, not just the kids; it builds child responsibility for a real, precisely
+  tracked debt the same way Clothing's settlement balance does; without it "who owes who" stays a
+  memory-based dispute. It is an action on the existing Bank page, not a new page, per the layout
+  rule. From/To/Amount, a required explicit Yes/No "does this need to be paid back?" with no
+  default, an optional note, and one plain-language confirmation sentence — no interest, due dates,
+  or extra approval screens. Four new fundsLedger kinds only (`transfer-out`, `transfer-in`,
+  `repay-out`, `repay-in`), always written as one linked pair under a shared `linkId`, exactly like
+  the existing Clothing bridge; no new storage collection, and debt is derived from the ledger on
+  every read rather than stored, the same principle as the Home Crew score. Excluded from the
+  household's earned/spent totals: money moving between two family accounts was neither earned nor
+  spent. Dad (and any other adult role name normally excluded from fundsAccounts()) can now hold a
+  tracked transfer balance and give/lend/borrow/repay exactly like the kids, without being enrolled
+  in the child allowance/job/clothing-wallet policies — see docs/handoff-to-c.md for the reachability
+  design (how Dad gets funded before his first transfer without an invented opening balance) and the
+  open Firebase-atomicity limitation, both flagged to misc during review.
 - 2026-09-08 — **Everything Has a Home**, a points-only cleanup game, added as a section at the top
   of the Money page. It passes the feature test: the recurring problem is abandoned dishes, trash,
   toys and clothes and the cleanup falling to one person; all four family members use it, Dad
